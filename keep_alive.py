@@ -1,8 +1,4 @@
 
-Pruthvi Jadhav <pruthvij880@gmail.com>
-11:24 (14 minutes ago)
-to me
-
 import requests
 import time
 import threading
