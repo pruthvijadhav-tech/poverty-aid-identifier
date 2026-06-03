@@ -751,6 +751,10 @@ def offices():
     lang = request.args.get('lang', session.get('lang', 'en'))
     return render_template('offices.html', lang=lang)
 
+#keep alive on render free plan
+from keep_alive import start
+start("https://poverty-aid-identifier.onrender.com")
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)
       
