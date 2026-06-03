@@ -1,0 +1,44 @@
+{
+    "name": "Poverty Aid Identifier",
+    "short_name": "AidApp",
+    "description": "Identify government aid schemes and report corruption",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#000080",
+    "theme_color": "#000080",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "/static/icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/static/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Check Aid Eligibility",
+            "url": "/",
+            "description": "Check which government schemes you qualify for"
+        },
+        {
+            "name": "Track Complaint",
+            "url": "/track",
+            "description": "Track your corruption complaint"
+        },
+        {
+            "name": "Report Corruption",
+            "url": "/corruption",
+            "description": "Report corruption or aid deduction"
+        }
+    ],
+    "categories": ["government", "social", "utilities"],
+    "lang": "en",                                                                             
+    "dir": "ltr"
+}

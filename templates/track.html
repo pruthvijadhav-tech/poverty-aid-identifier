@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Complaint - Poverty Aid Identifier</title>
+    <!-- PWA -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#000080">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AidApp">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; color: #333; }
+        .top-bar { background: linear-gradient(90deg, #FF9933, #ffffff, #138808); height: 6px; }
+        .header { background: #000080; color: white; padding: 20px; text-align: center; }
+        .header h1 { font-size: 20px; margin-bottom: 4px; }
+        .header p { font-size: 12px; opacity: 0.8; }
+        .container { max-width: 700px; margin: 0 auto; padding: 20px; }
+
+        .track-form-card { background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 25px; margin-top: 20px; border-top: 4px solid #000080; }
+        .track-form-card h2 { color: #000080; font-size: 18px; margin-bottom: 8px; border-bottom: 2px solid #FF9933; padding-bottom: 8px; }
+        .track-form-card p { font-size: 13px; color: #666; margin-bottom: 20px; margin-top: 8px; }
+        .track-input-row { display: flex; gap: 10px; }
+        .track-input-row input { flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 15px; background: #fafafa; }
+        .track-input-row input:focus { border-color: #FF9933; outline: none; }
+        .track-btn { padding: 12px 20px; background: #000080; color: white; border: none; border-radius: 10px; font-size: 15px; cursor: pointer; font-weight: bold; }
+        .track-btn:hover { background: #0000aa; }
+
+        .not-found { background: #ffebee; border-left: 4px solid #c62828; padding: 15px; border-radius: 10px; color: #c62828; font-size: 14px; margin-top: 20px; }
+
+        .track-card { background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; margin-top: 25px; }
+        .track-header { background: #000080; color: white; padding: 20px 25px; }
+        .track-header h3 { font-size: 14px; opacity: 0.8; margin-bottom: 5px; }
+        .track-id { font-size: 22px; font-weight: bold; letter-spacing: 2px; color: #FF9933; }
+        .track-body { padding: 20px 25px; }
+
+        .progress-container { margin: 20px 0 25px 0; }
+        .progress-steps { display: flex; justify-content: space-between; position: relative; margin-bottom: 10px; }
+        .progress-steps::before { content: ''; position: absolute; top: 15px; left: 0; right: 0; height: 4px; background: #e0e0e0; z-index: 0; }
+        .progress-line { position: absolute; top: 15px; left: 0; height: 4px; background: linear-gradient(90deg, #FF9933, #138808); z-index: 1; }
+        .step { display: flex; flex-direction: column; align-items: center; position: relative; z-index: 2; flex: 1; }
+        .step-dot { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; border: 3px solid #e0e0e0; background: white; color: #999; }
+        .step-dot.done { background: #138808; border-color: #138808; color: white; }
+        .step-dot.active { background: #FF9933; border-color: #FF9933; color: white; }
+        .step-label { font-size: 10px; color: #666; margin-top: 6px; text-align: center; font-weight: bold; }
+        .step-date { font-size: 9px; color: #999; text-align: center; margin-top: 2px; }
+
+        .status-badge { padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: bold; display: inline-block; margin-top: 10px; }
+        .status-Filed { background: #fff3e0; color: #e65c00; }
+        .status-Received { background: #e3f2fd; color: #1565c0; }
+        .status-ActionTaken { background: #f3e5f5; color: #6a1b9a; }
+        .status-Resolved { background: #e8f5e9; color: #1b5e20; }
+
+        .officer-card { background: #f0f4ff; border-left: 4px solid #000080; border-radius: 10px; padding: 15px; margin-top: 15px; }
+        .officer-label { font-size: 11px; color: #666; margin-bottom: 4px; }
+        .officer-name { font-size: 15px; font-weight: bold; color: #000080; margin-bottom: 4px; }
+        .officer-authority { font-size: 12px; color: #555; margin-bottom: 8px; }
+        .expected-date { font-size: 13px; color: #138808; font-weight: bold; }
+
+        .complaint-details { background: #fafafa; border-radius: 10px; padding: 15px; margin-top: 15px; }
+        .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-label { color: #666; }
+        .detail-value { font-weight: bold; color: #333; text-align: right; }
+        .deducted { color: #c62828; }
+
+        .back-btn { display: block; width: 100%; padding: 14px; background: #000080; color: white; border: none; border-radius: 10px; font-size: 15px; cursor: pointer; font-weight: bold; text-align: center; text-decoration: none; margin-top: 20px; }
+        .back-btn:hover { opacity: 0.9; }
+        .footer { text-align: center; padding: 20px; color: #999; font-size: 12px; margin-top: 20px; }
+
+        .lang-en .hi, .lang-en .mr { display: none; }
+        .lang-hi .en, .lang-hi .mr { display: none; }
+        .lang-mr .en, .lang-mr .hi { display: none; }
+
+        @media (max-width: 480px) {
+            .track-id { font-size: 18px; }
+            .track-input-row { flex-direction: column; }
+        }
+    </style>
+</head>
+<body class="lang-{{ lang }}">
+<div class="top-bar"></div>
+<div class="header">
+    <h1>
+        <span class="en">Track Your Complaint</span>
+        <span class="hi">अपनी शिकायत ट्रैक करें</span>
+        <span class="mr">तुमची तक्रार ट्रॅक करा</span>
+    </h1>
+    <p>
+        <span class="en">Enter your Tracking ID to see complaint status</span>
+        <span class="hi">शिकायत की स्थिति देखने के लिए ट्रैकिंग ID दर्ज करें</span>
+        <span class="mr">तक्रारीची स्थिती पाहण्यासाठी ट्रॅकिंग ID टाका</span>
+    </p>
+</div>
+
+<div class="container">
+    <div class="track-form-card">
+        <h2>
+            <span class="en">Track Complaint</span>
+            <span class="hi">शिकायत ट्रैक करें</span>
+            <span class="mr">तक्रार ट्रॅक करा</span>
+        </h2>
+        <p>
+            <span class="en">Enter the Tracking ID you received (e.g. PAI-2026-7842)</span>
+            <span class="hi">अपनी ट्रैकिंग ID दर्ज करें (जैसे PAI-2026-7842)</span>
+            <span class="mr">तुमचा ट्रॅकिंग ID टाका (उदा. PAI-2026-7842)</span>
+        </p>
+        <form method="POST">
+            <input type="hidden" name="lang" value="{{ lang }}"/>
+            <div class="track-input-row">
+                <input type="text" name="tracking_id_input" placeholder="PAI-2026-XXXX" required/>
+                <button type="submit" class="track-btn">
+                    <span class="en">Track</span>
+                    <span class="hi">ट्रैक</span>
+                    <span class="mr">ट्रॅक</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {% if not_found %}
+    <div class="not-found">
+        <span class="en">No complaint found with this Tracking ID. Please check and try again.</span>
+        <span class="hi">इस ट्रैकिंग ID से कोई शिकायत नहीं मिली।</span>
+        <span class="mr">या ट्रॅकिंग ID सह कोणतीही तक्रार सापडली नाही.</span>
+    </div>
+    {% endif %}
+
+    {% if report %}
+    <div class="track-card">
+        <div class="track-header">
+            <h3>
+                <span class="en">Complaint Tracking</span>
+                <span class="hi">शिकायत ट्रैकिंग</span>
+                <span class="mr">तक्रार ट्रॅकिंग</span>
+            </h3>
+            <div class="track-id">{{ report.tracking_id }}</div>
+            <div>
+                <span class="status-badge status-{{ report.status.replace(' ', '') }}">{{ report.status }}</span>
+            </div>
+        </div>
+        <div class="track-body">
+            <div class="progress-container">
+                <div class="progress-steps">
+                    {% set status = report.status %}
+                    <div class="progress-line" style="width:
+                        {% if status == 'Filed' %}0%
+                        {% elif status == 'Received' %}33%
+                        {% elif status == 'Action Taken' %}66%
+                        {% elif status == 'Resolved' %}100%
+                        {% else %}0%{% endif %}">
+                    </div>
+                    <div class="step">
+                        <div class="step-dot done">✓</div>
+                        <div class="step-label"><span class="en">Filed</span><span class="hi">दर्ज</span><span class="mr">नोंदवले</span></div>
+                        <div class="step-date">{{ report.filed_date }}</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-dot {% if status in ['Received','Action Taken','Resolved'] %}done{% elif status == 'Filed' %}active{% endif %}">
+                            {% if status in ['Received','Action Taken','Resolved'] %}✓{% else %}2{% endif %}
+                        </div>
+                        <div class="step-label"><span class="en">Received</span><span class="hi">प्राप्त</span><span class="mr">प्राप्त</span></div>
+                        <div class="step-date">{{ report.received_date or '--' }}</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-dot {% if status in ['Action Taken','Resolved'] %}done{% elif status == 'Received' %}active{% endif %}">
+                            {% if status in ['Action Taken','Resolved'] %}✓{% else %}3{% endif %}
+                        </div>
+                        <div class="step-label"><span class="en">Action</span><span class="hi">कार्रवाई</span><span class="mr">कारवाई</span></div>
+                        <div class="step-date">{{ report.action_date or '--' }}</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-dot {% if status == 'Resolved' %}done{% elif status == 'Action Taken' %}active{% endif %}">
+                            {% if status == 'Resolved' %}✓{% else %}4{% endif %}
+                        </div>
+                        <div class="step-label"><span class="en">Resolved</span><span class="hi">हल हुआ</span><span class="mr">सुटले</span></div>
+                        <div class="step-date">{{ report.resolved_date or '--' }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="officer-card">
+                <div class="officer-label"><span class="en">Assigned Officer</span><span class="hi">असाइन अधिकारी</span><span class="mr">नियुक्त अधिकारी</span></div>
+                <div class="officer-name">{{ report.assigned_officer }}</div>
+                <div class="officer-authority">{{ report.authority }}</div>
+                <div class="expected-date">
+                    <span class="en">Expected Resolution: {{ report.expected_resolution }}</span>
+                    <span class="hi">अपेक्षित समाधान: {{ report.expected_resolution }}</span>
+                    <span class="mr">अपेक्षित निराकरण: {{ report.expected_resolution }}</span>
+                </div>
+            </div>
+
+            <div class="complaint-details">
+                <div class="detail-row"><span class="detail-label"><span class="en">Scheme</span><span class="hi">योजना</span><span class="mr">योजना</span></span><span class="detail-value">{{ report.scheme }}</span></div>
+                <div class="detail-row"><span class="detail-label"><span class="en">Amount Entitled</span><span class="hi">हकदार राशि</span><span class="mr">हक्काची रक्कम</span></span><span class="detail-value">Rs. {{ report.entitled_amount }}</span></div>
+                <div class="detail-row"><span class="detail-label"><span class="en">Amount Received</span><span class="hi">प्राप्त राशि</span><span class="mr">मिळालेली रक्कम</span></span><span class="detail-value deducted">Rs. {{ report.received_amount }}</span></div>
+                <div class="detail-row"><span class="detail-label"><span class="en">Location</span><span class="hi">स्थान</span><span class="mr">ठिकाण</span></span><span class="detail-value">{{ report.location }}</span></div>
+                <div class="detail-row"><span class="detail-label"><span class="en">Filed On</span><span class="hi">दर्ज तारीख</span><span class="mr">नोंदवल्याची तारीख</span></span><span class="detail-value">{{ report.filed_date }}</span></div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <a href="/" class="back-btn">
+        <span class="en">← Back to Main App</span>
+        <span class="hi">← मुख्य ऐप पर वापस</span>
+        <span class="mr">← मुख्य अॅपवर परत</span>
+    </a>
+    <div class="footer">Poverty Aid Identifier - Every complaint is tracked and resolved.</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apply - Poverty Aid Identifier</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#000080">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; color: #333; }
+        .top-bar { background: linear-gradient(90deg, #FF9933, #ffffff, #138808); height: 6px; }
+        .header { background: #000080; color: white; padding: 20px; text-align: center; }
+        .header h1 { font-size: 20px; margin-bottom: 4px; }
+        .header p { font-size: 12px; opacity: 0.8; }
+        .container { max-width: 700px; margin: 0 auto; padding: 20px; }
+
+        .scheme-badge { background: white; border-radius: 16px; padding: 15px 20px; margin-top: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border-left: 6px solid #FF9933; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .scheme-badge h3 { color: #000080; font-size: 15px; }
+        .amount-tag { background: #FF9933; color: white; padding: 5px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; }
+
+        .steps-bar { display: flex; background: white; border-radius: 12px; padding: 15px 20px; margin-top: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); gap: 5px; }
+        .step-item { flex: 1; text-align: center; }
+        .step-circle { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; margin: 0 auto 5px; }
+        .step-circle.done { background: #138808; color: white; }
+        .step-circle.active { background: #FF9933; color: white; }
+        .step-circle.pending { background: #e0e0e0; color: #999; }
+        .step-label { font-size: 10px; color: #666; font-weight: bold; }
+
+        .form-card { background: white; border-radius: 16px; padding: 25px; margin-top: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border-top: 4px solid #FF9933; }
+        .section-title { color: #000080; font-size: 15px; font-weight: bold; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #FF9933; }
+        .form-group { margin-bottom: 18px; }
+        label { display: block; font-weight: bold; margin-bottom: 6px; color: #000080; font-size: 14px; }
+        .required-star { color: #c62828; }
+        input, select, textarea { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 14px; background: #fafafa; font-family: Arial; transition: border 0.2s; }
+        textarea { height: 80px; resize: none; }
+        input:focus, select:focus, textarea:focus { border-color: #FF9933; outline: none; background: white; }
+        input.success-field { border-color: #138808; }
+        .field-hint { font-size: 11px; color: #888; margin-top: 4px; }
+
+        .declaration-box { background: #f0f4ff; border: 2px solid #000080; border-radius: 12px; padding: 15px 20px; margin-top: 20px; }
+        .declaration-box h4 { color: #000080; font-size: 14px; margin-bottom: 10px; }
+        .declaration-text { font-size: 12px; color: #555; line-height: 1.7; }
+        .checkbox-row { display: flex; align-items: flex-start; gap: 12px; margin-top: 12px; }
+        .checkbox-row input[type="checkbox"] { width: 20px; height: 20px; margin-top: 2px; flex-shrink: 0; }
+        .checkbox-row label { font-size: 13px; color: #333; font-weight: normal; margin-bottom: 0; }
+
+        .submit-btn { width: 100%; padding: 16px; background: linear-gradient(90deg, #FF9933, #e65c00); color: white; border: none; border-radius: 10px; font-size: 17px; cursor: pointer; font-weight: bold; margin-top: 20px; letter-spacing: 1px; }
+        .submit-btn:hover { opacity: 0.9; }
+        .submit-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+        .success-card { background: white; border-radius: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); padding: 40px 30px; text-align: center; margin-top: 20px; }
+        .success-icon { width: 80px; height: 80px; background: #e8f5e9; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 35px; }
+        .success-title { color: #138808; font-size: 22px; font-weight: bold; margin-bottom: 10px; }
+        .success-sub { color: #666; font-size: 14px; line-height: 1.7; margin-bottom: 20px; }
+        .app-id-box { background: #f0f4ff; border: 2px dashed #000080; border-radius: 12px; padding: 15px; margin-bottom: 20px; }
+        .app-id-label { font-size: 12px; color: #666; margin-bottom: 5px; }
+        .app-id { font-size: 24px; font-weight: bold; color: #000080; letter-spacing: 3px; }
+
+        .next-steps { background: #fff3e0; border-left: 4px solid #FF9933; border-radius: 10px; padding: 15px 20px; text-align: left; margin-top: 15px; }
+        .next-steps h4 { color: #e65c00; margin-bottom: 10px; font-size: 14px; }
+        .next-step-item { display: flex; gap: 10px; margin-bottom: 8px; font-size: 13px; }
+        .step-num { width: 22px; height: 22px; background: #FF9933; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; flex-shrink: 0; }
+
+        .action-btns { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .print-btn { display: block; width: 100%; padding: 14px; background: linear-gradient(90deg, #138808, #0d6e05); color: white; border: none; border-radius: 10px; font-size: 15px; cursor: pointer; font-weight: bold; text-align: center; }
+        .track-btn { display: block; width: 100%; padding: 14px; background: #e8f5e9; color: #138808; border: none; border-radius: 10px; font-size: 15px; cursor: pointer; font-weight: bold; text-align: center; text-decoration: none; }
+        .back-btn { display: block; width: 100%; padding: 14px; background: #000080; color: white; border: none; border-radius: 10px; font-size: 15px; cursor: pointer; font-weight: bold; text-align: center; text-decoration: none; }
+        .home-btn { display: block; width: 100%; padding: 14px; background: white; color: #000080; border: 2px solid #000080; border-radius: 10px; font-size: 15px; cursor: pointer; font-weight: bold; text-align: center; text-decoration: none; }
+
+        .footer { text-align: center; padding: 20px; color: #999; font-size: 12px; margin-top: 20px; }
+
+        .lang-en .hi, .lang-en .mr { display: none; }
+        .lang-hi .en, .lang-hi .mr { display: none; }
+        .lang-mr .en, .lang-mr .hi { display: none; }
+
+        @media print {
+            .action-btns { display: none; }
+            .steps-bar { display: none; }
+            .top-bar { display: none; }
+            body { background: white; }
+        }
+        @media (max-width: 480px) {
+            .steps-bar { padding: 10px; }
+            .step-label { font-size: 9px; }
+        }
+    </style>
+</head>
+<body class="lang-{{ lang }}">
+<div class="top-bar"></div>
+<div class="header">
+    <h1>
+        <span class="en">📝 Online Application Form</span>
+        <span class="hi">📝 ऑनलाइन आवेदन फॉर्म</span>
+        <span class="mr">📝 ऑनलाइन अर्ज फॉर्म</span>
+    </h1>
+    <p>
+        <span class="en">Fill the form — Print and submit at nearest office</span>
+        <span class="hi">फॉर्म भरें — प्रिंट करें और निकटतम कार्यालय में जमा करें</span>
+        <span class="mr">फॉर्म भरा — प्रिंट करा आणि जवळच्या कार्यालयात सादर करा</span>
+    </p>
+</div>
+
+<div class="container">
+
+    {% if success %}
+    <!-- Success Screen -->
+    <div class="success-card">
+        <div class="success-icon">✓</div>
+        <div class="success-title">
+            <span class="en">Application Submitted!</span>
+            <span class="hi">आवेदन जमा हुआ!</span>
+            <span class="mr">अर्ज सादर झाला!</span>
+        </div>
+        <div class="success-sub">
+            <span class="en">Your application has been recorded. Print this page and take it to the nearest government office along with your documents.</span>
+            <span class="hi">आपका आवेदन दर्ज हो गया है। इस पृष्ठ को प्रिंट करें और दस्तावेजों के साथ निकटतम सरकारी कार्यालय ले जाएं।</span>
+            <span class="mr">तुमचा अर्ज नोंदवला गेला आहे. हे पृष्ठ प्रिंट करा आणि कागदपत्रांसह जवळच्या सरकारी कार्यालयात घेऊन जा.</span>
+        </div>
+        <div class="app-id-box">
+            <div class="app-id-label">
+                <span class="en">Application Reference ID</span>
+                <span class="hi">आवेदन संदर्भ ID</span>
+                <span class="mr">अर्ज संदर्भ ID</span>
+            </div>
+            <div class="app-id">{{ application_id }}</div>
+        </div>
+        <div style="background:#f0f7f0; border-radius:10px; padding:12px; margin-bottom:15px; font-size:13px; color:#333;">
+            <strong>{{ scheme.name }}</strong><br>
+            <span style="color:#138808; font-weight:bold;">{{ scheme.amount }}</span>
+        </div>
+        <div class="next-steps">
+            <h4>
+                <span class="en">📋 Next Steps</span>
+                <span class="hi">📋 अगले कदम</span>
+                <span class="mr">📋 पुढील पावले</span>
+            </h4>
+            <div class="next-step-item">
+                <div class="step-num">1</div>
+                <span>
+                    <span class="en">Print this page (tap Print button below)</span>
+                    <span class="hi">इस पृष्ठ को प्रिंट करें</span>
+                    <span class="mr">हे पृष्ठ प्रिंट करा</span>
+                </span>
+            </div>
+            <div class="next-step-item">
+                <div class="step-num">2</div>
+                <span>
+                    <span class="en">Collect all required documents (see checklist)</span>
+                    <span class="hi">सभी आवश्यक दस्तावेज़ इकट्ठा करें</span>
+                    <span class="mr">सर्व आवश्यक कागदपत्रे गोळा करा</span>
+                </span>
+            </div>
+            <div class="next-step-item">
+                <div class="step-num">3</div>
+                <span>
+                    <span class="en">Visit nearest Gram Panchayat or District Office</span>
+                    <span class="hi">निकटतम ग्राम पंचायत या जिला कार्यालय जाएं</span>
+                    <span class="mr">जवळच्या ग्रामपंचायत किंवा जिल्हा कार्यालयात जा</span>
+                </span>
+            </div>
+            <div class="next-step-item">
+                <div class="step-num">4</div>
+                <span>
+                    <span class="en">Submit this printed form + documents</span>
+                    <span class="hi">यह प्रिंटेड फॉर्म + दस्तावेज़ जमा करें</span>
+                    <span class="mr">हा प्रिंट केलेला फॉर्म + कागदपत्रे सादर करा</span>
+                </span>
+            </div>
+            <div class="next-step-item">
+                <div class="step-num">5</div>
+                <span>
+                    <span class="en">If anyone asks for money — report on our app immediately</span>
+                    <span class="hi">अगर कोई पैसे मांगे — तुरंत हमारे ऐप पर रिपोर्ट करें</span>
+                    <span class="mr">जर कोणी पैसे मागितले — तात्काळ आमच्या अॅपवर तक्रार करा</span>
+                </span>
+            </div>
+        </div>
+        <div class="action-btns">
+            <button onclick="window.print()" class="print-btn">
+                🖨️
+                <span class="en">Print Application</span>
+                <span class="hi">आवेदन प्रिंट करें</span>
+                <span class="mr">अर्ज प्रिंट करा</span>
+            </button>
+            <a href="/offices?lang={{ lang }}" class="track-btn">
+                📍
+                <span class="en">Find Nearest Office</span>
+                <span class="hi">निकटतम कार्यालय खोजें</span>
+                <span class="mr">जवळचे कार्यालय शोधा</span>
+            </a>
+            <a href="/documents/{{ scheme_key }}?lang={{ lang }}" class="back-btn">
+                📋
+                <span class="en">View Document Checklist</span>
+                <span class="hi">दस्तावेज़ चेकलिस्ट देखें</span>
+                <span class="mr">कागदपत्र यादी पाहा</span>
+            </a>
+            <a href="/" class="home-btn">
+                <span class="en">← Back to Home</span>
+                <span class="hi">← होम पर वापस</span>
+                <span class="mr">← होमवर परत</span>
+            </a>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Application Form -->
+    <div class="scheme-badge">
+        <h3>{{ scheme.name }}</h3>
+        <div class="amount-tag">{{ scheme.amount }}</div>
+    </div>
+
+    <div class="steps-bar">
+        <div class="step-item">
+            <div class="step-circle done">✓</div>
+            <div class="step-label">
+                <span class="en">Eligibility</span>
+                <span class="hi">पात्रता</span>
+                <span class="mr">पात्रता</span>
+            </div>
+        </div>
+        <div class="step-item">
+            <div class="step-circle done">✓</div>
+            <div class="step-label">
+                <span class="en">Documents</span>
+                <span class="hi">दस्तावेज़</span>
+                <span class="mr">कागदपत्रे</span>
+            </div>
+        </div>
+        <div class="step-item">
+            <div class="step-circle active">3</div>
+            <div class="step-label">
+                <span class="en">Fill Form</span>
+                <span class="hi">फॉर्म भरें</span>
+                <span class="mr">फॉर्म भरा</span>
+            </div>
+        </div>
+        <div class="step-item">
+            <div class="step-circle pending">4</div>
+            <div class="step-label">
+                <span class="en">Submit</span>
+                <span class="hi">जमा करें</span>
+                <span class="mr">सादर करा</span>
+            </div>
+        </div>
+    </div>
+
+    <form method="POST" onsubmit="return validateForm()">
+
+        <div class="form-card">
+            <div class="section-title">
+                <span class="en">Personal Information</span>
+                <span class="hi">व्यक्तिगत जानकारी</span>
+                <span class="mr">वैयक्तिक माहिती</span>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <span class="en">Full Name <span class="required-star">*</span></span>
+                    <span class="hi">पूरा नाम <span class="required-star">*</span></span>
+                    <span class="mr">पूर्ण नाव <span class="required-star">*</span></span>
+                </label>
+                <input type="text" name="full_name" value="{{ session.get('person_name', '') }}" placeholder="e.g. Ramesh Kumar" required/>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <span class="en">Father's / Husband's Name <span class="required-star">*</span></span>
+                    <span class="hi">पिता / पति का नाम <span class="required-star">*</span></span>
+                    <span class="mr">वडिलांचे / पतीचे नाव <span class="required-star">*</span></span>
+                </label>
+                <input type="text" name="father_name" placeholder="e.g. Suresh Kumar" required/>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <span class="en">Date of Birth <span class="required-star">*</span></span>
+                    <span class="hi">जन्म तिथि <span class="required-star">*</span></span>
+                    <span class="mr">जन्म तारीख <span class="required-star">*</span></span>
+                </label>
+                <input type="date" name="dob" required/>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <span class="en">Gender <span class="required-star">*</span></span>
+                    <span class="hi">लिंग <span class="required-star">*</span></span>
+                    <span class="mr">लिंग <span class="required-star">*</span></span>
+                </label>
+                <select name="gender" required>
+                    <option value="">-- Select --</option>
+                    <option value="male">Male / पुरुष</option>
+                    <option value="female">Female / महिला</option>
+                    <option value="other">Other / अन्य</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <span class="en">Aadhaar Number (optional)</span>
+                    <span class="hi">आधार नंबर (वैकल्पिक)</span>
+                    <span class="mr">आधार नंबर (ऐच्छिक)</span>
+                </label>
+                <input type="text" name="aadhaar" maxlength="12" placeholder="XXXX XXXX XXXX" id="aadhaarInput"/>
+                <div class="field-hint">
+                    <span class="en">Not mandatory — helps in faster processing</span>
+                    <span class="hi">अनिवार्य नहीं — तेज़ प्रक्रिया में मदद करता है</span>
+                    <span class="mr">अनिवार्य नाही — जलद प्रक्रियेत मदत होते</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <span class="en">Mobile Number <span class="required-star">*</span></span>
+                    <span class="hi">मोबाइल नंबर <span class="required-star">*</span></span>
+                    <span class="mr">मोबाइल नंबर <span class="required-star">*</span></span>
+                </label>
+                <input type="tel" name="mobile" value="{{ session.get('phone', '') }}" maxlength="10" placeholder="9876543210" required/>
+            </div>
+        </div>
+
+        <div class="form-card" style="margin-top:15px;">
+            <div class="section-title">
+                <span class="en">Address Details</span>
+                <span class="hi">पता विवरण</span>
+                <span class="mr">पत्ता तपशील</span>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <span class="en">Full Address <span class="required-star">*</span></span>
+                    <span class="hi">पूरा पता <span class="required-star">*</span></span>
+                    <span class="mr">पूर्ण पत्ता <span class="required-star">*</span></span>
+                </label>
+                <textarea name="address" placeholder="House No, Street, Village/Ward" required>{{ session.get('address', '') }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <span class="en">District <span class="required-star">*</span></span>
+                    <span class="hi">जिला <span class="required-star">*</span></span>
+                    <span class="mr">जिल्हा <span class="required-star">*</span></span>
+                </label>
+                <input type="text" name="district" placeholder="e.g. Pune" required/>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <span class="en">State <span class="required-star">*</span></span>
+                    <span class="hi">राज्य <span class="required-star">*</span></span>
+                    <span class="mr">राज्य <span class="required-star">*</span></span>
+                </label>
+                <select name="state" required>
+                    <option value="">-- Select State --</option>
+                    <option>Maharashtra</option>
+                    <option>Uttar Pradesh</option>
+                    <option>Bihar</option>
+                    <option>Madhya Pradesh</option>
+                    <option>Rajasthan</option>
+                    <option>Gujarat</option>
+                    <option>Karnataka</option>
+                    <option>Tamil Nadu</option>
+                    <option>West Bengal</option>
+                    <option>Andhra Pradesh</option>
+                    <option>Telangana</option>
+                    <option>Odisha</option>
+                    <option>Jharkhand</option>
+                    <option>Chhattisgarh</option>
+                    <option>Punjab</option>
+                    <option>Haryana</option>
+                    <option>Delhi</option>
+                    <option>Other</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <span class="en">PIN Code <span class="required-star">*</span></span>
+                    <span class="hi">पिन कोड <span class="required-star">*</span></span>
+                    <span class="mr">पिन कोड <span class="required-star">*</span></span>
+                </label>
+                <input type="text" name="pincode" maxlength="6" placeholder="e.g. 411001" required/>
+            </div>
+        </div>
+
+        <div class="form-card" style="margin-top:15px;">
+            <div class="section-title">
+                <span class="en">Economic Details</span>
+                <span class="hi">आर्थिक विवरण</span>
+                <span class="mr">आर्थिक तपशील</span>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <span class="en">Annual Family Income (Rs.) <span class="required-star">*</span></span>
+                    <span class="hi">वार्षिक पारिवारिक आय (रु.) <span class="required-star">*</span></span>
+                    <span class="mr">वार्षिक कौटुंबिक उत्पन्न (रु.) <span class="required-star">*</span></span>
+                </label>
+                <input type="number" name="annual_income" placeholder="e.g. 60000" required/>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <span class="en">Family Size <span class="required-star">*</span></span>
+                    <span class="hi">परिवार का आकार <span class="required-star">*</span></span>
+                    <span class="mr">कुटुंबाचा आकार <span class="required-star">*</span></span>
+                </label>
+                <input type="number" name="family_size" min="1" max="30" placeholder="e.g. 4" required/>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <span class="en">BPL Card Number (if any)</span>
+                    <span class="hi">BPL कार्ड नंबर (यदि है)</span>
+                    <span class="mr">BPL कार्ड नंबर (असल्यास)</span>
+                </label>
+                <input type="text" name="bpl_number" placeholder="Optional"/>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <span class="en">Bank Account Number <span class="required-star">*</span></span>
+                    <span class="hi">बैंक खाता नंबर <span class="required-star">*</span></span>
+                    <span class="mr">बँक खाते नंबर <span class="required-star">*</span></span>
+                </label>
+                <input type="text" name="bank_account" placeholder="e.g. 1234567890" required/>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <span class="en">Bank Name &amp; Branch <span class="required-star">*</span></span>
+                    <span class="hi">बैंक का नाम और शाखा <span class="required-star">*</span></span>
+                    <span class="mr">बँकेचे नाव आणि शाखा <span class="required-star">*</span></span>
+                </label>
+                <input type="text" name="bank_name" placeholder="e.g. State Bank of India, Pune Branch" required/>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <span class="en">IFSC Code <span class="required-star">*</span></span>
+                    <span class="hi">IFSC कोड <span class="required-star">*</span></span>
+                    <span class="mr">IFSC कोड <span class="required-star">*</span></span>
+                </label>
+                <input type="text" name="ifsc" maxlength="11" placeholder="e.g. SBIN0001234" style="text-transform:uppercase;" required/>
+            </div>
+        </div>
+
+        <div class="declaration-box">
+            <h4>
+                <span class="en">📜 Declaration</span>
+                <span class="hi">📜 घोषणा</span>
+                <span class="mr">📜 घोषणा</span>
+            </h4>
+            <div class="declaration-text">
+                <span class="en">I hereby declare that all the information provided above is true and correct to the best of my knowledge. I understand that providing false information may result in rejection of application and legal action.</span>
+                <span class="hi">मैं एतद्द्वारा घोषणा करता/करती हूँ कि ऊपर दी गई सभी जानकारी मेरी जानकारी के अनुसार सत्य और सही है।</span>
+                <span class="mr">मी येथे घोषणा करतो/करते की वरील सर्व माहिती माझ्या माहितीनुसार खरी आणि योग्य आहे.</span>
+            </div>
+            <div class="checkbox-row">
+                <input type="checkbox" id="declaration" name="declaration" required/>
+                <label for="declaration">
+                    <span class="en">I agree to the above declaration</span>
+                    <span class="hi">मैं उपरोक्त घोषणा से सहमत हूँ</span>
+                    <span class="mr">मी वरील घोषणेशी सहमत आहे</span>
+                </label>
+            </div>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submitBtn">
+            📝
+            <span class="en">Submit Application</span>
+            <span class="hi">आवेदन जमा करें</span>
+            <span class="mr">अर्ज सादर करा</span>
+        </button>
+    </form>
+
+    <div class="action-btns" style="margin-top:10px;">
+        <a href="/documents/{{ scheme_key }}?lang={{ lang }}" class="back-btn" style="background:#e8f5e9; color:#138808;">
+            📋
+            <span class="en">View Document Checklist First</span>
+            <span class="hi">पहले दस्तावेज़ चेकलिस्ट देखें</span>
+            <span class="mr">आधी कागदपत्र यादी पाहा</span>
+        </a>
+        <a href="javascript:history.back()" class="back-btn">
+            ←
+            <span class="en">Go Back</span>
+            <span class="hi">वापस जाएं</span>
+            <span class="mr">मागे जा</span>
+        </a>
+    </div>
+    {% endif %}
+
+    <div class="footer">Poverty Aid Identifier — Online Application — Print and submit at office</div>
+</div>
+
+<script>
+function validateForm() {
+    const mobile = document.querySelector('input[name="mobile"]');
+    if (mobile && !/^[0-9]{10}$/.test(mobile.value)) {
+        alert('Please enter valid 10-digit mobile number');
+        mobile.focus();
+        return false;
+    }
+    const ifsc = document.querySelector('input[name="ifsc"]');
+    if (ifsc) ifsc.value = ifsc.value.toUpperCase();
+    const pincode = document.querySelector('input[name="pincode"]');
+    if (pincode && !/^[0-9]{6}$/.test(pincode.value)) {
+        alert('Please enter valid 6-digit PIN code');
+        pincode.focus();
+        return false;
+    }
+    const aadhaar = document.querySelector('input[name="aadhaar"]');
+    if (aadhaar && aadhaar.value && !/^[0-9]{12}$/.test(aadhaar.value.replace(/\s/g,''))) {
+        alert('Please enter valid 12-digit Aadhaar number');
+        aadhaar.focus();
+        return false;
+    }
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('submitBtn').innerText = 'Submitting...';
+    return true;
+}
+
+// Format Aadhaar with spaces
+document.getElementById('aadhaarInput')?.addEventListener('input', function() {
+    let val = this.value.replace(/\D/g, '').slice(0, 12);
+    this.value = val.replace(/(\d{4})(?=\d)/g, '$1 ');
+});
+</script>
+</body>
+</html>

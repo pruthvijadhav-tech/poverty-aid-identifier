@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Poverty Aid Identifier</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#000080">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AidApp">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f0f4f8; color: #333; }
+
+        .top-bar { background: linear-gradient(90deg, #FF9933, #ffffff, #138808); height: 6px; }
+        .header { background: #000080; color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .header-left h1 { font-size: 20px; margin-bottom: 3px; }
+        .header-left p { font-size: 12px; opacity: 0.8; }
+        .header-right { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .admin-name { font-size: 14px; font-weight: bold; }
+        .admin-role { font-size: 11px; background: #FF9933; padding: 2px 8px; border-radius: 10px; display: inline-block; margin-top: 3px; }
+        .logout-btn { padding: 8px 15px; background: #c62828; color: white; border: none; border-radius: 8px; font-size: 13px; cursor: pointer; text-decoration: none; font-weight: bold; }
+        .logout-btn:hover { background: #b71c1c; }
+        .live-badge { background: #138808; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.7; } }
+
+        .nav-tabs { background: #00006a; display: flex; overflow-x: auto; }
+        .nav-tab { padding: 12px 20px; color: rgba(255,255,255,0.6); cursor: pointer; font-size: 13px; font-weight: bold; border-bottom: 3px solid transparent; white-space: nowrap; transition: all 0.2s; }
+        .nav-tab.active { color: #FF9933; border-bottom: 3px solid #FF9933; }
+        .nav-tab:hover { color: white; }
+
+        .container { max-width: 1300px; margin: 0 auto; padding: 20px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: white; border-radius: 12px; padding: 20px 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-top: 4px solid #e0e0e0; transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-2px); }
+        .stat-card.total { border-top-color: #000080; }
+        .stat-card.filed { border-top-color: #FF9933; }
+        .stat-card.received { border-top-color: #2196F3; }
+        .stat-card.action { border-top-color: #9C27B0; }
+        .stat-card.resolved { border-top-color: #138808; }
+        .stat-number { font-size: 32px; font-weight: bold; margin-bottom: 5px; }
+        .stat-card.total .stat-number { color: #000080; }
+        .stat-card.filed .stat-number { color: #FF9933; }
+        .stat-card.received .stat-number { color: #2196F3; }
+        .stat-card.action .stat-number { color: #9C27B0; }
+        .stat-card.resolved .stat-number { color: #138808; }
+        .stat-label { font-size: 12px; color: #666; font-weight: bold; }
+
+        .alert-banner { background: #ffebee; border: 2px solid #c62828; border-radius: 12px; padding: 15px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; }
+        .alert-banner-text h4 { color: #c62828; font-size: 15px; margin-bottom: 4px; }
+        .alert-banner-text p { font-size: 13px; color: #555; }
+
+        .filter-bar { background: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .filter-bar span { font-weight: bold; color: #000080; font-size: 14px; }
+        .filter-btn { padding: 8px 18px; border-radius: 20px; border: 2px solid #e0e0e0; background: white; cursor: pointer; font-size: 13px; font-weight: bold; color: #555; text-decoration: none; transition: all 0.2s; }
+        .filter-btn:hover { border-color: #000080; color: #000080; }
+        .filter-btn.active { background: #000080; color: white; border-color: #000080; }
+        .filter-btn.fake-btn { border-color: #c62828; color: #c62828; }
+        .filter-btn.fake-btn.active { background: #c62828; color: white; }
+
+        .table-card { background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); overflow: hidden; margin-bottom: 20px; }
+        .table-header { background: #000080; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .table-header h3 { font-size: 15px; }
+        .table-header p { font-size: 12px; opacity: 0.8; }
+        .confidential-notice { background: #fff3e0; border-left: 4px solid #FF9933; padding: 10px 20px; font-size: 13px; color: #e65c00; font-weight: bold; }
+
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        thead { background: #f8f9ff; }
+        th { padding: 12px; text-align: left; font-size: 12px; color: #000080; font-weight: bold; border-bottom: 2px solid #e0e0e0; white-space: nowrap; }
+        td { padding: 12px; font-size: 12px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+        tr:hover { background: #f8f9ff; }
+        tr:last-child td { border-bottom: none; }
+        tr.fake-row { background: #fff5f5; }
+        tr.suspicious-row { background: #fff5f5; }
+
+        .tracking-id { font-weight: bold; color: #000080; font-size: 12px; letter-spacing: 1px; }
+        .person-name { font-weight: bold; color: #333; }
+        .person-phone { color: #138808; font-size: 11px; margin-top: 2px; }
+        .person-address { color: #666; font-size: 11px; margin-top: 2px; max-width: 150px; word-break: break-word; }
+        .scheme-cell { max-width: 160px; font-size: 12px; }
+        .officer-cell { font-size: 11px; color: #555; max-width: 140px; }
+        .date-cell { font-size: 11px; color: #888; white-space: nowrap; }
+        .amount-entitled { color: #138808; font-weight: bold; font-size: 12px; }
+        .amount-received { color: #c62828; font-weight: bold; font-size: 12px; }
+        .amount-diff { color: #FF9933; font-size: 11px; }
+
+        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; white-space: nowrap; }
+        .status-Filed { background: #fff3e0; color: #e65c00; }
+        .status-Received { background: #e3f2fd; color: #1565c0; }
+        .status-ActionTaken { background: #f3e5f5; color: #6a1b9a; }
+        .status-Resolved { background: #e8f5e9; color: #1b5e20; }
+        .fake-badge { background: #ffebee; color: #c62828; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; display: block; margin-top: 4px; }
+
+        .update-form { display: flex; gap: 6px; align-items: center; }
+        .status-select { padding: 5px 8px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 11px; }
+        .update-btn { padding: 5px 10px; background: #000080; color: white; border: none; border-radius: 6px; font-size: 11px; cursor: pointer; }
+        .update-btn:hover { background: #0000aa; }
+
+        .log-table { min-width: 700px; }
+        .log-action { font-weight: bold; font-size: 11px; }
+        .log-normal { color: #138808; }
+        .log-warning { color: #FF9933; }
+        .log-danger { color: #c62828; }
+        .suspicious-badge { background: #ffebee; color: #c62828; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+        .normal-badge { background: #e8f5e9; color: #138808; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+
+        .no-data { text-align: center; padding: 40px; color: #999; font-size: 14px; }
+        .top-links { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; align-items: center; }
+        .back-link { color: #000080; text-decoration: none; font-size: 14px; font-weight: bold; }
+        .back-link:hover { text-decoration: underline; }
+        .heatmap-link { color: #e65c00; text-decoration: none; font-size: 14px; font-weight: bold; }
+        .heatmap-link:hover { text-decoration: underline; }
+        .footer { text-align: center; padding: 20px; color: #999; font-size: 11px; margin-top: 20px; }
+
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .header { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="top-bar"></div>
+<div class="header">
+    <div class="header-left">
+        <h1>Admin Dashboard</h1>
+        <p>Poverty Aid Identifier — Complaint Management System</p>
+    </div>
+    <div class="header-right">
+        <div class="live-badge">● LIVE</div>
+        <div>
+            <div class="admin-name">{{ admin_name }}</div>
+            <div class="admin-role">{{ admin_role | upper }}</div>
+        </div>
+        <a href="/admin/logout" class="logout-btn">Logout</a>
+    </div>
+</div>
+
+<div class="nav-tabs">
+    <div class="nav-tab active" onclick="showTab('complaints', this)">📋 Complaints ({{ total }})</div>
+    <div class="nav-tab" onclick="showTab('activity', this)">📝 Activity Log</div>
+    <div class="nav-tab" onclick="showTab('alerts', this)" style="{% if suspicious_count > 0 %}color:#FF9933;{% endif %}">
+        🚨 Security Alerts {% if suspicious_count > 0 %}({{ suspicious_count }}){% endif %}
+    </div>
+</div>
+
+<div class="container">
+    <div class="top-links">
+        <a href="/" class="back-link">← Back to Main App</a>
+        <a href="/heatmap" class="heatmap-link">🗺️ View Corruption Heatmap</a>
+    </div>
+
+    <!-- Tab 1: Complaints -->
+    <div class="tab-content active" id="tab-complaints">
+
+        {% if suspicious_count > 0 %}
+        <div class="alert-banner">
+            <div style="font-size:28px;">⚠️</div>
+            <div class="alert-banner-text">
+                <h4>Security Alert — {{ suspicious_count }} Suspicious Activities Detected</h4>
+                <p>Someone tried to access confidential data without authorization. Check Security Alerts tab for IP and device details.</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="stats-grid">
+            <div class="stat-card total"><div class="stat-number">{{ total }}</div><div class="stat-label">Total</div></div>
+            <div class="stat-card filed"><div class="stat-number">{{ filed }}</div><div class="stat-label">Filed</div></div>
+            <div class="stat-card received"><div class="stat-number">{{ received }}</div><div class="stat-label">Received</div></div>
+            <div class="stat-card action"><div class="stat-number">{{ action }}</div><div class="stat-label">Action Taken</div></div>
+            <div class="stat-card resolved"><div class="stat-number">{{ resolved }}</div><div class="stat-label">Resolved</div></div>
+        </div>
+
+        <div class="filter-bar">
+            <span>Filter:</span>
+            <a href="/admin?filter=All" class="filter-btn {% if filter_status == 'All' %}active{% endif %}">All ({{ total }})</a>
+            <a href="/admin?filter=Filed" class="filter-btn {% if filter_status == 'Filed' %}active{% endif %}">Filed ({{ filed }})</a>
+            <a href="/admin?filter=Received" class="filter-btn {% if filter_status == 'Received' %}active{% endif %}">Received ({{ received }})</a>
+            <a href="/admin?filter=Action Taken" class="filter-btn {% if filter_status == 'Action Taken' %}active{% endif %}">Action Taken ({{ action }})</a>
+            <a href="/admin?filter=Resolved" class="filter-btn {% if filter_status == 'Resolved' %}active{% endif %}">Resolved ({{ resolved }})</a>
+            <a href="/admin?filter=Fake" class="filter-btn fake-btn {% if filter_status == 'Fake' %}active{% endif %}">⚠ Fake ({{ fake_count }})</a>
+        </div>
+
+        <div class="table-card">
+            <div class="table-header">
+                <h3>All Complaints</h3>
+                <p>{{ reports|length }} records — {{ now }}</p>
+            </div>
+            <div class="confidential-notice">🔒 CONFIDENTIAL — Complainant details visible only to authorized officers. All access is logged and monitored.</div>
+            {% if reports %}
+            <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tracking ID</th>
+                        <th>🔒 Complainant</th>
+                        <th>Scheme</th>
+                        <th>Amount</th>
+                        <th>Location</th>
+                        <th>Assigned Officer</th>
+                        <th>Filed On</th>
+                        <th>Status</th>
+                        <th>Update</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in reports %}
+                    <tr {% if r['fake_flag'] %}class="fake-row"{% endif %}>
+                        <td>
+                            <div class="tracking-id">{{ r['tracking_id'] }}</div>
+                            {% if r['fake_flag'] %}<span class="fake-badge">⚠ FAKE SUSPECTED</span>{% endif %}
+                        </td>
+                        <td>
+                            <div class="person-name">{{ r['person_name'] or 'N/A' }}</div>
+                            <div class="person-phone">📞 {{ r['phone'] or 'N/A' }}</div>
+                            <div class="person-address">📍 {{ r['address'] or 'N/A' }}</div>
+                        </td>
+                        <td><div class="scheme-cell">{{ r['scheme'] }}</div></td>
+                        <td>
+                            <div class="amount-entitled">Due: Rs.{{ r['entitled_amount'] }}</div>
+                            <div class="amount-received">Got: Rs.{{ r['received_amount'] }}</div>
+                            {% if r['entitled_amount'] and r['received_amount'] %}
+                            <div class="amount-diff">Gap: Rs.{{ (r['entitled_amount']|int - r['received_amount']|int) }}</div>
+                            {% endif %}
+                        </td>
+                        <td>{{ r['location'] }}</td>
+                        <td><div class="officer-cell">{{ r['assigned_officer'] }}</div></td>
+                        <td><div class="date-cell">{{ r['filed_date'] }}</div></td>
+                        <td>
+                            <span class="status-badge status-{{ r['status'].replace(' ', '') }}">{{ r['status'] }}</span>
+                        </td>
+                        <td>
+                            <form method="POST" action="/admin">
+                                <input type="hidden" name="tracking_id" value="{{ r['tracking_id'] }}"/>
+                                <div class="update-form">
+                                    <select name="new_status" class="status-select">
+                                        <option value="Filed" {% if r['status'] == 'Filed' %}selected{% endif %}>Filed</option>
+                                        <option value="Received" {% if r['status'] == 'Received' %}selected{% endif %}>Received</option>
+                                        <option value="Action Taken" {% if r['status'] == 'Action Taken' %}selected{% endif %}>Action Taken</option>
+                                        <option value="Resolved" {% if r['status'] == 'Resolved' %}selected{% endif %}>Resolved</option>
+                                    </select>
+                                    <button type="submit" class="update-btn">Update</button>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% else %}
+            <div class="no-data">No complaints found for this filter.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Tab 2: Activity Log -->
+    <div class="tab-content" id="tab-activity">
+        <div class="table-card">
+            <div class="table-header">
+                <h3>Recent Activity Log</h3>
+                <p>Last 20 actions in the system</p>
+            </div>
+            {% if recent_logs %}
+            <div class="table-wrapper">
+            <table class="log-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>IP Address</th>
+                        <th>Browser</th>
+                        <th>Device</th>
+                        <th>Details</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in recent_logs %}
+                    <tr {% if log['suspicious'] %}class="suspicious-row"{% endif %}>
+                        <td><div class="date-cell">{{ log['timestamp'] }}</div></td>
+                        <td><strong>{{ log['username'] }}</strong></td>
+                        <td>
+                            <span class="log-action
+                                {% if log['suspicious'] %}log-danger
+                                {% elif 'LOGIN' in log['action'] %}log-warning
+                                {% else %}log-normal{% endif %}">
+                                {{ log['action'] }}
+                            </span>
+                        </td>
+                        <td>{{ log['ip_address'] }}</td>
+                        <td>{{ log['browser'] }}</td>
+                        <td>{{ log['device'] }}</td>
+                        <td style="max-width:200px;font-size:11px;">{{ log['details'] }}</td>
+                        <td>
+                            {% if log['suspicious'] %}
+                            <span class="suspicious-badge">⚠ SUSPICIOUS</span>
+                            {% else %}
+                            <span class="normal-badge">✓ NORMAL</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% else %}
+            <div class="no-data">No activity logs yet.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Tab 3: Security Alerts -->
+    <div class="tab-content" id="tab-alerts">
+        {% if suspicious_count > 0 %}
+        <div class="alert-banner">
+            <div style="font-size:28px;">🚨</div>
+            <div class="alert-banner-text">
+                <h4>{{ suspicious_count }} Suspicious Activities Detected!</h4>
+                <p>Full details below — IP address, browser, device, and timestamp for each incident. Use IP to trace the person.</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="table-card">
+            <div class="table-header" style="background:#c62828;">
+                <h3>🚨 Security Alerts</h3>
+                <p>{{ suspicious_count }} total alerts</p>
+            </div>
+            {% if suspicious_logs %}
+            <div class="table-wrapper">
+            <table class="log-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Username Attempted</th>
+                        <th>Action</th>
+                        <th>IP Address</th>
+                        <th>Browser</th>
+                        <th>Device</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in suspicious_logs %}
+                    <tr class="suspicious-row">
+                        <td><div class="date-cell">{{ log['timestamp'] }}</div></td>
+                        <td><strong style="color:#c62828;">{{ log['username'] }}</strong></td>
+                        <td><span class="log-action log-danger">{{ log['action'] }}</span></td>
+                        <td><strong style="color:#c62828;">{{ log['ip_address'] }}</strong></td>
+                        <td>{{ log['browser'] }}</td>
+                        <td>{{ log['device'] }}</td>
+                        <td style="font-size:11px;">{{ log['details'] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% else %}
+            <div class="no-data" style="color:#138808;">✓ No suspicious activity detected. System is secure!</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="footer">
+        Poverty Aid Identifier — Admin Panel — Confidential — All access logged and monitored<br>
+        Logged in as: <strong>{{ admin_name }}</strong> ({{ admin_role }}) — {{ now }}
+    </div>
+</div>
+
+<script>
+function showTab(name, el) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    el.classList.add('active');
+}
+</script>
+</body>
+</html>
