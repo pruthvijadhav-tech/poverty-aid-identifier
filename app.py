@@ -162,40 +162,40 @@ def login_required(f):
 
 OFFICERS = {
     "en": [
-        "Praveen Kumar Srivastava IAS (Central Vigilance Commissioner)",
-        "Praveen Vashista IPS (Vigilance Commissioner, CVC)",
-        "A.S. Rajeev IAS (Vigilance Commissioner, CVC)",
-        "Justice R.D. Dhanuka (Lokayukta, Maharashtra)",
-        "Justice Vijay Waghmare (Lokayukta, Maharashtra)",
-        "Shri V. Srinivas IAS (DARPG Secretary, CPGRAMS)",
-        "Rajesh Kumar Sharma IAS (District Collector)",
-        "Sunita Yadav IAS (District Collector)",
-        "Vikram Singh Rathore IAS (District Magistrate)",
-        "Meena Kumari IAS (District Collector)"
+        "Alok Kumar Verma IAS (Central Vigilance Commissioner)",
+        "Sanjay K. Mishra IPS (Vigilance Commissioner, CVC)",
+        "R.C. Srinivasan IAS (Vigilance Commissioner, CVC)",
+        "Justice K.S. Deshmukh (Lokayukta, Maharashtra)",
+        "Justice Milind Gaikwad (Lokayukta, Maharashtra)",
+        "Shri P.K. Deshpande IAS (DARPG Secretary, CPGRAMS)",
+        "Amit Singh Chouhan IAS (District Collector)",
+        "Anjali Sharma IAS (District Collector)",
+        "Rohan Singh Bundela IAS (District Magistrate)",
+        "Kavita Singhal IAS (District Collector)"
     ],
     "hi": [
-        "प्रवीण कुमार श्रीवास्तव IAS (केंद्रीय सतर्कता आयुक्त)",
-        "प्रवीण वशिष्ठ IPS (सतर्कता आयुक्त, CVC)",
-        "A.S. राजीव IAS (सतर्कता आयुक्त, CVC)",
-        "न्यायमूर्ति R.D. धनुका (लोकायुक्त, महाराष्ट्र)",
-        "न्यायमूर्ति विजय वाघमारे (लोकायुक्त, महाराष्ट्र)",
-        "श्री V. श्रीनिवास IAS (DARPG सचिव, CPGRAMS)",
-        "राजेश कुमार शर्मा IAS (जिला कलेक्टर)",
-        "सुनीता यादव IAS (जिला कलेक्टर)",
-        "विक्रम सिंह राठौर IAS (जिला मजिस्ट्रेट)",
-        "मीना कुमारी IAS (जिला कलेक्टर)"
+        "आलोक कुमार वर्मा IAS (केंद्रीय सतर्कता आयुक्त)",
+        "संजय के. मिश्रा IPS (सतर्कता आयुक्त, CVC)",
+        "R.C. श्रीनिवासन IAS (सतर्कता आयुक्त, CVC)",
+        "न्यायमूर्ति K.S. देशमुख (लोकायुक्त, महाराष्ट्र)",
+        "न्यायमूर्ति मिलिंद गायकवाड़ (लोकायुक्त, महाराष्ट्र)",
+        "श्री P.K. देशपांडे IAS (DARPG सचिव, CPGRAMS)",
+        "अमित सिंह चौहान IAS (जिला कलेक्टर)",
+        "अंजलि शर्मा IAS (जिला कलेक्टर)",
+        "रोहन सिंह बुंदेला IAS (जिला मजिस्ट्रेट)",
+        "कविता सिंघल IAS (जिला कलेक्टर)"
     ],
     "mr": [
-        "प्रवीण कुमार श्रीवास्तव IAS (केंद्रीय दक्षता आयुक्त)",
-        "प्रवीण वशिष्ठ IPS (दक्षता आयुक्त, CVC)",
-        "A.S. राजीव IAS (दक्षता आयुक्त, CVC)",
-        "न्यायमूर्ती R.D. धनुका (लोकायुक्त, महाराष्ट्र)",
-        "न्यायमूर्ती विजय वाघमारे (लोकायुक्त, महाराष्ट्र)",
-        "श्री V. श्रीनिवास IAS (DARPG सचिव, CPGRAMS)",
-        "राजेश कुमार शर्मा IAS (जिल्हाधिकारी)",
-        "सुनीता यादव IAS (जिल्हाधिकारी)",
-        "विक्रम सिंह राठौर IAS (जिल्हा दंडाधिकारी)",
-        "मीना कुमारी IAS (जिल्हाधिकारी)"
+        "आलोक कुमार वर्मा IAS (केंद्रीय दक्षता आयुक्त)",
+        "संजय के. मिश्रा IPS (दक्षता आयुक्त, CVC)",
+        "R.C. श्रीनिवासन IAS (दक्षता आयुक्त, CVC)",
+        "न्यायमूर्ती K.S. देशमुख (लोकायुक्त, महाराष्ट्र)",
+        "न्यायमूर्ती मिलिंद गायकवाड़ (लोकायुक्त, महाराष्ट्र)",
+        "श्री P.K. देशपांडे IAS (DARPG सचिव, CPGRAMS)",
+        "अमित सिंह चौहान IAS (जिल्हाधिकारी)",
+        "अंजलि शर्मा IAS (जिल्हाधिकारी)",
+        "रोहन सिंह बुंदेला IAS (जिल्हा दंडाधिकारी)",
+        "कविता सिंघल IAS (जिल्हाधिकारी)"
     ]
 }
 
