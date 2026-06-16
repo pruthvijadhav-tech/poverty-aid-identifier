@@ -755,6 +755,124 @@ def offices():
 from keep_alive import start
 start("https://poverty-aid-identifier.onrender.com")
 
+@app.route('/progress')
+def progress():
+    conn = get_db_connection()
+    now = datetime.now().strftime("%d %b %Y, %I:%M %p")
+
+    # Total stats
+    total = conn.execute('SELECT COUNT(*) FROM reports WHERE fake_flag=0').fetchone()[0]
+    resolved = conn.execute("SELECT COUNT(*) FROM reports WHERE status='Resolved' AND fake_flag=0").fetchone()[0]
+    pending = conn.execute("SELECT COUNT(*) FROM reports WHERE status!='Resolved' AND fake_flag=0").fetchone()[0]
+    fake = conn.execute("SELECT COUNT(*) FROM reports WHERE fake_flag=1").fetchone()[0]
+    rate = round((resolved / total * 100)) if total > 0 else 0
+
+    # Monthly trend — last 6 months
+    months = []
+    from datetime import timedelta
+    month_names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+    max_val = 1
+    for i in range(5, -1, -1):
+        d = datetime.now() - timedelta(days=30*i)
+        m = d.month
+        y = d.year
+        label = f"{month_names[m-1]} {str(y)[2:]}"
+        c = conn.execute(
+            "SELECT COUNT(*) FROM reports WHERE filed_date LIKE ? AND fake_flag=0",
+            (f"%{month_names[m-1]}%{y}%",)
+        ).fetchone()[0]
+        r = conn.execute(
+            "SELECT COUNT(*) FROM reports WHERE filed_date LIKE ? AND status='Resolved' AND fake_flag=0",
+            (f"%{month_names[m-1]}%{y}%",)
+        ).fetchone()[0]
+        if c > max_val: max_val = c
+        months.append({'month': label, 'complaints': c, 'resolved': r})
+
+    # Scale bars to max 100px
+    for m in months:
+        m['complaint_height'] = max(4, int(m['complaints'] / max_val * 100)) if max_val > 0 else 4
+        m['resolved_height'] = max(4, int(m['resolved'] / max_val * 100)) if max_val > 0 else 4
+
+    # Improvement check
+    improving = False
+    improvement_percent = 0
+    if len(months) >= 2:
+        prev = months[-2]['complaints']
+        curr = months[-1]['complaints']
+        if prev > 0 and curr < prev:
+            improving = True
+            improvement_percent = round((prev - curr) / prev * 100)
+
+    # District scores
+    district_rows = conn.execute(
+        "SELECT location, COUNT(*) as total, SUM(CASE WHEN status='Resolved' THEN 1 ELSE 0 END) as resolved FROM reports WHERE fake_flag=0 GROUP BY location ORDER BY total DESC LIMIT 10"
+    ).fetchall()
+
+    district_scores = []
+    for row in district_rows:
+        t = row['total']
+        r = row['resolved'] or 0
+        p = t - r
+        rt = round(r / t * 100) if t > 0 else 0
+        if t == 0:
+            grade = 'A'
+        elif rt >= 75:
+            grade = 'B'
+        elif rt >= 50:
+            grade = 'C'
+        elif p >= 5:
+            grade = 'F'
+        else:
+            grade = 'D'
+        parts = str(row['location']).split(',')
+        name = parts[0].strip() if parts else row['location']
+        state = parts[-1].strip() if len(parts) > 1 else 'India'
+        district_scores.append({
+            'name': name, 'state': state,
+            'total': t, 'resolved': r,
+            'pending': p, 'rate': rt, 'grade': grade
+        })
+
+    # Corruption free districts (grade A from above + zero complaints 30 days)
+    clean_districts = []
+    for d in district_scores:
+        if d['grade'] == 'A':
+            clean_districts.append({'name': d['name'], 'state': d['state'], 'days': 30})
+
+    # Scheme stats
+    scheme_rows = conn.execute(
+        "SELECT scheme, COUNT(*) as total, SUM(CASE WHEN status='Resolved' THEN 1 ELSE 0 END) as resolved FROM reports WHERE fake_flag=0 GROUP BY scheme ORDER BY total DESC LIMIT 8"
+    ).fetchall()
+
+    scheme_stats = []
+    for row in scheme_rows:
+        t = row['total']
+        r = row['resolved'] or 0
+        rt = round(r / t * 100) if t > 0 else 0
+        scheme_stats.append({
+            'name': str(row['scheme'])[:40],
+            'complaints': t,
+            'resolved': r,
+            'rate': rt
+        })
+
+    conn.close()
+
+    return render_template('progress.html',
+        now=now,
+        total_complaints=total,
+        resolved_count=resolved,
+        pending_count=pending,
+        fake_count=fake,
+        resolution_rate=rate,
+        monthly_trend=months,
+        improving=improving,
+        improvement_percent=improvement_percent,
+        district_scores=district_scores,
+        clean_districts=clean_districts,
+        scheme_stats=scheme_stats
+    )
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)
       

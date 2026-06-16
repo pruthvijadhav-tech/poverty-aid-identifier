@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Corruption Progress Report - Poverty Aid Identifier</title>
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#000080">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: Arial, sans-serif; background: #f5f5f5; color: #333; }
+.top-bar { background: linear-gradient(90deg, #FF9933, #ffffff, #138808); height: 6px; }
+.header { background: #000080; color: white; padding: 20px; text-align: center; }
+.header h1 { font-size: 20px; margin-bottom: 5px; }
+.header p { font-size: 12px; opacity: 0.8; }
+.live-badge { display: inline-block; background: #138808; color: white; padding: 3px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-top: 8px; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.7} }
+.container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+/* National Stats */
+.national-card { background: white; border-radius: 16px; padding: 25px; margin-top: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border-top: 4px solid #000080; }
+.section-title { color: #000080; font-size: 17px; font-weight: bold; margin-bottom: 20px; border-bottom: 2px solid #FF9933; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+.section-title span { font-size: 11px; color: #888; font-weight: normal; }
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+.stat-box { text-align: center; padding: 20px 10px; border-radius: 12px; }
+.stat-box.total { background: #e8eaf6; border-top: 4px solid #000080; }
+.stat-box.resolved { background: #e8f5e9; border-top: 4px solid #138808; }
+.stat-box.pending { background: #fff3e0; border-top: 4px solid #FF9933; }
+.stat-box.fake { background: #ffebee; border-top: 4px solid #c62828; }
+.stat-number { font-size: 36px; font-weight: bold; }
+.stat-box.total .stat-number { color: #000080; }
+.stat-box.resolved .stat-number { color: #138808; }
+.stat-box.pending .stat-number { color: #FF9933; }
+.stat-box.fake .stat-number { color: #c62828; }
+.stat-label { font-size: 12px; color: #666; margin-top: 5px; font-weight: bold; }
+/* Resolution rate bar */
+.resolution-section { margin-top: 15px; }
+.resolution-label { font-size: 14px; color: #333; margin-bottom: 8px; display: flex; justify-content: space-between; }
+.resolution-bar { height: 20px; background: #f0f0f0; border-radius: 10px; overflow: hidden; margin-bottom: 5px; }
+.resolution-fill { height: 100%; background: linear-gradient(90deg, #138808, #4CAF50); border-radius: 10px; transition: width 2s; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; }
+.resolution-fill span { color: white; font-size: 11px; font-weight: bold; }
+.resolution-note { font-size: 11px; color: #888; }
+/* Monthly trend */
+.trend-card { background: white; border-radius: 16px; padding: 25px; margin-top: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border-top: 4px solid #FF9933; }
+.trend-bars { display: flex; align-items: flex-end; gap: 8px; height: 120px; margin-top: 15px; }
+.trend-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.trend-bar { width: 100%; border-radius: 6px 6px 0 0; transition: height 1s; position: relative; min-height: 4px; }
+.trend-bar.complaints { background: linear-gradient(180deg, #c62828, #e53935); }
+.trend-bar.resolved { background: linear-gradient(180deg, #138808, #43A047); }
+.trend-month { font-size: 10px; color: #888; text-align: center; }
+.trend-count { font-size: 10px; font-weight: bold; color: #333; }
+.trend-legend { display: flex; gap: 20px; margin-top: 10px; justify-content: center; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #555; }
+.legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+/* District scorecards */
+.districts-card { background: white; border-radius: 16px; padding: 25px; margin-top: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border-top: 4px solid #138808; }
+.district-item { display: flex; align-items: center; gap: 15px; padding: 15px 0; border-bottom: 1px solid #f0f0f0; }
+.district-item:last-child { border-bottom: none; }
+.district-rank { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; flex-shrink: 0; }
+.grade-A { background: #e8f5e9; color: #138808; border: 2px solid #138808; }
+.grade-B { background: #e3f2fd; color: #1565c0; border: 2px solid #1565c0; }
+.grade-C { background: #fff3e0; color: #e65c00; border: 2px solid #FF9933; }
+.grade-D { background: #fce4ec; color: #c62828; border: 2px solid #c62828; }
+.district-info { flex: 1; }
+.district-name { font-size: 15px; font-weight: bold; color: #333; margin-bottom: 3px; }
+.district-state { font-size: 11px; color: #888; }
+.district-stats { display: flex; gap: 15px; margin-top: 5px; }
+.dstat { font-size: 11px; color: #555; }
+.dstat span { font-weight: bold; }
+.district-bar-wrap { width: 120px; }
+.district-bar { height: 8px; background: #f0f0f0; border-radius: 4px; overflow: hidden; margin-bottom: 3px; }
+.district-bar-fill { height: 100%; border-radius: 4px; }
+.grade-badge { padding: 5px 14px; border-radius: 20px; font-size: 13px; font-weight: bold; flex-shrink: 0; }
+.badge-A { background: #e8f5e9; color: #138808; }
+.badge-B { background: #e3f2fd; color: #1565c0; }
+.badge-C { background: #fff3e0; color: #e65c00; }
+.badge-D { background: #ffebee; color: #c62828; }
+.badge-F { background: #ffebee; color: #b71c1c; }
+/* Corruption free certificate */
+.certificate-card { background: linear-gradient(135deg, #e8f5e9, #f1f8e9); border-radius: 16px; padding: 25px; margin-top: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 2px solid #138808; }
+.certificate-header { text-align: center; margin-bottom: 20px; }
+.certificate-title { font-size: 20px; font-weight: bold; color: #138808; }
+.certificate-sub { font-size: 13px; color: #555; margin-top: 5px; }
+.certificate-items { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+.cert-item { background: white; border-radius: 12px; padding: 18px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-top: 3px solid #138808; }
+.cert-icon { font-size: 30px; margin-bottom: 8px; }
+.cert-district { font-size: 15px; font-weight: bold; color: #000080; margin-bottom: 3px; }
+.cert-state { font-size: 11px; color: #888; margin-bottom: 8px; }
+.cert-days { font-size: 12px; color: #138808; font-weight: bold; }
+.cert-share { margin-top: 10px; display: block; padding: 7px; background: #138808; color: white; border-radius: 8px; font-size: 12px; cursor: pointer; border: none; width: 100%; }
+/* Scheme corruption report */
+.scheme-card { background: white; border-radius: 16px; padding: 25px; margin-top: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border-top: 4px solid #c62828; }
+.scheme-row { display: flex; align-items: center; gap: 15px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+.scheme-row:last-child { border-bottom: none; }
+.scheme-name-cell { flex: 1; font-size: 13px; font-weight: bold; color: #333; }
+.scheme-complaints { font-size: 12px; color: #c62828; font-weight: bold; width: 80px; text-align: center; }
+.scheme-resolved { font-size: 12px; color: #138808; font-weight: bold; width: 80px; text-align: center; }
+.scheme-rate { font-size: 12px; font-weight: bold; width: 60px; text-align: center; }
+.scheme-progress { width: 100px; }
+.sp-bar { height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden; }
+.sp-fill { height: 100%; border-radius: 3px; }
+/* Alert banner */
+.alert-banner { background: #ffebee; border: 2px solid #c62828; border-radius: 12px; padding: 15px 20px; margin-top: 20px; display: flex; align-items: center; gap: 15px; }
+.alert-text h4 { color: #c62828; font-size: 15px; margin-bottom: 4px; }
+.alert-text p { font-size: 13px; color: #555; }
+/* Download report button */
+.download-section { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+.download-btn { flex: 1; padding: 15px; background: linear-gradient(90deg, #000080, #0000aa); color: white; border: none; border-radius: 10px; font-size: 15px; cursor: pointer; font-weight: bold; text-align: center; min-width: 200px; }
+.share-btn { flex: 1; padding: 15px; background: linear-gradient(90deg, #138808, #0d6e05); color: white; border: none; border-radius: 10px; font-size: 15px; cursor: pointer; font-weight: bold; text-align: center; min-width: 200px; }
+.back-btn { display: block; width: 100%; padding: 14px; background: white; color: #000080; border: 2px solid #000080; border-radius: 10px; font-size: 15px; cursor: pointer; font-weight: bold; text-align: center; text-decoration: none; margin-top: 10px; }
+.footer { text-align: center; padding: 20px; color: #999; font-size: 12px; margin-top: 20px; }
+@media print {
+.download-section { display: none; }
+.back-btn { display: none; }
+body { background: white; }
+}
+@media (max-width: 600px) {
+.stats-grid { grid-template-columns: repeat(2, 1fr); }
+.certificate-items { grid-template-columns: 1fr; }
+.district-bar-wrap { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="top-bar"></div>
+<div class="header">
+<h1>📊 Corruption Progress Report</h1>
+<p>Monthly transparency report — district-wise accountability tracker</p>
+<div class="live-badge">● LIVE DATA — {{ now }}</div>
+</div>
+<div class="container">
+{% if total_complaints == 0 %}
+<div class="alert-banner" style="margin-top:20px;">
+<div style="font-size:28px;">ℹ️</div>
+<div class="alert-text">
+<h4>No Complaints Filed Yet</h4>
+<p>This report will populate automatically as citizens file corruption complaints. Share the app to get started!</p>
+</div>
+</div>
+{% endif %}
+<!-- National Overview -->
+<div class="national-card">
+<div class="section-title">
+🇮🇳 National Corruption Overview
+<span>Updated: {{ now }}</span>
+</div>
+<div class="stats-grid">
+<div class="stat-box total">
+<div class="stat-number">{{ total_complaints }}</div>
+<div class="stat-label">Total Complaints</div>
+</div>
+<div class="stat-box resolved">
+<div class="stat-number">{{ resolved_count }}</div>
+<div class="stat-label">Resolved ✅</div>
+</div>
+<div class="stat-box pending">
+<div class="stat-number">{{ pending_count }}</div>
+<div class="stat-label">Pending ⏳</div>
+</div>
+<div class="stat-box fake">
+<div class="stat-number">{{ fake_count }}</div>
+<div class="stat-label">Fake Detected 🚫</div>
+</div>
+</div>
+<div class="resolution-section">
+<div class="resolution-label">
+<span>Overall Resolution Rate</span>
+<span style="font-weight:bold; color:#138808;">{{ resolution_rate }}%</span>
+</div>
+<div class="resolution-bar">
+<div class="resolution-fill" style="width:{{ resolution_rate }}%">
+<span>{{ resolution_rate }}%</span>
+</div>
+</div>
+<div class="resolution-note">
+{% if resolution_rate >= 75 %}
+✅ Excellent — System is working well. Most complaints being resolved.
+{% elif resolution_rate >= 50 %}
+🟡 Good — More than half of complaints resolved. Keep pushing!
+{% elif resolution_rate > 0 %}
+⚠️ Needs improvement — Several complaints still pending resolution.
+{% else %}
+ℹ️ No complaints resolved yet. System is new.
+{% endif %}
+</div>
+</div>
+</div>
+<!-- Monthly Trend -->
+<div class="trend-card">
+<div class="section-title">
+📈 Monthly Trend — Complaints vs Resolved
+<span>Last 6 months</span>
+</div>
+<div class="trend-bars" id="trendBars">
+{% for month_data in monthly_trend %}
+<div class="trend-bar-wrap">
+<div class="trend-count" style="color:#c62828;">{{ month_data.complaints }}</div>
+<div class="trend-bar complaints" style="height:{{ month_data.complaint_height }}px;" title="{{ month_data.complaints }} complaints"></div>
+<div class="trend-bar resolved" style="height:{{ month_data.resolved_height }}px;" title="{{ month_data.resolved }} resolved"></div>
+<div class="trend-count" style="color:#138808;">{{ month_data.resolved }}</div>
+<div class="trend-month">{{ month_data.month }}</div>
+</div>
+{% endfor %}
+</div>
+<div class="trend-legend">
+<div class="legend-item"><div class="legend-dot" style="background:#c62828;"></div> Complaints Filed</div>
+<div class="legend-item"><div class="legend-dot" style="background:#138808;"></div> Complaints Resolved</div>
+</div>
+{% if improving %}
+<div style="text-align:center; margin-top:12px; padding:10px; background:#e8f5e9; border-radius:8px; font-size:13px; color:#138808; font-weight:bold;">
+✅ Corruption is REDUCING! Complaints down {{ improvement_percent }}% compared to last month.
+</div>
+{% endif %}
+</div>
+<!-- District Scorecards -->
+<div class="districts-card">
+<div class="section-title">
+🏆 District Corruption Scorecard
+<span>Graded A to F</span>
+</div>
+<div style="background:#f8f9ff; border-radius:10px; padding:12px 15px; margin-bottom:15px; font-size:12px; color:#555; display:flex; gap:20px; flex-wrap:wrap;">
+<span><strong style="color:#138808;">A</strong> — Corruption Free (0 complaints)</span>
+<span><strong style="color:#1565c0;">B</strong> — Clean (75%+ resolved)</span>
+<span><strong style="color:#e65c00;">C</strong> — Average (50-74% resolved)</span>
+<span><strong style="color:#c62828;">D</strong> — Corrupt (below 50%)</span>
+<span><strong style="color:#b71c1c;">F</strong> — Critical (5+ unresolved)</span>
+</div>
+{% if district_scores %}
+{% for district in district_scores %}
+<div class="district-item">
+<div class="district-rank grade-{{ district.grade }}">{{ loop.index }}</div>
+<div class="district-info">
+<div class="district-name">{{ district.name }}</div>
+<div class="district-state">{{ district.state }}</div>
+<div class="district-stats">
+<div class="dstat">Complaints: <span style="color:#c62828;">{{ district.total }}</span></div>
+<div class="dstat">Resolved: <span style="color:#138808;">{{ district.resolved }}</span></div>
+<div class="dstat">Pending: <span style="color:#FF9933;">{{ district.pending }}</span></div>
+</div>
+</div>
+<div class="district-bar-wrap">
+<div style="font-size:10px; color:#888; margin-bottom:3px;">Resolution rate</div>
+<div class="district-bar">
+<div class="district-bar-fill" style="width:{{ district.rate }}%; background:{% if district.rate >= 75 %}#138808{% elif district.rate >= 50 %}#FF9933{% else %}#c62828{% endif %};"></div>
+</div>
+<div style="font-size:10px; color:#555; font-weight:bold;">{{ district.rate }}%</div>
+</div>
+<div class="grade-badge badge-{{ district.grade }}">Grade {{ district.grade }}</div>
+</div>
+{% endfor %}
+{% else %}
+<div style="text-align:center; padding:30px; color:#999; font-size:14px;">
+No district data yet. Scorecards appear as complaints are filed.
+</div>
+{% endif %}
+</div>
+<!-- Corruption Free Certificate -->
+<div class="certificate-card">
+<div class="certificate-header">
+<div class="certificate-title">🏆 Corruption Free Districts</div>
+<div class="certificate-sub">Districts with zero complaints in the last 30 days</div>
+</div>
+{% if clean_districts %}
+<div class="certificate-items">
+{% for d in clean_districts %}
+<div class="cert-item">
+<div class="cert-icon">🏅</div>
+<div class="cert-district">{{ d.name }}</div>
+<div class="cert-state">{{ d.state }}</div>
+<div class="cert-days">{{ d.days }} days complaint free</div>
+<button class="cert-share" onclick="shareDistrict('{{ d.name }}', '{{ d.days }}')">
+Share Certificate 📤
+</button>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div style="text-align:center; padding:20px; color:#555; font-size:14px;">
+<div style="font-size:40px; margin-bottom:10px;">🎯</div>
+Districts with zero complaints for 30 days will receive certificates here.
+<br>
+<span style="font-size:12px; color:#888; margin-top:8px; display:block;">Encourage citizens in your district to use the app and report honestly.</span>
+</div>
+{% endif %}
+</div>
+<!-- Scheme Corruption Report -->
+<div class="scheme-card">
+<div class="section-title">
+📋 Scheme-wise Corruption Report
+<span>Which schemes have most corruption</span>
+</div>
+<div style="display:flex; gap:10px; padding:10px 0; border-bottom:2px solid #f0f0f0; margin-bottom:5px;">
+<div style="flex:1; font-size:11px; font-weight:bold; color:#666;">SCHEME</div>
+<div style="width:80px; text-align:center; font-size:11px; font-weight:bold; color:#c62828;">COMPLAINTS</div>
+<div style="width:80px; text-align:center; font-size:11px; font-weight:bold; color:#138808;">RESOLVED</div>
+<div style="width:60px; text-align:center; font-size:11px; font-weight:bold; color:#555;">RATE</div>
+<div style="width:100px; font-size:11px; font-weight:bold; color:#555;">PROGRESS</div>
+</div>
+{% if scheme_stats %}
+{% for scheme in scheme_stats %}
+<div class="scheme-row">
+<div class="scheme-name-cell">{{ scheme.name }}</div>
+<div class="scheme-complaints">{{ scheme.complaints }}</div>
+<div class="scheme-resolved">{{ scheme.resolved }}</div>
+<div class="scheme-rate" style="color:{% if scheme.rate >= 75 %}#138808{% elif scheme.rate >= 50 %}#FF9933{% else %}#c62828{% endif %};">{{ scheme.rate }}%</div>
+<div class="scheme-progress">
+<div class="sp-bar">
+<div class="sp-fill" style="width:{{ scheme.rate }}%; background:{% if scheme.rate >= 75 %}#138808{% elif scheme.rate >= 50 %}#FF9933{% else %}#c62828{% endif %};"></div>
+</div>
+</div>
+</div>
+{% endfor %}
+{% else %}
+<div style="text-align:center; padding:30px; color:#999; font-size:14px;">
+Scheme data will appear as complaints are filed.
+</div>
+{% endif %}
+</div>
+<!-- Download and Share -->
+<div class="download-section">
+<button class="download-btn" onclick="window.print()">
+🖨️ Download Monthly Report PDF
+</button>
+<button class="share-btn" onclick="shareReport()">
+📤 Share This Report
+</button>
+</div>
+<a href="/heatmap" class="back-btn">🗺️ View Live Heatmap</a>
+<a href="/" class="back-btn" style="margin-top:8px;">← Back to Main App</a>
+<div class="footer">
+Poverty Aid Identifier — Corruption Progress Report — {{ now }}<br>
+Data updates in real time as complaints are filed and resolved.
+</div>
+</div>
+<script>
+function shareDistrict(name, days) {
+const text = `🏆 ${name} is CORRUPTION FREE!\n\n${days} days without a single corruption complaint.\n\nVerified by Poverty Aid Identifier — India's free civic tech platform.\n\npoverty-aid-identifier.onrender.com`;
+if (navigator.share) {
+navigator.share({ title: `${name} — Corruption Free!`, text });
+} else {
+navigator.clipboard.writeText(text);
+alert('Certificate text copied! Share it on WhatsApp.');
+}
+}
+function shareReport() {
+const text = `📊 India Corruption Progress Report\n\nMonthly transparency report by Poverty Aid Identifier.\n\nDistrict scorecards, resolution rates, and accountability data — all free and public.\n\nView report: poverty-aid-identifier.onrender.com/progress\n\n🇮🇳 Every rupee of government aid belongs to the people.`;
+if (navigator.share) {
+navigator.share({ title: 'Corruption Progress Report', text });
+} else {
+navigator.clipboard.writeText(text);
+alert('Report link copied! Share it on WhatsApp.');
+}
+}
+</script>
+</body>
+</html>
