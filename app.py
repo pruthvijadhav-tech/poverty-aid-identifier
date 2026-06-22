@@ -99,6 +99,19 @@ def init_db():
         submitted_at TEXT
     )
     ''')
+    conn.execute('''
+       CREATE TABLE IF NOT EXISTS success_stories (
+           id INTEGER PRIMARY KEY AUTOINCREMENT,
+           name TEXT,
+           location TEXT,
+           scheme TEXT,
+           story TEXT,
+           benefit TEXT,
+           time_taken TEXT,
+           approved INTEGER DEFAULT 0,
+           filed_date TEXT
+       )
+   ''')
 
     # Default admin users
     try:
@@ -872,6 +885,166 @@ def progress():
         clean_districts=clean_districts,
         scheme_stats=scheme_stats
     )
+@app.route('/stories')
+def stories():
+    conn = get_db_connection()
+
+    # Get approved stories only
+    story_rows = conn.execute(
+        'SELECT * FROM success_stories WHERE approved=1 ORDER BY id DESC'
+    ).fetchall()
+
+    # Stats
+    total_stories = conn.execute(
+        'SELECT COUNT(*) FROM success_stories WHERE approved=1'
+    ).fetchone()[0]
+
+    total_schemes = conn.execute(
+        'SELECT COUNT(*) FROM success_stories WHERE approved=1'
+    ).fetchone()[0]
+
+    # Count unique states
+    state_rows = conn.execute(
+        'SELECT DISTINCT location FROM success_stories WHERE approved=1'
+    ).fetchall()
+    states = set()
+    for r in state_rows:
+        if r['location'] and ',' in r['location']:
+            states.add(r['location'].split(',')[-1].strip())
+    states_covered = len(states) if states else 0
+
+    # Avatar colors and icons
+    icons = ['👨', '👩', '👴', '👵', '🧑', '👦', '👧']
+    bgs = ['#e8f5e9', '#e3f2fd', '#fff3e0', '#fce4ec', '#f3e5f5', '#e0f7fa', '#fff8e1']
+    scheme_colors = {
+        'PM Jan Arogya Yojana': ('#fff3e0', '#e65c00'),
+        'PM Awas Yojana': ('#e8f5e9', '#138808'),
+        'Ayushman Bharat': ('#fff3e0', '#e65c00'),
+        'Antyodaya Anna Yojana': ('#fff8e1', '#f57f17'),
+        'Widow Pension': ('#f3e5f5', '#7b1fa2'),
+        'Old Age Pension': ('#e3f2fd', '#1565c0'),
+        'MNREGA': ('#e0f7fa', '#00838f'),
+    }
+
+    stories_list = []
+    for i, row in enumerate(story_rows):
+        sbg, scol = scheme_colors.get(row['scheme'], ('#f5f5f5', '#333333'))
+        stories_list.append({
+            'name': row['name'],
+            'district': row['location'].split(',')[0].strip() if row['location'] and ',' in row['location'] else row['location'],
+            'state': row['location'].split(',')[-1].strip() if row['location'] and ',' in row['location'] else 'India',
+            'scheme': row['scheme'],
+            'scheme_bg': sbg,
+            'scheme_color': scol,
+            'quote_en': row['story'],
+            'quote_hi': row['story'],  # same text — user wrote in their own language
+            'quote_mr': row['story'],
+            'benefit': row['benefit'] or '',
+            'benefit_hi': row['benefit'] or '',
+            'benefit_mr': row['benefit'] or '',
+            'time_taken': row['time_taken'] or '',
+            'time_taken_hi': row['time_taken'] or '',
+            'time_taken_mr': row['time_taken'] or '',
+            'avatar_bg': bgs[i % len(bgs)],
+            'avatar_icon': icons[i % len(icons)],
+            'verified': True,
+        })
+
+    conn.close()
+
+    return render_template('stories.html',
+        stories=stories_list,
+        total_stories=total_stories,
+        total_schemes_received=total_schemes,
+        states_covered=states_covered,
+    )
+
+
+@app.route('/stories/submit', methods=['POST'])
+def submit_story():
+    name = sanitize(request.form.get('name', ''))
+    location = sanitize(request.form.get('location', ''))
+    scheme = sanitize(request.form.get('scheme', ''))
+    story = sanitize(request.form.get('story', ''))
+    benefit = sanitize(request.form.get('benefit', ''))
+    time_taken = sanitize(request.form.get('time_taken', ''))
+    consent = request.form.get('consent')
+
+    if not all([name, location, scheme, story, consent]):
+        return render_template('stories.html',
+            error="Please fill all required fields.",
+            stories=[], total_stories=0,
+            total_schemes_received=0, states_covered=0
+        )
+
+    if len(story) < 20:
+        return render_template('stories.html',
+            error="Please write a longer story (minimum 20 characters).",
+            stories=[], total_stories=0,
+            total_schemes_received=0, states_covered=0
+        )
+
+    conn = get_db_connection()
+    filed_date = datetime.now().strftime("%d %b %Y, %I:%M %p")
+
+    conn.execute(
+        '''INSERT INTO success_stories
+           (name, location, scheme, story, benefit, time_taken, approved, filed_date)
+           VALUES (?, ?, ?, ?, ?, ?, 0, ?)''',
+        (name, location, scheme, story, benefit, time_taken, filed_date)
+    )
+    conn.commit()
+    conn.close()
+
+    # Log activity
+    try:
+        log_conn = get_db_connection()
+        log_conn.execute(
+            'INSERT INTO activity_logs (timestamp, username, action, ip_address) VALUES (?, ?, ?, ?)',
+            (filed_date, name, 'Story submitted — pending approval', request.remote_addr or 'unknown')
+        )
+        log_conn.commit()
+        log_conn.close()
+    except:
+        pass
+
+    return render_template('story_submitted.html')
+
+
+# ── ALSO ADD THIS ADMIN ROUTE to approve stories ───────────────────────────────
+
+@app.route('/admin/stories')
+@login_required
+def admin_stories():
+    conn = get_db_connection()
+    pending = conn.execute(
+        'SELECT * FROM success_stories WHERE approved=0 ORDER BY id DESC'
+    ).fetchall()
+    approved = conn.execute(
+        'SELECT * FROM success_stories WHERE approved=1 ORDER BY id DESC'
+    ).fetchall()
+    conn.close()
+    return render_template('admin_stories.html', pending=pending, approved=approved)
+
+
+@app.route('/admin/stories/approve/<int:story_id>')
+@login_required
+def approve_story(story_id):
+    conn = get_db_connection()
+    conn.execute('UPDATE success_stories SET approved=1 WHERE id=?', (story_id,))
+    conn.commit()
+    conn.close()
+    return redirect('/admin/stories')
+
+
+@app.route('/admin/stories/reject/<int:story_id>')
+@login_required
+def reject_story(story_id):
+    conn = get_db_connection()
+    conn.execute('DELETE FROM success_stories WHERE id=?', (story_id,))
+    conn.commit()
+    conn.close()
+    return redirect('/admin/stories')
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)

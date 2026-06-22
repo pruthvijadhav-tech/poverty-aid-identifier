@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Stories - Admin</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:Arial,sans-serif; background:#f5f5f5; padding:20px; }
+        .header { background:#000080; color:white; padding:16px 20px; border-radius:12px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; }
+        h1 { font-size:18px; }
+        .section { background:white; border-radius:12px; padding:20px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+        .section-title { font-size:16px; font-weight:bold; margin-bottom:16px; padding-bottom:8px; border-bottom:2px solid #FF9933; }
+        .section-title.red { border-bottom-color:#c62828; color:#c62828; }
+        .section-title.green { border-bottom-color:#138808; color:#138808; }
+        .story-row { border:1px solid #e0e0e0; border-radius:10px; padding:16px; margin-bottom:12px; }
+        .story-row.pending { border-left:4px solid #FF9933; }
+        .story-row.approved { border-left:4px solid #138808; }
+        .story-name { font-weight:bold; color:#000080; font-size:15px; }
+        .story-meta { font-size:12px; color:#888; margin:4px 0 8px; }
+        .story-text { font-size:13px; color:#333; background:#f8f9ff; padding:10px; border-radius:8px; margin-bottom:10px; line-height:1.5; }
+        .story-benefit { font-size:12px; color:#138808; font-weight:bold; margin-bottom:10px; }
+        .actions { display:flex; gap:10px; }
+        .approve-btn { padding:8px 20px; background:#138808; color:white; border:none; border-radius:8px; font-size:13px; font-weight:bold; cursor:pointer; text-decoration:none; }
+        .reject-btn { padding:8px 20px; background:#c62828; color:white; border:none; border-radius:8px; font-size:13px; font-weight:bold; cursor:pointer; text-decoration:none; }
+        .back-btn { display:inline-block; padding:10px 20px; background:white; color:#000080; border:2px solid #000080; border-radius:8px; font-size:14px; text-decoration:none; font-weight:bold; }
+        .empty { text-align:center; padding:20px; color:#999; font-size:14px; }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h1>📖 Manage Success Stories</h1>
+    <a href="/admin" class="back-btn">← Admin</a>
+</div>
+
+<div class="section">
+    <div class="section-title red">⏳ Pending Approval ({{ pending|length }})</div>
+    {% if pending %}
+    {% for s in pending %}
+    <div class="story-row pending">
+        <div class="story-name">{{ s.name }}</div>
+        <div class="story-meta">📍 {{ s.location }} | 🏛️ {{ s.scheme }} | 📅 {{ s.filed_date }}</div>
+        <div class="story-text">{{ s.story }}</div>
+        <div class="story-benefit">Benefit: {{ s.benefit }} | Time: {{ s.time_taken }}</div>
+        <div class="actions">
+            <a href="/admin/stories/approve/{{ s.id }}" class="approve-btn">✅ Approve</a>
+            <a href="/admin/stories/reject/{{ s.id }}" class="reject-btn" onclick="return confirm('Delete this story?')">❌ Reject</a>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty">No pending stories.</div>
+    {% endif %}
+</div>
+
+<div class="section">
+    <div class="section-title green">✅ Approved Stories ({{ approved|length }})</div>
+    {% if approved %}
+    {% for s in approved %}
+    <div class="story-row approved">
+        <div class="story-name">{{ s.name }}</div>
+        <div class="story-meta">📍 {{ s.location }} | 🏛️ {{ s.scheme }} | 📅 {{ s.filed_date }}</div>
+        <div class="story-text">{{ s.story }}</div>
+        <div class="story-benefit">Benefit: {{ s.benefit }} | Time: {{ s.time_taken }}</div>
+        <div class="actions">
+            <a href="/admin/stories/reject/{{ s.id }}" class="reject-btn" onclick="return confirm('Remove this story?')">🗑️ Remove</a>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty">No approved stories yet.</div>
+    {% endif %}
+</div>
+</body>
+</html>

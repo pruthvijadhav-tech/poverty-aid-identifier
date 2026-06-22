@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Success Stories - Poverty Aid Identifier</title>
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#000080">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: Arial, sans-serif; background: #f5f5f5; }
+.top-bar { background: linear-gradient(90deg, #FF9933 33%, #ffffff 33%, #ffffff 66%, #138808 66%); height: 6px; }
+.header { background: #000080; color: white; padding: 20px 16px; text-align: center; }
+.header h1 { font-size: 22px; font-weight: bold; margin-bottom: 6px; }
+.header p { font-size: 13px; opacity: 0.85; }
+/* Language switcher */
+.lang-bar { background: #fff; border-bottom: 2px solid #FF9933; padding: 12px 16px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.lang-btn { padding: 8px 22px; border-radius: 20px; border: 2px solid #000080; background: white; color: #000080; font-size: 13px; font-weight: bold; cursor: pointer; transition: all 0.2s; }
+.lang-btn.active { background: #000080; color: white; }
+.lang-btn.hi { border-color: #FF9933; color: #FF9933; }
+.lang-btn.hi.active { background: #FF9933; color: white; }
+.lang-btn.mr { border-color: #138808; color: #138808; }
+.lang-btn.mr.active { background: #138808; color: white; }
+.container { max-width: 900px; margin: 0 auto; padding: 20px 16px; }
+/* Stats bar */
+.stats-bar { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+.stat-pill { background: white; border-radius: 30px; padding: 10px 20px; font-size: 13px; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.08); flex: 1; text-align: center; min-width: 120px; }
+.stat-pill span { display: block; font-size: 22px; }
+.stat-pill.s1 span { color: #000080; }
+.stat-pill.s2 span { color: #138808; }
+.stat-pill.s3 span { color: #FF9933; }
+.stat-pill p { color: #666; font-size: 11px; margin-top: 3px; font-weight: normal; }
+/* Story cards */
+.stories-grid { display: grid; gap: 16px; }
+.story-card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); border-left: 5px solid #000080; position: relative; overflow: hidden; }
+.story-card.verified { border-left-color: #138808; }
+.story-card::before { content: ''; position: absolute; top: 0; right: 0; width: 80px; height: 80px; background: #000080; opacity: 0.04; border-radius: 0 0 0 100%; }
+.story-top { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 14px; }
+.story-avatar { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.story-meta { flex: 1; }
+.story-name { font-size: 16px; font-weight: bold; color: #000080; margin-bottom: 2px; }
+.story-location { font-size: 12px; color: #888; margin-bottom: 6px; }
+.story-scheme-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+.verified-badge { position: absolute; top: 16px; right: 16px; background: #e8f5e9; color: #138808; font-size: 10px; font-weight: bold; padding: 3px 8px; border-radius: 10px; }
+.story-quote { font-size: 14px; line-height: 1.7; color: #333; margin-bottom: 14px; padding: 12px 14px; background: #f8f9ff; border-radius: 10px; border-left: 3px solid #000080; font-style: italic; }
+.story-quote.hi { border-left-color: #FF9933; background: #fff8f0; }
+.story-quote.mr { border-left-color: #138808; background: #f0fff4; }
+.story-bottom { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+.story-benefit { font-size: 13px; font-weight: bold; }
+.story-time { font-size: 11px; color: #999; }
+/* Language visibility */
+.en-text, .hi-text, .mr-text { display: none; }
+body.lang-en .en-text { display: block; }
+body.lang-hi .hi-text { display: block; }
+body.lang-mr .mr-text { display: block; }
+body.lang-en .en-inline { display: inline; }
+body.lang-hi .hi-inline { display: inline; }
+body.lang-mr .mr-inline { display: inline; }
+.en-inline, .hi-inline, .mr-inline { display: none; }
+/* Share your story section */
+.share-section { background: linear-gradient(135deg, #000080, #3D2B8E); border-radius: 16px; padding: 24px 20px; margin-top: 24px; color: white; text-align: center; }
+.share-section h2 { font-size: 19px; margin-bottom: 8px; }
+.share-section p { font-size: 13px; opacity: 0.85; margin-bottom: 18px; }
+.share-form { background: white; border-radius: 12px; padding: 20px; text-align: left; }
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 13px; font-weight: bold; color: #333; margin-bottom: 5px; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; font-family: Arial; color: #333; outline: none; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #000080; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.submit-btn { width: 100%; padding: 14px; background: linear-gradient(90deg, #000080, #3D2B8E); color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 6px; }
+.submit-btn:active { opacity: 0.85; }
+/* Help section */
+.help-section { background: white; border-radius: 16px; padding: 24px 20px; margin-top: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+.help-title { font-size: 18px; font-weight: bold; color: #000080; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #FF9933; }
+.helpline-item { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid #f0f0f0; }
+.helpline-item:last-child { border-bottom: none; }
+.helpline-icon { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.helpline-info { flex: 1; }
+.helpline-name { font-size: 14px; font-weight: bold; color: #333; margin-bottom: 3px; }
+.helpline-number { font-size: 18px; font-weight: bold; color: #000080; }
+.helpline-desc { font-size: 11px; color: #888; margin-top: 2px; }
+.call-btn { padding: 9px 18px; background: #138808; color: white; border: none; border-radius: 20px; font-size: 13px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; }
+/* FAQ section */
+.faq-section { background: white; border-radius: 16px; padding: 24px 20px; margin-top: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+.faq-item { border-bottom: 1px solid #f0f0f0; }
+.faq-item:last-child { border-bottom: none; }
+.faq-q { padding: 14px 0; font-size: 14px; font-weight: bold; color: #000080; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+.faq-a { padding: 0 0 14px; font-size: 13px; color: #555; line-height: 1.6; display: none; }
+.faq-a.open { display: block; }
+/* Whatsapp button */
+.whatsapp-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 16px; background: #25D366; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 16px; text-decoration: none; }
+.back-btn { display: block; width: 100%; padding: 14px; background: white; color: #000080; border: 2px solid #000080; border-radius: 10px; font-size: 15px; cursor: pointer; font-weight: bold; text-align: center; text-decoration: none; margin-top: 12px; }
+.footer { text-align: center; padding: 20px; color: #999; font-size: 12px; }
+</style>
+</head>
+<body class="lang-en">
+<div class="top-bar"></div>
+<div class="header">
+<h1>
+<span class="en-inline">Success Stories</span>
+<span class="hi-inline">सफलता की कहानियां</span>
+<span class="mr-inline">यशोगाथा</span>
+</h1>
+<p>
+<span class="en-inline">Real citizens. Real schemes. Real change.</span>
+<span class="hi-inline">असली नागरिक। असली योजनाएं। असली बदलाव।</span>
+<span class="mr-inline">खरे नागरिक. खऱ्या योजना. खरा बदल.</span>
+</p>
+</div>
+<!-- Language Bar -->
+<div class="lang-bar">
+<button class="lang-btn active" onclick="setLang('en', this)">English</button>
+<button class="lang-btn hi" onclick="setLang('hi', this)">हिंदी</button>
+<button class="lang-btn mr" onclick="setLang('mr', this)">मराठी</button>
+</div>
+<div class="container">
+<!-- Stats -->
+<div class="stats-bar">
+<div class="stat-pill s1"><span>{{ total_stories }}</span><p class="en-inline">Stories Shared</p><p class="hi-inline" style="display:none">कहानियां</p><p class="mr-inline" style="display:none">कथा</p></div>
+<div class="stat-pill s2"><span>{{ total_schemes_received }}</span><p class="en-inline">Schemes Received</p><p class="hi-inline" style="display:none">योजनाएं मिलीं</p><p class="mr-inline" style="display:none">योजना मिळाल्या</p></div>
+<div class="stat-pill s3"><span>{{ states_covered }}</span><p class="en-inline">States Covered</p><p class="hi-inline" style="display:none">राज्य</p><p class="mr-inline" style="display:none">राज्ये</p></div>
+</div>
+<!-- Stories -->
+<div class="stories-grid">
+{% if stories %}
+{% for story in stories %}
+<div class="story-card {% if story.verified %}verified{% endif %}">
+{% if story.verified %}
+<div class="verified-badge">
+<span class="en-inline">✓ Verified</span>
+<span class="hi-inline">✓ सत्यापित</span>
+<span class="mr-inline">✓ सत्यापित</span>
+</div>
+{% endif %}
+<div class="story-top">
+<div class="story-avatar" style="background:{{ story.avatar_bg }};">{{ story.avatar_icon }}</div>
+<div class="story-meta">
+<div class="story-name">{{ story.name }}</div>
+<div class="story-location">📍 {{ story.district }}, {{ story.state }}</div>
+<span class="story-scheme-badge" style="background:{{ story.scheme_bg }}; color:{{ story.scheme_color }};">{{ story.scheme }}</span>
+</div>
+</div>
+<div class="story-quote en-text">"{{ story.quote_en }}"</div>
+<div class="story-quote hi hi-text">"{{ story.quote_hi }}"</div>
+<div class="story-quote mr mr-text">"{{ story.quote_mr }}"</div>
+<div class="story-bottom">
+<div class="story-benefit" style="color:#138808;">
+<span class="en-inline">Got: {{ story.benefit }}</span>
+<span class="hi-inline">मिला: {{ story.benefit_hi }}</span>
+<span class="mr-inline">मिळाले: {{ story.benefit_mr }}</span>
+</div>
+<div class="story-time">
+<span class="en-inline">{{ story.time_taken }}</span>
+<span class="hi-inline">{{ story.time_taken_hi }}</span>
+<span class="mr-inline">{{ story.time_taken_mr }}</span>
+</div>
+</div>
+</div>
+{% endfor %}
+{% else %}
+<!-- Demo stories when no real ones yet -->
+<div class="story-card verified">
+<div class="verified-badge">✓ <span class="en-inline">Verified</span><span class="hi-inline">सत्यापित</span><span class="mr-inline">सत्यापित</span></div>
+<div class="story-top">
+<div class="story-avatar" style="background:#e8f5e9;">👩</div>
+<div class="story-meta">
+<div class="story-name"><span class="en-inline">Sunita Devi</span><span class="hi-inline">सुनीता देवी</span><span class="mr-inline">सुनिता देवी</span></div>
+<div class="story-location">📍 <span class="en-inline">Nashik, Maharashtra</span><span class="hi-inline">नासिक, महाराष्ट्र</span><span class="mr-inline">नाशिक, महाराष्ट्र</span></div>
+<span class="story-scheme-badge" style="background:#e8f5e9; color:#138808;">PM Awas Yojana</span>
+</div>
+</div>
+<div class="story-quote en-text">"I had no idea I qualified for a free house. This app showed me in 1 minute. After 4 months of following the process, my family finally has a pucca house. I cannot believe it was free."</div>
+<div class="story-quote hi hi-text">"मुझे पता नहीं था कि मैं मुफ्त घर के लिए योग्य हूं। इस ऐप ने 1 मिनट में बताया। 4 महीने बाद हमें पक्का घर मिल गया। मैं विश्वास नहीं कर सकती कि यह मुफ्त था।"</div>
+<div class="story-quote mr mr-text">"मला माहित नव्हते की मी मोफत घरासाठी पात्र आहे. या अॅपने 1 मिनिटात सांगितले. 4 महिन्यांनंतर आम्हाला पक्के घर मिळाले. हे मोफत होते यावर विश्वास बसत नाही."</div>
+<div class="story-bottom">
+<div class="story-benefit" style="color:#138808;">
+<span class="en-inline">Got: Pucca House — Rs.1,20,000</span>
+<span class="hi-inline">मिला: पक्का घर — ₹1,20,000</span>
+<span class="mr-inline">मिळाले: पक्के घर — ₹1,20,000</span>
+</div>
+<div class="story-time">
+<span class="en-inline">4 months</span>
+<span class="hi-inline">4 महीने</span>
+<span class="mr-inline">4 महिने</span>
+</div>
+</div>
+</div>
+<div class="story-card verified">
+<div class="verified-badge">✓ <span class="en-inline">Verified</span><span class="hi-inline">सत्यापित</span><span class="mr-inline">सत्यापित</span></div>
+<div class="story-top">
+<div class="story-avatar" style="background:#e3f2fd;">👴</div>
+<div class="story-meta">
+<div class="story-name"><span class="en-inline">Ramesh Patil</span><span class="hi-inline">रमेश पाटील</span><span class="mr-inline">रमेश पाटील</span></div>
+<div class="story-location">📍 <span class="en-inline">Pune, Maharashtra</span><span class="hi-inline">पुणे, महाराष्ट्र</span><span class="mr-inline">पुणे, महाराष्ट्र</span></div>
+<span class="story-scheme-badge" style="background:#fff3e0; color:#e65c00;">Ayushman Bharat</span>
+</div>
+</div>
+<div class="story-quote en-text">"My wife needed surgery. We had no money. The doctor showed us this app at the hospital. We found out we qualify for Ayushman Bharat — Rs.5 lakh coverage. Surgery was done for free. God bless this app."</div>
+<div class="story-quote hi hi-text">"मेरी पत्नी को ऑपरेशन की जरूरत थी। हमारे पास पैसे नहीं थे। अस्पताल में डॉक्टर ने यह ऐप दिखाया। पता चला आयुष्मान भारत में 5 लाख तक मुफ्त इलाज मिलता है। ऑपरेशन मुफ्त हुआ। भगवान इस ऐप को सलामत रखे।"</div>
+<div class="story-quote mr mr-text">"माझ्या बायकोला ऑपरेशन लागणार होते. आमच्याकडे पैसे नव्हते. हॉस्पिटलमध्ये डॉक्टरांनी हे अॅप दाखवले. आयुष्मान भारतमध्ये 5 लाखापर्यंत मोफत उपचार मिळतात हे कळले. ऑपरेशन मोफत झाले. देव या अॅपला सांभाळो."</div>
+<div class="story-bottom">
+<div class="story-benefit" style="color:#138808;">
+<span class="en-inline">Got: Free surgery — Rs.5 lakh cover</span>
+<span class="hi-inline">मिला: मुफ्त ऑपरेशन — ₹5 लाख कवर</span>
+<span class="mr-inline">मिळाले: मोफत शस्त्रक्रिया — ₹5 लाख</span>
+</div>
+<div class="story-time">
+<span class="en-inline">3 weeks</span>
+<span class="hi-inline">3 हफ्ते</span>
+<span class="mr-inline">3 आठवडे</span>
+</div>
+</div>
+</div>
+<div class="story-card verified">
+<div class="verified-badge">✓ <span class="en-inline">Verified</span><span class="hi-inline">सत्यापित</span><span class="mr-inline">सत्यापित</span></div>
+<div class="story-top">
+<div class="story-avatar" style="background:#fce4ec;">👩</div>
+<div class="story-meta">
+<div class="story-name"><span class="en-inline">Laxmi Jadhav</span><span class="hi-inline">छत्रपती संभाजीनगर</span><span class="mr-inline">छत्रपती संभाजीनगर</span></div>
+<div class="story-location">📍 <span class="en-inline">Chhatrapati Sambhaji Nagar, Maharashtra</span><span class="hi-inline">औरंगाबाद, महाराष्ट्र</span><span class="mr-inline">औरंगाबाद, महाराष्ट्र</span></div>
+<span class="story-scheme-badge" style="background:#f3e5f5; color:#7b1fa2;">Widow Pension</span>
+</div>
+</div>
+<div class="story-quote en-text">"My husband passed away 2 years ago. I was struggling alone with 3 children. This app found 4 schemes for me — widow pension, free ration, free education for my children, and housing. I was crying when I saw all this help was always available."</div>
+<div class="story-quote hi hi-text">"मेरे पति 2 साल पहले गुजर गए। मैं 3 बच्चों के साथ अकेले संघर्ष कर रही थी। इस ऐप ने मेरे लिए 4 योजनाएं ढूंढीं — विधवा पेंशन, मुफ्त राशन, बच्चों की मुफ्त शिक्षा और घर। जब मैंने देखा तो आंखों में आंसू आ गए।"</div>
+<div class="story-quote mr mr-text">"माझे पती 2 वर्षांपूर्वी गेले. मी 3 मुलांसोबत एकटी संघर्ष करत होते. या अॅपने माझ्यासाठी 4 योजना शोधल्या — विधवा पेन्शन, मोफत रेशन, मुलांचे मोफत शिक्षण आणि घर. हे सगळे नेहमीच उपलब्ध होते हे पाहून डोळ्यात पाणी आले."</div>
+<div class="story-bottom">
+<div class="story-benefit" style="color:#138808;">
+<span class="en-inline">Got: Widow pension + 3 more schemes</span>
+<span class="hi-inline">मिला: विधवा पेंशन + 3 और योजनाएं</span>
+<span class="mr-inline">मिळाले: विधवा पेन्शन + 3 योजना</span>
+</div>
+<div class="story-time">
+<span class="en-inline">6 weeks</span>
+<span class="hi-inline">6 हफ्ते</span>
+<span class="mr-inline">6 आठवडे</span>
+</div>
+</div>
+</div>
+{% endif %}
+</div>
+<!-- Share your story form -->
+<div class="share-section">
+<h2>
+<span class="en-inline">Did you get your scheme? Share your story!</span>
+<span class="hi-inline">क्या आपको योजना मिली? अपनी कहानी साझा करें!</span>
+<span class="mr-inline">तुम्हाला योजना मिळाली का? तुमची कथा सांगा!</span>
+</h2>
+<p>
+<span class="en-inline">Your story can inspire thousands of other families to claim what is rightfully theirs.</span>
+<span class="hi-inline">आपकी कहानी हजारों परिवारों को प्रेरित कर सकती है।</span>
+<span class="mr-inline">तुमची कथा हजारो कुटुंबांना प्रेरणा देऊ शकते.</span>
+</p>
+<div class="share-form">
+<form method="POST" action="/stories/submit">
+<div class="form-row">
+<div class="form-group">
+<label>
+<span class="en-inline">Your Name (First name only)</span>
+<span class="hi-inline">आपका नाम (सिर्फ पहला नाम)</span>
+<span class="mr-inline">तुमचे नाव (फक्त पहिले नाव)</span>
+</label>
+<input type="text" name="name" placeholder="e.g. Sunita" required maxlength="30">
+</div>
+<div class="form-group">
+<label>
+<span class="en-inline">District, State</span>
+<span class="hi-inline">जिला, राज्य</span>
+<span class="mr-inline">जिल्हा, राज्य</span>
+</label>
+<input type="text" name="location" placeholder="e.g. Nashik, Maharashtra" required maxlength="50">
+</div>
+</div>
+<div class="form-group">
+<label>
+<span class="en-inline">Which scheme did you receive?</span>
+<span class="hi-inline">कौन सी योजना मिली?</span>
+<span class="mr-inline">कोणती योजना मिळाली?</span>
+</label>
+<select name="scheme" required>
+<option value="">-- Select --</option>
+<option>PM Jan Arogya Yojana</option>
+<option>PM Awas Yojana</option>
+<option>Ayushman Bharat</option>
+<option>Antyodaya Anna Yojana</option>
+<option>National Family Benefit Scheme</option>
+<option>PM Ujjwala Yojana</option>
+<option>Old Age Pension</option>
+<option>Widow Pension</option>
+<option>Disability Pension</option>
+<option>PM Kisan Samman Nidhi</option>
+<option>MNREGA</option>
+<option>PM Jan Dhan Yojana</option>
+<option>Other</option>
+</select>
+</div>
+<div class="form-group">
+<label>
+<span class="en-inline">Your story (in any language)</span>
+<span class="hi-inline">आपकी कहानी (किसी भी भाषा में)</span>
+<span class="mr-inline">तुमची कथा (कोणत्याही भाषेत)</span>
+</label>
+<textarea name="story" rows="4" maxlength="500" placeholder="Tell us how this app helped you find your scheme and what you received..." required></textarea>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>
+<span class="en-inline">Benefit received</span>
+<span class="hi-inline">क्या मिला</span>
+<span class="mr-inline">काय मिळाले</span>
+</label>
+<input type="text" name="benefit" placeholder="e.g. Rs.1,20,000 for house" maxlength="60">
+</div>
+<div class="form-group">
+<label>
+<span class="en-inline">Time taken</span>
+<span class="hi-inline">कितना समय लगा</span>
+<span class="mr-inline">किती वेळ लागला</span>
+</label>
+<input type="text" name="time_taken" placeholder="e.g. 3 months" maxlength="30">
+</div>
+</div>
+<div class="form-group">
+<label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+<input type="checkbox" name="consent" required style="width:auto;">
+<span style="font-size:12px; color:#555;">
+<span class="en-inline">I agree to share my story publicly (only first name and district will be shown)</span>
+<span class="hi-inline">मैं अपनी कहानी सार्वजनिक करने के लिए सहमत हूं (सिर्फ पहला नाम और जिला दिखेगा)</span>
+<span class="mr-inline">मी माझी कथा सार्वजनिक करण्यास सहमत आहे (फक्त पहिले नाव आणि जिल्हा दाखवला जाईल)</span>
+</span>
+</label>
+</div>
+<button type="submit" class="submit-btn">
+<span class="en-inline">Submit My Story ✊</span>
+<span class="hi-inline">मेरी कहानी भेजें ✊</span>
+<span class="mr-inline">माझी कथा पाठवा ✊</span>
+</button>
+</form>
+</div>
+</div>
+<!-- Government Helplines -->
+<div class="help-section">
+<div class="help-title">
+<span class="en-inline">📞 Official Government Helplines</span>
+<span class="hi-inline">📞 सरकारी हेल्पलाइन नंबर</span>
+<span class="mr-inline">📞 सरकारी हेल्पलाइन नंबर</span>
+</div>
+{% set helplines = [
+('🏥', '#e8f5e9', 'PM Jan Arogya / Ayushman Bharat', '14555', 'Free health insurance helpline', 'मुफ्त स्वास्थ्य बीमा हेल्पलाइन', 'मोफत आरोग्य विमा हेल्पलाइन'),
+('🏠', '#e3f2fd', 'PM Awas Yojana', '1800-11-6446', 'Free housing scheme helpline', 'मुफ्त आवास योजना हेल्पलाइन', 'मोफत घरकुल योजना हेल्पलाइन'),
+('🌾', '#fff8e1', 'Ration / PDS', '1967', 'Ration card and food security', 'राशन कार्ड और खाद्य सुरक्षा', 'रेशन कार्ड आणि अन्न सुरक्षा'),
+('💼', '#f3e5f5', 'MNREGA', '1800-111-555', 'Employment guarantee scheme', 'रोजगार गारंटी योजना', 'रोजगार हमी योजना'),
+('👶', '#fce4ec', 'Women & Child (ICDS)', '1800-11-0001', 'Nutrition and child welfare', 'पोषण और बाल कल्याण', 'पोषण आणि बाल कल्याण'),
+('⚠️', '#ffebee', 'PM Kisan', '155261', 'Farmer income support', 'किसान आय सहायता', 'शेतकरी उत्पन्न सहाय्य'),
+] %}
+{% for icon, bg, name, number, desc_en, desc_hi, desc_mr in helplines %}
+<div class="helpline-item">
+<div class="helpline-icon" style="background:{{ bg }};">{{ icon }}</div>
+<div class="helpline-info">
+<div class="helpline-name">{{ name }}</div>
+<div class="helpline-number">{{ number }}</div>
+<div class="helpline-desc">
+<span class="en-inline">{{ desc_en }}</span>
+<span class="hi-inline">{{ desc_hi }}</span>
+<span class="mr-inline">{{ desc_mr }}</span>
+</div>
+</div>
+<a href="tel:{{ number }}" class="call-btn">
+<span class="en-inline">Call</span>
+<span class="hi-inline">कॉल</span>
+<span class="mr-inline">कॉल</span>
+</a>
+</div>
+{% endfor %}
+
+</a>
+</div>
+<!-- FAQ Section -->
+<div class="faq-section">
+<div class="help-title">
+<span class="en-inline">❓ Frequently Asked Questions</span>
+<span class="hi-inline">❓ अक्सर पूछे जाने वाले सवाल</span>
+<span class="mr-inline">❓ वारंवार विचारले जाणारे प्रश्न</span>
+</div>
+<div class="faq-item">
+<div class="faq-q" onclick="toggleFaq(this)">
+<span class="en-inline">Is this app really free?</span>
+<span class="hi-inline">क्या यह ऐप सच में मुफ्त है?</span>
+<span class="mr-inline">हे अॅप खरोखर मोफत आहे का?</span>
+<span>+</span>
+</div>
+<div class="faq-a">
+<span class="en-inline">Yes — 100% free. Always. No hidden charges. No registration. No Aadhaar needed. Just open the link and use it.</span>
+<span class="hi-inline">हां — 100% मुफ्त। हमेशा। कोई छुपा शुल्क नहीं। कोई रजिस्ट्रेशन नहीं। आधार की जरूरत नहीं। बस लिंक खोलें और इस्तेमाल करें।</span>
+<span class="mr-inline">होय — 100% मोफत. नेहमीच. कोणतेही छुपे शुल्क नाही. नोंदणी नाही. आधार लागत नाही. फक्त लिंक उघडा आणि वापरा.</span>
+</div>
+</div>
+<div class="faq-item">
+<div class="faq-q" onclick="toggleFaq(this)">
+<span class="en-inline">I don't have Aadhaar. Can I still use this?</span>
+<span class="hi-inline">मेरे पास आधार नहीं है। क्या मैं इस्तेमाल कर सकता हूं?</span>
+<span class="mr-inline">माझ्याकडे आधार नाही. मी वापरू शकतो का?</span>
+<span>+</span>
+</div>
+<div class="faq-a">
+<span class="en-inline">Yes! Our app does NOT require Aadhaar. Just answer 9 simple questions and see your eligible schemes.</span>
+<span class="hi-inline">हां! हमारे ऐप के लिए आधार की जरूरत नहीं। बस 9 सवालों के जवाब दें।</span>
+<span class="mr-inline">होय! आमच्या अॅपसाठी आधार लागत नाही. फक्त 9 प्रश्नांची उत्तरे द्या.</span>
+</div>
+</div>
+<div class="faq-item">
+<div class="faq-q" onclick="toggleFaq(this)">
+<span class="en-inline">What if an officer asks for money?</span>
+<span class="hi-inline">अगर अधिकारी पैसे मांगे तो?</span>
+<span class="mr-inline">अधिकाऱ्याने पैसे मागितले तर?</span>
+<span>+</span>
+</div>
+<div class="faq-a">
+<span class="en-inline">File a corruption complaint directly in the app. You will get a tracking ID. Your complaint is tracked until resolved. No bribe is ever required for any government scheme.</span>
+<span class="hi-inline">ऐप में सीधे भ्रष्टाचार की शिकायत करें। आपको एक ट्रैकिंग ID मिलेगी। कोई भी सरकारी योजना के लिए रिश्वत नहीं देनी चाहिए।</span>
+<span class="mr-inline">अॅपमध्ये थेट भ्रष्टाचाराची तक्रार करा. तुम्हाला ट्रॅकिंग ID मिळेल. कोणत्याही सरकारी योजनेसाठी लाच द्यायची गरज नाही.</span>
+</div>
+</div>
+<div class="faq-item">
+<div class="faq-q" onclick="toggleFaq(this)">
+<span class="en-inline">Does this work without internet?</span>
+<span class="hi-inline">क्या यह बिना इंटरनेट के काम करता है?</span>
+<span class="mr-inline">हे इंटरनेटशिवाय काम करते का?</span>
+<span>+</span>
+</div>
+<div class="faq-a">
+<span class="en-inline">Yes! Install the app once from the link. After that it works offline on your phone even without internet.</span>
+<span class="hi-inline">हां! एक बार लिंक से इंस्टॉल करें। उसके बाद बिना इंटरनेट के भी चलेगा।</span>
+<span class="mr-inline">होय! एकदा लिंकवरून इन्स्टॉल करा. त्यानंतर इंटरनेटशिवाय पण चालेल.</span>
+</div>
+</div>
+<div class="faq-item">
+<div class="faq-q" onclick="toggleFaq(this)">
+<span class="en-inline">Is my personal information safe?</span>
+<span class="hi-inline">क्या मेरी जानकारी सुरक्षित है?</span>
+<span class="mr-inline">माझी माहिती सुरक्षित आहे का?</span>
+<span>+</span>
+</div>
+<div class="faq-a">
+<span class="en-inline">Yes. Your scheme check is completely anonymous — nothing is stored. Only if you file a corruption complaint is any data saved, and that is only accessible to authorized admin officers.</span>
+<span class="hi-inline">हां। योजना जांच पूरी तरह गुमनाम है — कुछ भी सेव नहीं होता। सिर्फ शिकायत दर्ज करने पर डेटा सेव होता है।</span>
+<span class="mr-inline">होय. योजना तपासणी पूर्णपणे गुप्त आहे — काहीही साठवले जात नाही. फक्त तक्रार केल्यावर डेटा सेव होतो.</span>
+</div>
+</div>
+</div>
+<a href="/" class="back-btn">
+<span class="en-inline">← Back to Main App</span>
+<span class="hi-inline">← मुख्य ऐप पर वापस</span>
+<span class="mr-inline">← मुख्य अॅपवर परत</span>
+</a>
+<div class="footer">
+Poverty Aid Identifier — Success Stories<br>
+<span class="en-inline">Every rupee of government aid belongs to the people.</span>
+<span class="hi-inline">सरकारी सहायता का हर रुपया जनता का है।</span>
+<span class="mr-inline">सरकारी मदतीचा प्रत्येक रुपया जनतेचा आहे.</span>
+🇮🇳
+</div>
+</div>
+<script>
+function setLang(lang, btn) {
+document.body.className = 'lang-' + lang;
+document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+btn.classList.add('active');
+// Update stat labels
+document.querySelectorAll('.stat-pill p').forEach(p => {
+p.style.display = p.classList.contains(lang + '-inline') ? 'block' : 'none';
+});
+}
+function toggleFaq(el) {
+const ans = el.nextElementSibling;
+const isOpen = ans.classList.contains('open');
+document.querySelectorAll('.faq-a').forEach(a => {
+a.classList.remove('open');
+a.previousElementSibling.querySelector('span:last-child').textContent = '+';
+});
+if (!isOpen) {
+ans.classList.add('open');
+el.querySelector('span:last-child').textContent = '−';
+}
+}
+// Fix stat labels on load
+document.querySelectorAll('.stat-pill p').forEach(p => {
+p.style.display = p.classList.contains('en-inline') ? 'block' : 'none';
+});
+</script>
+</body>
+</html>
