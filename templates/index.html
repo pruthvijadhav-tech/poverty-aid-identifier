@@ -133,14 +133,12 @@
 </head>
 <body>
 
-<!-- Loading Overlay -->
 <div class="loading-overlay" id="loadingOverlay">
     <div class="spinner"></div>
     <div class="loading-text" id="loadingText">Checking Eligibility...</div>
     <div class="loading-sub" id="loadingSub">Please wait a moment</div>
 </div>
 
-<!-- PWA Install Banner -->
 <div class="install-banner" id="installBanner">
     <div class="install-banner-info">
         <img src="/static/icons/icon-192.png" class="install-banner-icon" alt="App Icon"/>
@@ -157,17 +155,15 @@
 
 {% if not result %}
 <div class="lang-screen" id="langScreen">
-    <div class="lang-logo"><span>A</span></div>
+    <div class="lang-logo"><span>P</span></div>
     <div class="lang-title">Poverty Aid Identifier</div>
-    <div class="lang-tagline">Every person will receive help</div>
-    <div class="lang-tagline">हर व्यक्ति को मदद मिलेगी</div>
-    <div class="lang-tagline">प्रत्येक व्यक्तीला मदत मिळेल</div>
-    <div class="lang-card">
-        <h3>Select Your Language / भाषा चुनें / भाषा निवडा</h3>
+    <div class="lang-tagline" style="font-weight: 600; margin-bottom: 20px;">Select Questionnaire Language / भाषा चुनें</div>
+    
+    <div class="lang-card" style="margin-top: 0px;">
         <div class="lang-buttons">
-            <button class="lang-btn btn-english" onclick="selectLang('en')">English</button>
-            <button class="lang-btn btn-hindi" onclick="selectLang('hi')">Hindi - हिंदी</button>
-            <button class="lang-btn btn-marathi" onclick="selectLang('mr')">Marathi - मराठी</button>
+            <button class="lang-btn btn-english lang-en" onclick="selectLang('en')">English</button>
+            <button class="lang-btn btn-hindi lang-hi" onclick="selectLang('hi')">Hindi - हिंदी</button>
+            <button class="lang-btn btn-marathi lang-mr" onclick="selectLang('mr')">Marathi - मराठी</button>
         </div>
     </div>
 </div>
@@ -358,7 +354,7 @@
             <div class="corruption-section-body">
                 <p>Every rupee of government aid belongs to you. If any official has deducted money — report immediately.</p>
                 <p>सरकारी सहायता का हर रुपया आपका है। अगर किसी अधिकारी ने पैसे काटे हैं — तुरंत रिपोर्ट करें।</p>
-                <p>सरकारी मदतीचा प्रत्येक रुपया तुमचा आहे. जर कोणत्या अधिकाऱ्याने पैसे कापले — तात्काळ तक्रार करा.</p>
+                <p>सरकारी मदतीचा प्रत्येक रुपया तुमचा आहे। जर कोणत्या अधिकाऱ्याने पैसे कापले — तात्काळ तक्रार करा।</p>
                 <a href="/corruption?lang={{ lang }}" class="corruption-btn">
                     {% if lang == 'hi' %}भ्रष्टाचार रिपोर्ट करें{% elif lang == 'mr' %}भ्रष्टाचाराची तक्रार करा{% else %}Report Corruption / Deduction of Aid{% endif %}
                 </a>
@@ -449,7 +445,7 @@ const translations = {
     },
     mr: {
         title: "गरिबी मदत ओळखकर्ता",
-        subtitle: "प्रत्येक व्यक्तीला मदत मिळेल. मुले, वृद्ध आणि आपत्कालीन परिस्थितींना प्राधान्य.",
+        subtitle: "प्रत्येक व्यक्तीला मदत मिळेल. मुले, वृद्ध आणि आपत्कालीन परिस्थितिंना प्राधान्य.",
         section_personal: "वैयक्तिक तपशील", section_aid: "मदत तपशील",
         privacyNote: "तुमचे वैयक्तिक तपशील गोपनीय आहेत आणि केवळ अधिकृत सरकारी अधिकाऱ्यांसोबत सामायिक केले जातील.",
         lbl_name: "पूर्ण नाव", ph_name: "उदा. रमेश कुमार",

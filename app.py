@@ -453,8 +453,9 @@ def index():
     score = 0
     person_name = ''
 
-    # ── Handle lang from GET parameter
-    lang = request.args.get('lang', 'en') if request.method == 'GET' else 'en'
+    # Get the language parameter if provided, otherwise leave it flexible for the user choice screen
+    lang = request.args.get('lang') or request.form.get('lang') or session.get('lang', 'en')
+    session['lang'] = lang
 
     if request.method == 'POST':
 
