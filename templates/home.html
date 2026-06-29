@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Poverty Aid Identifier</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#000080">
+    <style>
+        :root { --navy:#000080; --saffron:#FF9933; --green:#138808; --light:#F4F6FB; --dark:#1A1A2E; --gray:#6B7280; --border:#E5E7EB; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html { scroll-behavior:smooth; overflow-x:hidden; }
+        body { font-family:'Segoe UI',Arial,sans-serif; background:var(--light); color:var(--dark); max-width:100vw; overflow-x:hidden; }
+
+        /* LANGUAGE VISIBILITY — content only, not buttons */
+        .lang-content.en,.lang-content.hi,.lang-content.mr { display:none; }
+        body.lang-en .lang-content.en { display:block; }
+        body.lang-hi .lang-content.hi { display:block; }
+        body.lang-mr .lang-content.mr { display:block; }
+        .en,.hi,.mr { display:none; }
+        body.lang-en .en { display:block; }
+        body.lang-hi .hi { display:block; }
+        body.lang-mr .mr { display:block; }
+        body.lang-en .en-inline { display:inline; }
+        body.lang-hi .hi-inline { display:inline; }
+        body.lang-mr .mr-inline { display:inline; }
+        .en-inline,.hi-inline,.mr-inline { display:none; }
+        /* Lang buttons always visible */
+        .lang-btn { display:block !important; }
+
+        /* FLAG BAR */
+        .flag-bar { height:5px; background:linear-gradient(90deg,#FF9933 33%,#fff 33%,#fff 66%,#138808 66%); }
+
+        /* HEADER */
+        .header { background:var(--navy); padding:12px 16px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:100; box-shadow:0 2px 10px rgba(0,0,50,0.3); }
+        .logo { display:flex; align-items:center; gap:8px; }
+        .logo-icon { width:32px; height:32px; background:linear-gradient(135deg,#FF9933,#fff,#138808); border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+        .logo-text { color:white; font-size:14px; font-weight:700; line-height:1.2; }
+        .logo-sub { color:rgba(255,255,255,0.6); font-size:9px; }
+        .header-links { display:flex; gap:6px; }
+        .header-link { color:rgba(255,255,255,0.8); font-size:11px; text-decoration:none; padding:5px 10px; border-radius:20px; border:1px solid rgba(255,255,255,0.2); white-space:nowrap; }
+
+        /* HERO */
+        .hero { background:linear-gradient(150deg,#000080 0%,#0a0a3a 55%,#001a00 100%); padding:36px 16px 32px; text-align:center; position:relative; overflow:hidden; }
+        .hero-badge { display:inline-block; background:rgba(255,153,51,0.15); border:1px solid rgba(255,153,51,0.4); color:#FF9933; font-size:10px; font-weight:700; padding:4px 12px; border-radius:20px; margin-bottom:14px; letter-spacing:1px; }
+        .hero h1 { color:white; font-size:24px; font-weight:800; line-height:1.25; margin-bottom:8px; }
+        .hero h1 span { color:#FF9933; }
+        .hero-sub { color:rgba(255,255,255,0.7); font-size:13px; line-height:1.6; margin-bottom:20px; max-width:440px; margin-left:auto; margin-right:auto; }
+        .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-width:360px; margin:0 auto 20px; }
+        .hero-stat-num { font-size:24px; font-weight:800; color:white; line-height:1; }
+        .hero-stat-num.or { color:#FF9933; }
+        .hero-stat-num.gr { color:#4ade80; }
+        .hero-stat-label { font-size:9px; color:rgba(255,255,255,0.55); margin-top:3px; }
+        .hero-pills { display:flex; justify-content:center; gap:6px; flex-wrap:wrap; }
+        .pill { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.85); font-size:10px; padding:4px 10px; border-radius:20px; }
+        .pill.gr { border-color:rgba(19,136,8,0.5); color:#4ade80; background:rgba(19,136,8,0.1); }
+        .pill.or { border-color:rgba(255,153,51,0.5); color:#FF9933; background:rgba(255,153,51,0.1); }
+
+        /* LANG SECTION */
+        .lang-section { background:white; border-bottom:2px solid #FF9933; padding:14px 16px; }
+        .lang-title { text-align:center; font-size:11px; color:var(--gray); margin-bottom:10px; font-weight:600; letter-spacing:.5px; }
+        .lang-buttons { display:flex; gap:8px; justify-content:center; }
+        .lang-btn { flex:1; max-width:140px; padding:12px 8px; border-radius:10px; border:2px solid; font-size:13px; font-weight:700; cursor:pointer; text-align:center; text-decoration:none; display:block; transition:all .2s; }
+        .lang-btn.en { border-color:var(--navy); color:var(--navy); background:white; }
+        .lang-btn.en.active,.lang-btn.en:hover { background:var(--navy); color:white; }
+        .lang-btn.hi { border-color:var(--saffron); color:var(--saffron); background:white; }
+        .lang-btn.hi.active,.lang-btn.hi:hover { background:var(--saffron); color:white; }
+        .lang-btn.mr { border-color:var(--green); color:var(--green); background:white; }
+        .lang-btn.mr.active,.lang-btn.mr:hover { background:var(--green); color:white; }
+
+        /* STATS */
+        .stats-section { padding:22px 16px; background:var(--navy); }
+        .stats-title { text-align:center; color:rgba(255,255,255,0.5); font-size:10px; font-weight:700; letter-spacing:2px; margin-bottom:16px; text-transform:uppercase; }
+        .stats-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; max-width:400px; margin:0 auto; }
+        .stat-card { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:14px 10px; text-align:center; }
+        .stat-card:nth-child(1){border-top:3px solid #FF9933;}
+        .stat-card:nth-child(2){border-top:3px solid #4ade80;}
+        .stat-card:nth-child(3){border-top:3px solid #60a5fa;}
+        .stat-card:nth-child(4){border-top:3px solid #f472b6;}
+        .stat-number { font-size:26px; font-weight:800; color:white; line-height:1; }
+        .stat-label { font-size:11px; color:rgba(255,255,255,0.6); margin-top:4px; line-height:1.4; }
+        .stat-sub { font-size:9px; color:rgba(255,255,255,0.3); margin-top:2px; }
+
+        /* HOW IT WORKS */
+        .how-section { padding:24px 16px; background:white; }
+        .sec-head { text-align:center; margin-bottom:18px; }
+        .sec-eye { font-size:10px; font-weight:700; letter-spacing:2px; color:var(--saffron); text-transform:uppercase; margin-bottom:5px; }
+        .sec-title { font-size:18px; font-weight:800; color:var(--navy); }
+        .steps { display:flex; flex-direction:column; gap:10px; max-width:460px; margin:0 auto; }
+        .step { display:flex; gap:12px; align-items:flex-start; padding:12px; background:var(--light); border-radius:10px; }
+        .step-num { width:28px; height:28px; border-radius:50%; color:white; font-weight:800; font-size:13px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .step h4 { font-size:13px; font-weight:700; color:var(--dark); margin-bottom:2px; }
+        .step p { font-size:11px; color:var(--gray); line-height:1.5; }
+
+        /* COMPARISON */
+        .compare-section { padding:24px 16px; background:var(--light); }
+        .compare-table { max-width:480px; margin:0 auto; border-radius:14px; overflow:hidden; box-shadow:0 4px 16px rgba(0,0,0,0.08); }
+        .c-head { display:grid; grid-template-columns:1fr 1fr 1fr; background:var(--navy); }
+        .c-head div { padding:10px 6px; text-align:center; color:white; font-size:11px; font-weight:700; }
+        .c-head div:first-child { text-align:left; padding-left:12px; color:rgba(255,255,255,0.6); }
+        .c-head div:last-child { background:rgba(255,153,51,0.2); color:#FF9933; }
+        .c-row { display:grid; grid-template-columns:1fr 1fr 1fr; background:white; border-bottom:1px solid var(--border); }
+        .c-row:last-child { border-bottom:none; }
+        .c-row:nth-child(even) { background:#fafafa; }
+        .c-row div { padding:10px 6px; text-align:center; font-size:11px; color:var(--gray); }
+        .c-row div:first-child { text-align:left; padding-left:12px; color:var(--dark); font-weight:600; font-size:10px; }
+        .tick { color:var(--green); font-weight:800; font-size:14px; }
+        .cross { color:#c62828; font-weight:800; font-size:14px; }
+        .c-hi { background:rgba(255,153,51,0.04) !important; }
+
+        /* SCHEMES */
+        .schemes-section { padding:24px 16px; background:white; }
+        .schemes-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; max-width:480px; margin:0 auto; }
+        .scheme-pill { background:var(--light); border-radius:8px; padding:10px; border-left:3px solid var(--navy); }
+        .scheme-pill.or { border-left-color:var(--saffron); }
+        .scheme-pill.gr { border-left-color:var(--green); }
+        .scheme-pill.pu { border-left-color:#7c3aed; }
+        .sname { font-size:11px; font-weight:700; color:var(--dark); margin-bottom:2px; }
+        .samount { font-size:10px; color:var(--green); font-weight:600; }
+
+        /* DOCTOR FEEDBACK */
+        .feedback-section { padding:24px 16px; background:var(--navy); }
+        .feedback-card { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:14px; padding:18px; max-width:480px; margin:0 auto; }
+        .fb-top { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+        .fb-avatar { width:40px; height:40px; background:rgba(255,153,51,0.2); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+        .fb-name { color:white; font-size:14px; font-weight:700; }
+        .fb-org { color:rgba(255,255,255,0.5); font-size:10px; margin-top:2px; }
+        .fb-quote { color:rgba(255,255,255,0.8); font-size:12px; line-height:1.7; font-style:italic; border-left:3px solid var(--saffron); padding-left:12px; }
+        .fb-tags { display:flex; flex-wrap:wrap; gap:5px; margin-top:12px; }
+        .fb-tag { background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.6); font-size:9px; padding:3px 8px; border-radius:20px; }
+
+        /* FOOTER NAV */
+        .footer-nav { background:white; border-top:1px solid var(--border); padding:14px 16px; }
+        .footer-links { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; max-width:460px; margin:0 auto; }
+        .footer-link { display:flex; flex-direction:column; align-items:center; gap:3px; padding:10px 6px; border-radius:8px; text-decoration:none; border:1px solid var(--border); background:var(--light); }
+        .footer-link-icon { font-size:18px; }
+        .footer-link-label { font-size:9px; font-weight:600; color:var(--navy); text-align:center; }
+
+        .footer { background:var(--dark); padding:16px; text-align:center; }
+        .footer p { color:rgba(255,255,255,0.4); font-size:10px; line-height:1.8; }
+        .footer a { color:rgba(255,255,255,0.6); text-decoration:none; }
+
+        .start-btn { display:block; width:100%; max-width:300px; margin:20px auto 0; padding:16px; background:linear-gradient(90deg,#FF9933,#e65c00); color:white; border:none; border-radius:12px; font-size:16px; font-weight:800; cursor:pointer; text-decoration:none; text-align:center; }
+    </style>
+</head>
+<body class="lang-en">
+<div class="flag-bar"></div>
+
+<!-- HEADER -->
+<div class="header">
+    <div class="logo">
+        <div class="logo-icon">🇮🇳</div>
+        <div>
+            <div class="logo-text">Poverty Aid Identifier</div>
+            <div class="logo-sub en-inline">Every rupee belongs to the people</div>
+            <div class="logo-sub hi-inline">हर रुपया जनता का है</div>
+            <div class="logo-sub mr-inline">प्रत्येक रुपया जनतेचा आहे</div>
+        </div>
+    </div>
+    <div class="header-links">
+        <a href="/heatmap" class="header-link">🗺 <span class="en-inline">Map</span><span class="hi-inline">मैप</span><span class="mr-inline">नकाशा</span></a>
+        <a href="/stories" class="header-link">📖 <span class="en-inline">Stories</span><span class="hi-inline">कहानियां</span><span class="mr-inline">कथा</span></a>
+    </div>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+    <div class="hero-badge">
+        <span class="en-inline">🇮🇳 FREE · NO AADHAAR · WORKS OFFLINE</span>
+        <span class="hi-inline">🇮🇳 मुफ्त · आधार नहीं · ऑफलाइन काम करता है</span>
+        <span class="mr-inline">🇮🇳 मोफत · आधार नाही · ऑफलाइन काम करते</span>
+    </div>
+    <h1>
+        <span class="en">Find Your <span>Government Schemes</span> in 1 Second</span>
+        <span class="hi">1 सेकंड में जानें अपनी <span>सरकारी योजनाएं</span></span>
+        <span class="mr">1 सेकंदात शोधा तुमच्या <span>सरकारी योजना</span></span>
+    </h1>
+    <p class="hero-sub">
+        <span class="en-inline">270 million Indians don't know which welfare schemes they qualify for. This AI app tells them — instantly, for free, in their own language.</span>
+        <span class="hi-inline">27 करोड़ भारतीयों को नहीं पता कि वे किन योजनाओं के लिए योग्य हैं। यह AI ऐप उन्हें तुरंत, मुफ्त में, उनकी अपनी भाषा में बताता है।</span>
+        <span class="mr-inline">27 कोटी भारतीयांना माहित नाही की ते कोणत्या योजनांसाठी पात्र आहेत. हे AI अॅप त्यांना तत्काळ, मोफत, त्यांच्या स्वतःच्या भाषेत सांगते.</span>
+    </p>
+    <div class="hero-stats">
+        <div>
+            <div class="hero-stat-num or">16+</div>
+            <div class="hero-stat-label"><span class="en-inline">Schemes</span><span class="hi-inline">योजनाएं</span><span class="mr-inline">योजना</span></div>
+        </div>
+        <div>
+            <div class="hero-stat-num">3</div>
+            <div class="hero-stat-label"><span class="en-inline">Languages</span><span class="hi-inline">भाषाएं</span><span class="mr-inline">भाषा</span></div>
+        </div>
+        <div>
+            <div class="hero-stat-num gr">&lt;1s</div>
+            <div class="hero-stat-label"><span class="en-inline">Result</span><span class="hi-inline">परिणाम</span><span class="mr-inline">निकाल</span></div>
+        </div>
+    </div>
+    <div class="hero-pills">
+        <div class="pill gr">✓ <span class="en-inline">No Aadhaar</span><span class="hi-inline">आधार नहीं</span><span class="mr-inline">आधार नाही</span></div>
+        <div class="pill gr">✓ <span class="en-inline">Works Offline</span><span class="hi-inline">ऑफलाइन</span><span class="mr-inline">ऑफलाइन</span></div>
+        <div class="pill or">✓ <span class="en-inline">Hindi + Marathi</span><span class="hi-inline">हिंदी + मराठी</span><span class="mr-inline">हिंदी + मराठी</span></div>
+        <div class="pill">✓ <span class="en-inline">Zero Cost</span><span class="hi-inline">बिल्कुल मुफ्त</span><span class="mr-inline">पूर्णपणे मोफत</span></div>
+    </div>
+</div>
+
+<!-- LANGUAGE SELECTION -->
+<div class="lang-section">
+    <div class="lang-title">SELECT YOUR LANGUAGE / भाषा चुनें / भाषा निवडा</div>
+    <div class="lang-buttons">
+        <a href="#" class="lang-btn en active" id="btn-en" onclick="setLang('en',this,event)">English</a>
+        <a href="#" class="lang-btn hi" id="btn-hi" onclick="setLang('hi',this,event)">हिंदी</a>
+        <a href="#" class="lang-btn mr" id="btn-mr" onclick="setLang('mr',this,event)">मराठी</a>
+    </div>
+</div>
+
+<!-- IMPACT STATS -->
+<div class="stats-section">
+    <div class="stats-title"><span class="en-inline">IMPACT NUMBERS</span><span class="hi-inline">प्रभाव के आंकड़े</span><span class="mr-inline">प्रभाव आकडे</span></div>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">270M+</div>
+            <div class="stat-label"><span class="en-inline">BPL Citizens in India</span><span class="hi-inline">भारत में BPL नागरिक</span><span class="mr-inline">भारतातील BPL नागरिक</span></div>
+            <div class="stat-sub"><span class="en-inline">Potential beneficiaries</span><span class="hi-inline">संभावित लाभार्थी</span><span class="mr-inline">संभाव्य लाभार्थी</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">16+</div>
+            <div class="stat-label"><span class="en-inline">Govt Schemes Covered</span><span class="hi-inline">सरकारी योजनाएं</span><span class="mr-inline">सरकारी योजना</span></div>
+            <div class="stat-sub"><span class="en-inline">Central government</span><span class="hi-inline">केंद्र सरकार</span><span class="mr-inline">केंद्र सरकार</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">175</div>
+            <div class="stat-label"><span class="en-inline">Max AI Need Score</span><span class="hi-inline">अधिकतम AI स्कोर</span><span class="mr-inline">जास्तीत जास्त AI स्कोर</span></div>
+            <div class="stat-sub"><span class="en-inline">9 weighted parameters</span><span class="hi-inline">9 मापदंड</span><span class="mr-inline">9 मापदंड</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">₹0</div>
+            <div class="stat-label"><span class="en-inline">Cost to Every Citizen</span><span class="hi-inline">हर नागरिक के लिए</span><span class="mr-inline">प्रत्येक नागरिकासाठी</span></div>
+            <div class="stat-sub"><span class="en-inline">Free forever</span><span class="hi-inline">हमेशा के लिए मुफ्त</span><span class="mr-inline">नेहमीसाठी मोफत</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="how-section">
+    <div class="sec-head">
+        <div class="sec-eye"><span class="en-inline">SIMPLE PROCESS</span><span class="hi-inline">आसान प्रक्रिया</span><span class="mr-inline">सोपी प्रक्रिया</span></div>
+        <div class="sec-title"><span class="en-inline">How It Works</span><span class="hi-inline">यह कैसे काम करता है</span><span class="mr-inline">हे कसे काम करते</span></div>
+    </div>
+    <div class="steps">
+        <div class="step">
+            <div class="step-num" style="background:var(--navy)">1</div>
+            <div>
+                <h4><span class="en-inline">Select Your Language</span><span class="hi-inline">अपनी भाषा चुनें</span><span class="mr-inline">तुमची भाषा निवडा</span></h4>
+                <p><span class="en-inline">Choose English, Hindi, or Marathi. Everything changes instantly.</span><span class="hi-inline">अंग्रेजी, हिंदी या मराठी चुनें। सब कुछ तुरंत बदल जाता है।</span><span class="mr-inline">इंग्रजी, हिंदी किंवा मराठी निवडा. सर्व काही लगेच बदलते.</span></p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num" style="background:var(--saffron)">2</div>
+            <div>
+                <h4><span class="en-inline">Answer 9 Simple Questions</span><span class="hi-inline">9 सरल सवालों के जवाब दें</span><span class="mr-inline">9 सोप्या प्रश्नांची उत्तरे द्या</span></h4>
+                <p><span class="en-inline">Income, housing, medical. No Aadhaar. No documents needed.</span><span class="hi-inline">आय, घर, स्वास्थ्य। आधार नहीं चाहिए।</span><span class="mr-inline">उत्पन्न, घर, वैद्यकीय. आधार लागत नाही.</span></p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num" style="background:var(--green)">3</div>
+            <div>
+                <h4><span class="en-inline">AI Calculates Your Need Score</span><span class="hi-inline">AI आपका स्कोर निकालता है</span><span class="mr-inline">AI तुमचा स्कोर काढतो</span></h4>
+                <p><span class="en-inline">0-175 points. Result in under 1 second.</span><span class="hi-inline">0-175 अंक। 1 सेकंड से कम में।</span><span class="mr-inline">0-175 गुण. 1 सेकंदापेक्षा कमी वेळात.</span></p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num" style="background:#7c3aed">4</div>
+            <div>
+                <h4><span class="en-inline">See Your Eligible Schemes</span><span class="hi-inline">अपनी योग्य योजनाएं देखें</span><span class="mr-inline">तुमच्या पात्र योजना पहा</span></h4>
+                <p><span class="en-inline">Only schemes you actually qualify for with documents needed.</span><span class="hi-inline">सिर्फ वे योजनाएं जिनके लिए आप योग्य हैं।</span><span class="mr-inline">फक्त त्या योजना ज्यासाठी तुम्ही पात्र आहात.</span></p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num" style="background:#c62828">5</div>
+            <div>
+                <h4><span class="en-inline">Report Corruption If Needed</span><span class="hi-inline">जरूरत पर भ्रष्टाचार रिपोर्ट करें</span><span class="mr-inline">गरज असल्यास भ्रष्टाचाराची तक्रार करा</span></h4>
+                <p><span class="en-inline">If any officer asks for money — report instantly. Track like Amazon.</span><span class="hi-inline">अगर कोई पैसे मांगे — तुरंत रिपोर्ट करें।</span><span class="mr-inline">कोणी पैसे मागितल्यास — लगेच तक्रार करा.</span></p>
+            </div>
+        </div>
+    </div>
+  <a href="{{ url_for('index') }}?lang=en" id="start-btn" class="start-btn">
+    <span class="en-inline">Check My Eligibility →</span>
+    <span class="hi-inline">मेरी पात्रता जांचें →</span>
+    <span class="mr-inline">माझी पात्रता तपासा →</span>
+</a>
+
+<!-- COMPARISON -->
+<div class="compare-section">
+    <div class="sec-head">
+        <div class="sec-eye"><span class="en-inline">WHY THIS APP</span><span class="hi-inline">यह ऐप क्यों</span><span class="mr-inline">हे अॅप का</span></div>
+        <div class="sec-title"><span class="en-inline">Us vs Government Portal</span><span class="hi-inline">हम बनाम सरकारी पोर्टल</span><span class="mr-inline">आमचे अॅप vs सरकारी पोर्टल</span></div>
+    </div>
+    <div class="compare-table">
+        <div class="c-head">
+            <div><span class="en-inline">Feature</span><span class="hi-inline">विशेषता</span><span class="mr-inline">वैशिष्ट्य</span></div>
+            <div><span class="en-inline">Govt Portal</span><span class="hi-inline">सरकारी पोर्टल</span><span class="mr-inline">सरकारी पोर्टल</span></div>
+            <div><span class="en-inline">This App</span><span class="hi-inline">यह ऐप</span><span class="mr-inline">हे अॅप</span></div>
+        </div>
+        <div class="c-row">
+            <div><span class="en-inline">Aadhaar Required</span><span class="hi-inline">आधार जरूरी</span><span class="mr-inline">आधार लागतो</span></div>
+            <div><span class="cross">✗ <span class="en-inline">Yes</span><span class="hi-inline">हां</span><span class="mr-inline">हो</span></span></div>
+            <div class="c-hi"><span class="tick">✓ <span class="en-inline">No</span><span class="hi-inline">नहीं</span><span class="mr-inline">नाही</span></span></div>
+        </div>
+        <div class="c-row">
+            <div><span class="en-inline">Marathi Support</span><span class="hi-inline">मराठी सहायता</span><span class="mr-inline">मराठी सपोर्ट</span></div>
+            <div><span class="cross">✗ <span class="en-inline">No</span><span class="hi-inline">नहीं</span><span class="mr-inline">नाही</span></span></div>
+            <div class="c-hi"><span class="tick">✓ <span class="en-inline">Yes</span><span class="hi-inline">हां</span><span class="mr-inline">हो</span></span></div>
+        </div>
+        <div class="c-row">
+            <div><span class="en-inline">Works Offline</span><span class="hi-inline">ऑफलाइन काम</span><span class="mr-inline">ऑफलाइन काम</span></div>
+            <div><span class="cross">✗ <span class="en-inline">No</span><span class="hi-inline">नहीं</span><span class="mr-inline">नाही</span></span></div>
+            <div class="c-hi"><span class="tick">✓ PWA</span></div>
+        </div>
+        <div class="c-row">
+            <div><span class="en-inline">Corruption Report</span><span class="hi-inline">भ्रष्टाचार रिपोर्ट</span><span class="mr-inline">भ्रष्टाचार तक्रार</span></div>
+            <div><span class="cross">✗ <span class="en-inline">None</span><span class="hi-inline">नहीं</span><span class="mr-inline">नाही</span></span></div>
+            <div class="c-hi"><span class="tick">✓ <span class="en-inline">Full</span><span class="hi-inline">पूरा</span><span class="mr-inline">पूर्ण</span></span></div>
+        </div>
+        <div class="c-row">
+            <div><span class="en-inline">Load Speed</span><span class="hi-inline">लोड स्पीड</span><span class="mr-inline">लोड गती</span></div>
+            <div><span class="cross">✗ <span class="en-inline">Slow</span><span class="hi-inline">धीमा</span><span class="mr-inline">संथ</span></span></div>
+            <div class="c-hi"><span class="tick">✓ &lt;1s</span></div>
+        </div>
+        <div class="c-row">
+            <div><span class="en-inline">Cost to Citizen</span><span class="hi-inline">नागरिक के लिए</span><span class="mr-inline">नागरिकासाठी</span></div>
+            <div style="color:#666"><span class="en-inline">Varies</span><span class="hi-inline">अलग-अलग</span><span class="mr-inline">वेगळे</span></div>
+            <div class="c-hi"><span class="tick">✓ ₹0</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- SCHEMES -->
+<div class="schemes-section">
+    <div class="sec-head">
+        <div class="sec-eye"><span class="en-inline">WHAT WE COVER</span><span class="hi-inline">हम क्या कवर करते हैं</span><span class="mr-inline">आम्ही काय कव्हर करतो</span></div>
+        <div class="sec-title"><span class="en-inline">16+ Government Schemes</span><span class="hi-inline">16+ सरकारी योजनाएं</span><span class="mr-inline">16+ सरकारी योजना</span></div>
+    </div>
+    <div class="schemes-grid">
+        <div class="scheme-pill"><div class="sname"><span class="en-inline">PM Jan Arogya</span><span class="hi-inline">PM जन आरोग्य</span><span class="mr-inline">PM जन आरोग्य</span></div><div class="samount">₹5 <span class="en-inline">lakh health cover</span><span class="hi-inline">लाख स्वास्थ्य</span><span class="mr-inline">लाख आरोग्य</span></div></div>
+        <div class="scheme-pill or"><div class="sname"><span class="en-inline">PM Awas Yojana</span><span class="hi-inline">PM आवास योजना</span><span class="mr-inline">PM आवास योजना</span></div><div class="samount">₹1.2 <span class="en-inline">lakh housing</span><span class="hi-inline">लाख घर</span><span class="mr-inline">लाख घर</span></div></div>
+        <div class="scheme-pill gr"><div class="sname"><span class="en-inline">Ayushman Bharat</span><span class="hi-inline">आयुष्मान भारत</span><span class="mr-inline">आयुष्मान भारत</span></div><div class="samount"><span class="en-inline">Free treatment</span><span class="hi-inline">मुफ्त इलाज</span><span class="mr-inline">मोफत उपचार</span></div></div>
+        <div class="scheme-pill pu"><div class="sname"><span class="en-inline">Widow Pension</span><span class="hi-inline">विधवा पेंशन</span><span class="mr-inline">विधवा पेन्शन</span></div><div class="samount"><span class="en-inline">Monthly pension</span><span class="hi-inline">मासिक पेंशन</span><span class="mr-inline">मासिक पेन्शन</span></div></div>
+        <div class="scheme-pill or"><div class="sname"><span class="en-inline">Antyodaya Ration</span><span class="hi-inline">अंत्योदय राशन</span><span class="mr-inline">अंत्योदय रेशन</span></div><div class="samount">35 kg/<span class="en-inline">month free</span><span class="hi-inline">माह मुफ्त</span><span class="mr-inline">महिना मोफत</span></div></div>
+        <div class="scheme-pill"><div class="sname"><span class="en-inline">Old Age Pension</span><span class="hi-inline">वृद्धावस्था पेंशन</span><span class="mr-inline">वृद्धापकाळ पेन्शन</span></div><div class="samount"><span class="en-inline">Monthly support</span><span class="hi-inline">मासिक सहायता</span><span class="mr-inline">मासिक मदत</span></div></div>
+        <div class="scheme-pill gr"><div class="sname">MNREGA</div><div class="samount">100 <span class="en-inline">days work</span><span class="hi-inline">दिन काम</span><span class="mr-inline">दिवस काम</span></div></div>
+        <div class="scheme-pill pu"><div class="sname"><span class="en-inline">PM Ujjwala</span><span class="hi-inline">PM उज्ज्वला</span><span class="mr-inline">PM उज्ज्वला</span></div><div class="samount"><span class="en-inline">Free LPG cylinder</span><span class="hi-inline">मुफ्त गैस</span><span class="mr-inline">मोफत गॅस</span></div></div>
+    </div>
+    <p style="text-align:center;font-size:11px;color:var(--gray);margin-top:12px;">
+        + <span class="en-inline">8 more schemes based on your profile</span>
+        <span class="hi-inline">आपकी प्रोफाइल के आधार पर 8 और योजनाएं</span>
+        <span class="mr-inline">तुमच्या प्रोफाइलनुसार 8 अधिक योजना</span>
+    </p>
+</div>
+
+<!-- DOCTOR FEEDBACK -->
+<div class="feedback-section">
+    <div class="sec-head">
+        <div class="sec-eye" style="color:rgba(255,153,51,0.8)"><span class="en-inline">REAL WORLD TESTING</span><span class="hi-inline">वास्तविक परीक्षण</span><span class="mr-inline">वास्तविक चाचणी</span></div>
+        <div class="sec-title" style="color:white"><span class="en-inline">Reviewed by Medical Professionals</span><span class="hi-inline">चिकित्सा विशेषज्ञों द्वारा समीक्षित</span><span class="mr-inline">वैद्यकीय तज्ञांनी पुनरावलोकन केले</span></div>
+    </div>
+    <div class="feedback-card">
+        <div class="fb-top">
+            <div class="fb-avatar">👨‍⚕️</div>
+            <div>
+                <div class="fb-name"><span class="en-inline">Doctor Association</span><span class="hi-inline">डॉक्टर एसोसिएशन</span><span class="mr-inline">डॉक्टर असोसिएशन</span></div>
+                <div class="fb-org">Hinganghat, Maharashtra</div>
+            </div>
+        </div>
+        <div class="fb-quote">
+            <span class="en-inline">"We reviewed this app at our clinic. It finds government schemes for patients in under 1 minute — in Marathi, without Aadhaar. We suggested voice input, document scanning, AI chatbot, and UI improvements. The team is actively working on these features."</span>
+            <span class="hi-inline">"हमने अपने क्लिनिक में इस ऐप की समीक्षा की। यह 1 मिनट से कम समय में मरीजों के लिए सरकारी योजनाएं ढूंढता है — मराठी में, आधार के बिना। हमने वॉयस इनपुट, दस्तावेज़ स्कैनिंग, AI चैटबॉट और UI सुधारों का सुझाव दिया।"</span>
+            <span class="mr-inline">"आम्ही आमच्या क्लिनिकमध्ये या अॅपचे पुनरावलोकन केले. ते 1 मिनिटापेक्षा कमी वेळात रुग्णांसाठी सरकारी योजना शोधते — मराठीत, आधारशिवाय. आम्ही व्हॉइस इनपुट, डॉक्युमेंट स्कॅनिंग, AI चॅटबॉट आणि UI सुधारणा सुचवल्या."</span>
+        </div>
+        <div class="fb-tags">
+            <div class="fb-tag">Voice Input</div>
+            <div class="fb-tag">UI/UX</div>
+            <div class="fb-tag">AI Chatbot</div>
+            <div class="fb-tag">Doc Scanning</div>
+        </div>
+    </div>
+</div>
+
+<!-- FOOTER NAV -->
+<div class="footer-nav">
+    <div class="footer-links">
+        <a href="/heatmap" class="footer-link">
+            <span class="footer-link-icon">🗺️</span>
+            <span class="footer-link-label"><span class="en-inline">Corruption Map</span><span class="hi-inline">भ्रष्टाचार मैप</span><span class="mr-inline">भ्रष्टाचार नकाशा</span></span>
+        </a>
+        <a href="/progress" class="footer-link">
+            <span class="footer-link-icon">📊</span>
+            <span class="footer-link-label"><span class="en-inline">Progress Report</span><span class="hi-inline">प्रगति रिपोर्ट</span><span class="mr-inline">प्रगती अहवाल</span></span>
+        </a>
+        <a href="/stories" class="footer-link">
+            <span class="footer-link-icon">📖</span>
+            <span class="footer-link-label"><span class="en-inline">Success Stories</span><span class="hi-inline">सफलता की कहानियां</span><span class="mr-inline">यशोगाथा</span></span>
+        </a>
+    </div>
+</div>
+
+<div class="footer">
+    <p>
+    Poverty Aid Identifier — Open Source Civic Tech<br>
+    Built by <a href="https://github.com/pruthvijadhav-tech" style="border-bottom: 1px dashed #FF9933; color:inherit; text-decoration:none;">Pruthvi Jadhav</a><br>
+    <a href="https://github.com/pruthvijadhav-tech/poverty-aid-identifier">GitHub</a> ·
+    <a href="/corruption">
+        <span class="en-inline">Report Corruption</span>
+        <span class="hi-inline">भ्रष्टाचार रिपोर्ट</span>
+        <span class="mr-inline">भ्रष्टाचार तक्रार</span>
+    </a>
+</p>
+</div>
+
+<script>
+function setLang(lang, el, e) {
+    if (e) e.preventDefault();
+    document.body.classList.remove("lang-en","lang-hi","lang-mr");
+    document.body.classList.add("lang-" + lang);
+    
+    document.querySelectorAll(".lang-btn").forEach(btn=>{
+        btn.classList.remove("active");
+    });
+    el.classList.add("active");
+    localStorage.setItem("pai_lang", lang);
+
+    // Update the Eligibility Link dynamically
+    const startBtn = document.getElementById("start-btn");
+    if (startBtn) {
+        startBtn.href = "{{ url_for('index') }}?lang=" + lang;
+    }
+}
+
+window.onload = function () {
+    let lang = localStorage.getItem("pai_lang") || "en";
+    document.body.classList.remove("lang-en","lang-hi","lang-mr");
+    document.body.classList.add("lang-" + lang);
+    
+    document.querySelectorAll(".lang-btn").forEach(btn=>{
+        btn.classList.remove("active");
+    });
+    
+    let selected = document.getElementById("btn-" + lang);
+    if(selected) selected.classList.add("active");
+
+    // Initialize the Eligibility Link on page load
+    const startBtn = document.getElementById("start-btn");
+    if (startBtn) {
+        startBtn.href = "{{ url_for('index') }}?lang=" + lang;
+    }
+};
+
+window.onload = function () {
+
+    let lang = localStorage.getItem("pai_lang") || "en";
+
+    document.body.classList.remove("lang-en","lang-hi","lang-mr");
+    document.body.classList.add("lang-" + lang);
+
+    document.querySelectorAll(".lang-btn").forEach(btn=>{
+        btn.classList.remove("active");
+    });
+
+    let selected = document.getElementById("btn-" + lang);
+    if(selected)
+        selected.classList.add("active");
+
+   
+};
+
+// Service Worker
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/static/service-worker.js");
+}
+</script>
+</body>
+</html>

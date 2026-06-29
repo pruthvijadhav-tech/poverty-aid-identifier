@@ -646,5 +646,26 @@ window.addEventListener('appinstalled', () => {
     installBanner.classList.remove('show');
 });
 </script>
+<script>
+(function(){
+    // Read lang from URL ?lang=hi etc
+    var params = new URLSearchParams(window.location.search);
+    var urlLang = params.get('lang');
+    if(urlLang && ['en','hi','mr'].indexOf(urlLang) !== -1){
+        // Set hidden lang field in form if it exists
+        var langField = document.querySelector('input[name="lang"]');
+        if(langField) langField.value = urlLang;
+ 
+        // Trigger language change if selectLang function exists
+        if(typeof selectLang === 'function'){
+            selectLang(urlLang);
+        }
+ 
+        // Also try clicking the correct language button
+        var btn = document.querySelector('.lang-' + urlLang);
+        if(btn && btn.click) btn.click();
+    }
+})();
+</script>
 </body>
 </html>

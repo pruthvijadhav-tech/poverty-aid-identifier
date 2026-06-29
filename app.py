@@ -433,52 +433,117 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/')
+def root():
+    return redirect(url_for('home'))
+
+
+# Landing page
+@app.route('/home')
+def home():
+    return render_template('home.html')
+
+
+# Eligibility Form
+@app.route('/eligibility', methods=['GET', 'POST'])
 def index():
     ip = get_client_ip()
-    if request.method == 'POST':
-        if not rate_limit_check(ip):
-            log_activity('PUBLIC', 'RATE_LIMIT_HIT', ip, 'Too many requests', suspicious=1)
-            return render_template('index.html',
-                result="Too many requests. Please wait a minute.",
-                schemes=[], score=0, lang='en', person_name='',
-                now=datetime.now().strftime("%d %b %Y, %I:%M %p"))
     result = None
     schemes = []
     score = 0
-    lang = 'en'
     person_name = ''
+
+    # ── Handle lang from GET parameter
+    lang = request.args.get('lang', 'en') if request.method == 'GET' else 'en'
+
     if request.method == 'POST':
+
+        if not rate_limit_check(ip):
+            log_activity('PUBLIC', 'RATE_LIMIT_HIT', ip, 'Too many requests', suspicious=1)
+            return render_template(
+                'index.html',
+                result="Too many requests. Please wait a minute.",
+                schemes=[],
+                score=0,
+                lang='en',
+                person_name='',
+                now=datetime.now().strftime("%d %b %Y, %I:%M %p")
+            )
+
         lang = sanitize(request.form.get('lang', 'en'))
+
+        if 'age_group' not in request.form:
+            return render_template(
+                'index.html',
+                result=None,
+                schemes=[],
+                score=0,
+                lang=lang,
+                person_name='',
+                now=datetime.now().strftime("%d %b %Y, %I:%M %p")
+            )
+
         person_name = sanitize(request.form.get('person_name', ''))
         phone = sanitize(request.form.get('phone', ''))
         address = sanitize(request.form.get('address', ''))
 
-        # Validate phone
         if phone and not re.match(r'^[0-9]{10}$', phone):
-            return render_template('index.html',
-                result=None, schemes=[], score=0, lang=lang,
-                person_name='', error="Invalid phone number. Enter 10 digits.",
-                now=datetime.now().strftime("%d %b %Y, %I:%M %p"))
+            return render_template(
+                'index.html',
+                result=None,
+                schemes=[],
+                score=0,
+                lang=lang,
+                person_name='',
+                error="Invalid phone number. Enter 10 digits.",
+                now=datetime.now().strftime("%d %b %Y, %I:%M %p")
+            )
 
         score = calculate_score(request.form)
         schemes = get_schemes(score, request.form, lang)
         result = get_priority(score, request.form)
+
+        # Keep these session lines, just make sure to add the results flag
         session['schemes'] = schemes
         session['lang'] = lang
         session['person_name'] = person_name
         session['phone'] = phone
         session['address'] = address
+        session['score'] = score
+        session['result'] = result
+        session['assessment_results_ready'] = True  # Flag to show the results block
+
+        # ADD THIS REDIRECT LINE HERE:
+        return redirect(url_for('index', lang=lang))
+
         conn = get_db_connection()
-        conn.execute('INSERT INTO form_submissions (phone, ip_address, submitted_at) VALUES (?, ?, ?)',
-            (phone, ip, datetime.now().strftime("%d %b %Y, %I:%M %p")))
+        conn.execute(
+            'INSERT INTO form_submissions (phone, ip_address, submitted_at) VALUES (?, ?, ?)',
+            (phone, ip, datetime.now().strftime("%d %b %Y, %I:%M %p"))
+        )
         conn.commit()
         conn.close()
+
         log_activity('PUBLIC', 'FORM_SUBMITTED', ip, f'Form submitted for {person_name}')
-    return render_template('index.html',
-        result=result, schemes=schemes, score=score, lang=lang,
-        person_name=person_name,
-        now=datetime.now().strftime("%d %b %Y, %I:%M %p"))
+
+    # Pull the calculated values out of the session safely
+    results_ready = session.pop('assessment_results_ready', False)
+    schemes = session.get('schemes', [])
+    score = session.get('score', 0)
+    result = session.get('result', None)
+    person_name = session.get('person_name', '')
+
+    return render_template(
+        'index.html', 
+        results=results_ready, 
+        schemes=schemes, 
+        score=score, 
+        result=result, 
+        person_name=person_name, 
+        lang=lang
+    )
+    
+    
 
 @app.route('/scheme/<scheme_key>')
 def scheme_detail(scheme_key):
@@ -1010,8 +1075,6 @@ def submit_story():
 
     return render_template('story_submitted.html')
 
-
-# ── ALSO ADD THIS ADMIN ROUTE to approve stories ───────────────────────────────
 
 @app.route('/admin/stories')
 @login_required
