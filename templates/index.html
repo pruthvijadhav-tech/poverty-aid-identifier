@@ -300,15 +300,7 @@
 
                 <button type="submit" class="submit-btn" id="submitBtn">Check Aid Eligibility</button>
 
-                <button type="button" onclick="clearForm()" style="
-                        width:100%;padding:10px;
-                        background:white;color:#c62828;
-                        border:2px solid #c62828;
-                        border-radius:10px;font-size:14px;
-                        font-weight:700;cursor:pointer;
-                        margin-top:8px;">
-                        🔄 Check for New Person / नया व्यक्ति / नवीन व्यक्ती
-                </button>
+                
             </form>
         </div>
         {% endif %}
@@ -378,8 +370,6 @@
             <a href="javascript:history.back()" class="back-btn-main">
                 {% if lang == 'hi' %}← वापस जाएं{% elif lang == 'mr' %}← मागे जा{% else %}← Go Back{% endif %}
             </a>
-            <!-- FIX: appended a cache-busting query param so this is always
-                 treated as a fresh navigation, not a bfcache restore -->
             <a href="/?fresh=1" class="check-another">
                 {% if lang == 'hi' %}दूसरे व्यक्ति की जांच करें{% elif lang == 'mr' %}दुसऱ्या व्यक्तीची तपासणी करा{% else %}Check Another Person{% endif %}
             </a>
@@ -624,12 +614,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// ============================================================
-// FIX #1: Reset the form whenever the page is restored from the
-// browser's back/forward cache (bfcache). This is the main cause
-// of "old person's data still showing" when clicking
-// "Check Another Person" / going back and forward.
-// ============================================================
+
 window.addEventListener('pageshow', function (event) {
     const form = document.getElementById('mainForm');
     if (event.persisted && form) {
