@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, session, redirect, url_for, jsonify
 from functools import wraps
+from werkzeug.security import generate_password_hash, check_password_hash
+import google.generativeai as genai
 import random
 import string
 import sqlite3
@@ -15,8 +17,20 @@ from collections import defaultdict
 
 app = Flask(__name__)
 
-# Fix 5 — Secret key from environment or fallback
-app.secret_key = os.environ.get('SECRET_KEY', 'poverty_aid_secret_key_2026_secure_fallback')
+
+_SECRET_KEY_FALLBACK = 'poverty_aid_secret_key_2026_secure_fallback'
+app.secret_key = os.environ.get('SECRET_KEY', _SECRET_KEY_FALLBACK)
+if app.secret_key == _SECRET_KEY_FALLBACK:
+    print('[WARNING] SECRET_KEY env var not set — using an insecure default. '
+          'Set SECRET_KEY before deploying this publicly.')
+
+
+@app.after_request
+def add_no_cache_headers(response):
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 # Rate limiting storage
 request_counts = defaultdict(list)
@@ -32,7 +46,21 @@ def rate_limit_check(ip):
     return True
 
 def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
+    # Salted + slow hash (werkzeug/pbkdf2) for any newly created accounts.
+    return generate_password_hash(password)
+
+def verify_password(stored_hash, password):
+    """
+    Verifies a password against a stored hash.
+    Supports the new salted werkzeug hash AND the old unsalted SHA-256 hash
+    (for accounts created before this fix) so existing logins keep working.
+    """
+    if not stored_hash:
+        return False
+    if stored_hash.startswith(('pbkdf2:', 'scrypt:')):
+        return check_password_hash(stored_hash, password)
+    # Legacy SHA-256 hex digest
+    return stored_hash == hashlib.sha256(password.encode()).hexdigest()
 
 def init_db():
     conn = sqlite3.connect('reports.db')
@@ -113,26 +141,28 @@ def init_db():
        )
    ''')
 
-    # Default admin users
+    # Default admin users. Passwords can be overridden via environment
+    # variables (recommended before any public deployment); if not set,
+    # they fall back to the original defaults so nothing breaks.
     try:
         c.execute(
             "INSERT INTO admin_users (username, password, role, full_name) VALUES (?, ?, ?, ?)",
-            ('admin', hash_password('admin2026'), 'superadmin', 'Super Admin')
+            ('admin', hash_password(os.environ.get('ADMIN_PASSWORD', 'admin2026')), 'superadmin', 'Super Admin')
         )
 
         c.execute(
             "INSERT INTO admin_users (username, password, role, full_name) VALUES (?, ?, ?, ?)",
-            ('pruthvi', hash_password('pruthvi2026'), 'superadmin', 'Pruthvi Jadhav')
+            ('pruthvi', hash_password(os.environ.get('PRUTHVI_PASSWORD', 'pruthvi2026')), 'superadmin', 'Pruthvi Jadhav')
         )
 
         c.execute(
             "INSERT INTO admin_users (username, password, role, full_name) VALUES (?, ?, ?, ?)",
-            ('officer1', hash_password('officer2026'), 'officer', 'Rajesh Kumar Sharma IAS')
+            ('officer1', hash_password(os.environ.get('OFFICER1_PASSWORD', 'officer2026')), 'officer', 'Rajesh Kumar Sharma IAS')
         )
 
         c.execute(
             "INSERT INTO admin_users (username, password, role, full_name) VALUES (?, ?, ?, ?)",
-            ('officer2', hash_password('officer2026'), 'officer', 'Sunita Yadav IAS')
+            ('officer2', hash_password(os.environ.get('OFFICER2_PASSWORD', 'officer2026')), 'officer', 'Sunita Yadav IAS')
         )
 
     except:
@@ -457,6 +487,7 @@ def index():
     lang = request.args.get('lang') or request.form.get('lang') or session.get('lang', 'en')
     session['lang'] = lang
 
+    
     if request.method == 'POST':
 
         if not rate_limit_check(ip):
@@ -527,12 +558,21 @@ def index():
 
         log_activity('PUBLIC', 'FORM_SUBMITTED', ip, f'Form submitted for {person_name}')
 
-    # Pull the calculated values out of the session safely
+    # Pull the calculated values out of the session safely.
+    # FIX: use pop() (not get()) for every result-related key so the data
+    # is shown exactly once and then wiped — otherwise the next visit to
+    # /eligibility (fresh form) re-displays the previous person's result.
     results_ready = session.pop('assessment_results_ready', False)
-    schemes = session.get('schemes', [])
-    score = session.get('score', 0)
-    result = session.get('result', None)
-    person_name = session.get('person_name', '')
+    schemes = session.pop('schemes', [])
+    score = session.pop('score', 0)
+    result = session.pop('result', None)
+    person_name = session.pop('person_name', '')
+    session.pop('phone', None)
+    session.pop('address', None)
+
+    if not results_ready:
+        # No fresh submission — always show a blank form, never stale data.
+        schemes, score, result, person_name = [], 0, None, ''
 
     return render_template(
         'index.html', 
@@ -645,10 +685,15 @@ def admin_login():
         username = request.form.get('username')
         password = request.form.get('password')
         conn = get_db_connection()
-        user = conn.execute('SELECT * FROM admin_users WHERE username=? AND password=?',
-            (username, hash_password(password))).fetchone()
-        conn.close()
-        if user:
+        user = conn.execute('SELECT * FROM admin_users WHERE username=?', (username,)).fetchone()
+        if user and verify_password(user['password'], password):
+            # Transparently upgrade any old unsalted SHA-256 hash to the
+            # new salted hash the next time that account logs in.
+            if not user['password'].startswith(('pbkdf2:', 'scrypt:')):
+                conn.execute('UPDATE admin_users SET password=? WHERE username=?',
+                    (hash_password(password), username))
+                conn.commit()
+            conn.close()
             session['admin_logged_in'] = True
             session['admin_username'] = user['username']
             session['admin_role'] = user['role']
@@ -656,6 +701,7 @@ def admin_login():
             log_activity(username, 'LOGIN_SUCCESS', ip, f'{user["full_name"]} logged in')
             return redirect(url_for('admin'))
         else:
+            conn.close()
             log_activity(username or 'UNKNOWN', 'LOGIN_FAILED', ip,
                 f'Failed login attempt with username: {username}', suspicious=1)
             error = "Invalid username or password"
@@ -1110,7 +1156,153 @@ def reject_story(story_id):
     conn.close()
     return redirect('/admin/stories')
 
+@app.route('/chatbot')
+def chatbot_page():
+    lang = request.args.get('lang', session.get('lang', 'en'))
+    return render_template('chatbot.html', lang=lang)
+ 
+ 
+@app.route('/chatbot', methods=['POST'])
+def chatbot_reply():
+    try:
+        data = request.get_json()
+        user_message = data.get('message', '').strip()
+        lang = data.get('lang', 'en')
+ 
+        if not user_message:
+            return jsonify({'reply': 'Please ask a question.'})
+ 
+        # Sanitize input
+        user_message = sanitize(user_message)
+ 
+        # Get Gemini API key
+        api_key = os.environ.get('GEMINI_API_KEY', '')
+ 
+        if not api_key:
+            # Fallback if no API key — rule based answers
+            return jsonify({'reply': get_fallback_answer(user_message, lang)})
+ 
+        # Configure Gemini
+        import google.generativeai as genai
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+ 
+        # System prompt based on language
+        system_prompts = {
+            'en': """You are a helpful AI assistant for Poverty Aid Identifier — a free civic tech app that helps India's poorest citizens find government schemes they qualify for.
+ 
+You help citizens with:
+1. Information about 16 government schemes: PM Jan Arogya Yojana, PM Awas Yojana, Ayushman Bharat, Antyodaya Anna Yojana, National Family Benefit Scheme, PM Ujjwala Yojana, Old Age Pension (IGNOAPS), Widow Pension, Divyangjan Swavalamban, Accessible India Campaign, PM Poshan, ICDS, Annapurna Scheme, Saubhagya, PM Jan Dhan Yojana, Basic Community Support
+2. Documents needed for each scheme
+3. How to apply for schemes
+4. Corruption reporting — citizens can file complaints at /corruption and track with tracking ID
+5. How the AI Need Score works (0-175 points across 9 parameters)
+ 
+Rules:
+- Keep answers short and clear — max 4-5 lines
+- Use simple language — the user may be poor or uneducated
+- Always be helpful and kind
+- If asked about something unrelated to welfare schemes, gently redirect to schemes
+- Mention relevant helpline numbers when appropriate
+- Do NOT make up information — only answer what you know about these schemes""",
+ 
+            'hi': """आप Poverty Aid Identifier के लिए एक सहायक AI हैं — एक मुफ्त civic tech ऐप जो भारत के गरीब नागरिकों को सरकारी योजनाएं खोजने में मदद करता है।
+ 
+आप इनके बारे में मदद करते हैं:
+1. 16 सरकारी योजनाओं की जानकारी
+2. हर योजना के लिए जरूरी दस्तावेज़
+3. आवेदन कैसे करें
+4. भ्रष्टाचार की शिकायत कैसे करें
+ 
+नियम:
+- जवाब छोटे और सरल रखें — 4-5 लाइन से ज्यादा नहीं
+- आसान हिंदी में बोलें — उपयोगकर्ता पढ़ा-लिखा नहीं हो सकता
+- हमेशा दयालु और मददगार रहें
+- झूठी जानकारी न दें""",
+ 
+            'mr': """तुम्ही Poverty Aid Identifier साठी एक सहाय्यक AI आहात — एक मोफत civic tech अॅप जे भारतातील गरीब नागरिकांना सरकारी योजना शोधण्यास मदत करते.
+ 
+तुम्ही यासाठी मदत करता:
+1. 16 सरकारी योजनांची माहिती
+2. प्रत्येक योजनेसाठी आवश्यक कागदपत्रे
+3. अर्ज कसा करावा
+4. भ्रष्टाचाराची तक्रार कशी करावी
+ 
+नियम:
+- उत्तरे छोटी आणि स्पष्ट ठेवा — 4-5 ओळींपेक्षा जास्त नाही
+- सोप्या मराठीत बोला
+- नेहमी दयाळू आणि मदत करणारे राहा
+- खोटी माहिती देऊ नका"""
+        }
+ 
+        system_prompt = system_prompts.get(lang, system_prompts['en'])
+        full_prompt = system_prompt + "\n\nUser question: " + user_message
+ 
+        # Call Gemini
+        response = model.generate_content(full_prompt)
+        reply = response.text.strip()
+ 
+        # Log the interaction
+        log_activity('CHATBOT', 'QUERY', get_client_ip(),
+            f'Lang: {lang} | Q: {user_message[:50]}')
+ 
+        return jsonify({'reply': reply})
+ 
+    except Exception as e:
+        print(f"Chatbot error: {e}")
+        return jsonify({'reply': get_fallback_answer(
+            data.get('message', '') if data else '',
+            data.get('lang', 'en') if data else 'en'
+        )})
+ 
+ 
+def get_fallback_answer(question, lang='en'):
+    """Rule-based fallback when Gemini API is not available"""
+    q = question.lower()
+ 
+    fallbacks = {
+        'en': {
+            'awas': "PM Awas Yojana gives Rs.1,20,000 for house construction to BPL families.\n\nDocuments needed:\n• Aadhaar Card\n• BPL Certificate\n• Land ownership document\n• Bank account details\n\nApply at your Gram Panchayat or online at pmaymis.gov.in\nHelpline: 1800-11-6163",
+            'ayushman': "Ayushman Bharat gives free health insurance up to Rs.5 lakh per year.\n\nDocuments needed:\n• Aadhaar Card\n• Ration Card\n• SECC Certificate\n\nJust visit any empanelled hospital and show your Aadhaar.\nHelpline: 14555",
+            'pension': "Old Age Pension (IGNOAPS) gives Rs.200-500 per month to elderly BPL citizens aged 60+.\n\nDocuments needed:\n• Aadhaar Card\n• Age proof\n• BPL Certificate\n• Bank details\n\nApply at Gram Panchayat or Block Office.\nHelpline: 1800-111-555",
+            'corruption': "To report corruption:\n1. Go to our app and click 'Report Corruption'\n2. Fill officer name, scheme, amount demanded\n3. You get a tracking ID like PAI-2026-XXXX\n4. Track status: Filed → Received → Action Taken → Resolved\n\nYou can also call: 1800-11-0001",
+            'score': "The AI Need Score is calculated from 9 parameters:\n• Income (40 pts)\n• Medical condition (30 pts)\n• Accident (25 pts)\n• Earning member death (25 pts)\n• Age group (30 pts)\n• Housing (20 pts)\n• Family size (20 pts)\n• Electricity (10 pts)\n• Ration card (10 pts)\n\nMaximum score: 175 points",
+            'ration': "Antyodaya Anna Yojana gives 35 kg free food grains per month to the poorest BPL families.\n\nDocuments: Aadhaar + Ration Card\nApply at nearest Food Department office.\nHelpline: 1800-111-001",
+            'default': "I can help you with:\n• PM Awas Yojana (housing)\n• Ayushman Bharat (health)\n• Old Age / Widow Pension\n• Ration schemes\n• Corruption reporting\n• How to apply for any scheme\n\nWhat would you like to know?"
+        },
+        'hi': {
+            'awas': "PM आवास योजना BPL परिवारों को घर बनाने के लिए ₹1,20,000 देती है।\n\nजरूरी दस्तावेज़:\n• आधार कार्ड\n• BPL प्रमाण पत्र\n• जमीन का दस्तावेज़\n• बैंक खाता विवरण\n\nग्राम पंचायत या pmaymis.gov.in पर आवेदन करें।\nहेल्पलाइन: 1800-11-6163",
+            'ayushman': "आयुष्मान भारत में हर साल ₹5 लाख तक का मुफ्त इलाज मिलता है।\n\nजरूरी दस्तावेज़:\n• आधार कार्ड\n• राशन कार्ड\n\nकिसी भी सूचीबद्ध अस्पताल में जाएं।\nहेल्पलाइन: 14555",
+            'pension': "वृद्धावस्था पेंशन में 60+ उम्र के BPL नागरिकों को ₹200-500 प्रति माह मिलता है।\n\nजरूरी दस्तावेज़:\n• आधार कार्ड\n• उम्र प्रमाण\n• BPL प्रमाण पत्र\n\nग्राम पंचायत में आवेदन करें।",
+            'corruption': "भ्रष्टाचार की शिकायत के लिए:\n1. ऐप में 'भ्रष्टाचार रिपोर्ट' पर क्लिक करें\n2. अधिकारी का नाम, योजना, मांगी गई राशि भरें\n3. आपको PAI-2026-XXXX ट्रैकिंग ID मिलेगी\n4. स्थिति ट्रैक करें: दर्ज → प्राप्त → कार्रवाई → हल",
+            'default': "मैं इनमें मदद कर सकता हूं:\n• PM आवास योजना\n• आयुष्मान भारत\n• वृद्धावस्था/विधवा पेंशन\n• राशन योजनाएं\n• भ्रष्टाचार की शिकायत\n\nआप क्या जानना चाहते हैं?"
+        },
+        'mr': {
+            'awas': "PM आवास योजना BPL कुटुंबांना घर बांधण्यासाठी ₹1,20,000 देते.\n\nआवश्यक कागदपत्रे:\n• आधार कार्ड\n• BPL प्रमाणपत्र\n• जमिनीचा दस्तऐवज\n• बँक खाते तपशील\n\nग्रामपंचायत किंवा pmaymis.gov.in वर अर्ज करा.\nहेल्पलाइन: 1800-11-6163",
+            'ayushman': "आयुष्मान भारतमध्ये दरवर्षी ₹5 लाखापर्यंत मोफत उपचार मिळतो.\n\nआवश्यक कागदपत्रे:\n• आधार कार्ड\n• रेशन कार्ड\n\nकोणत्याही सूचीबद्ध रुग्णालयात जा.\nहेल्पलाइन: 14555",
+            'pension': "वृद्धापकाळ पेन्शनमध्ये 60+ वयाच्या BPL नागरिकांना ₹200-500 प्रति महिना मिळतो.\n\nआवश्यक कागदपत्रे:\n• आधार कार्ड\n• वयाचा पुरावा\n• BPL प्रमाणपत्र\n\nग्रामपंचायतमध्ये अर्ज करा.",
+            'corruption': "भ्रष्टाचाराची तक्रार करण्यासाठी:\n1. अॅपमध्ये 'भ्रष्टाचार तक्रार' वर क्लिक करा\n2. अधिकाऱ्याचे नाव, योजना, मागितलेली रक्कम भरा\n3. तुम्हाला PAI-2026-XXXX ट्रॅकिंग ID मिळेल\n4. स्थिती ट्रॅक करा: दाखल → प्राप्त → कारवाई → निराकरण",
+            'default': "मी यासाठी मदत करू शकतो:\n• PM आवास योजना\n• आयुष्मान भारत\n• वृद्धापकाळ/विधवा पेन्शन\n• रेशन योजना\n• भ्रष्टाचार तक्रार\n\nतुम्हाला काय जाणून घ्यायचे आहे?"
+        }
+    }
+ 
+    f = fallbacks.get(lang, fallbacks['en'])
+    if 'awas' in q or 'housing' in q or 'house' in q or 'घर' in q:
+        return f.get('awas', f['default'])
+    elif 'ayushman' in q or 'health' in q or 'hospital' in q or 'आयुष्मान' in q:
+        return f.get('ayushman', f['default'])
+    elif 'pension' in q or 'old age' in q or 'elderly' in q or 'पेंशन' in q or 'पेन्शन' in q:
+        return f.get('pension', f['default'])
+    elif 'corruption' in q or 'bribe' in q or 'report' in q or 'भ्रष्टाचार' in q:
+        return f.get('corruption', f['default'])
+    elif 'score' in q or 'need score' in q or 'algorithm' in q or 'स्कोर' in q:
+        return f.get('score', f['default'])
+    elif 'ration' in q or 'antyodaya' in q or 'food' in q or 'राशन' in q or 'रेशन' in q:
+        return f.get('ration', f['default'])
+    else:
+        return f['default']
+
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)
-      
-      
+    
+    debug_mode = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
+    app.run(debug=debug_mode, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), threaded=True)

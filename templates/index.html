@@ -186,7 +186,10 @@
 
         {% if not result %}
         <div class="form-card">
-            <form method="POST" id="mainForm" onsubmit="return validateAndSubmit()">
+            <!-- FIX: autocomplete="off" prevents the browser from re-filling
+                 old values into a "fresh" form, and novalidate lets our JS
+                 validation run consistently across browsers. -->
+            <form method="POST" id="mainForm" autocomplete="off" novalidate onsubmit="return validateAndSubmit()">
                 <input type="hidden" name="lang" id="langInput" value="en"/>
 
                 <div class="form-section-title" id="section_personal">Personal Details</div>
@@ -194,20 +197,20 @@
 
                 <div class="form-group">
                     <label id="lbl_name">Full Name</label>
-                    <input type="text" name="person_name" id="person_name" placeholder="e.g. Ramesh Kumar" required />
+                    <input type="text" name="person_name" id="person_name" placeholder="e.g. Ramesh Kumar" autocomplete="off" required />
                     <div class="field-error" id="err_name">Please enter your full name</div>
                 </div>
 
                 <div class="form-group">
                     <label id="lbl_phone">Phone Number</label>
-                    <input type="tel" name="phone" id="phone" placeholder="e.g. 9876543210" maxlength="10" required />
+                    <input type="tel" name="phone" id="phone" placeholder="e.g. 9876543210" maxlength="10" autocomplete="off" required />
                     <div class="field-hint">Enter 10 digit mobile number</div>
                     <div class="field-error" id="err_phone">Please enter a valid 10-digit phone number</div>
                 </div>
 
                 <div class="form-group">
                     <label id="lbl_address">Address</label>
-                    <input type="text" name="address" id="address" placeholder="e.g. Village Rampur, Dist. Pune, Maharashtra" required />
+                    <input type="text" name="address" id="address" placeholder="e.g. Village Rampur, Dist. Pune, Maharashtra" autocomplete="off" required />
                     <div class="field-error" id="err_address">Please enter your address</div>
                 </div>
 
@@ -296,6 +299,16 @@
                 </div>
 
                 <button type="submit" class="submit-btn" id="submitBtn">Check Aid Eligibility</button>
+
+                <button type="button" onclick="clearForm()" style="
+                        width:100%;padding:10px;
+                        background:white;color:#c62828;
+                        border:2px solid #c62828;
+                        border-radius:10px;font-size:14px;
+                        font-weight:700;cursor:pointer;
+                        margin-top:8px;">
+                        🔄 Check for New Person / नया व्यक्ति / नवीन व्यक्ती
+                </button>
             </form>
         </div>
         {% endif %}
@@ -365,7 +378,9 @@
             <a href="javascript:history.back()" class="back-btn-main">
                 {% if lang == 'hi' %}← वापस जाएं{% elif lang == 'mr' %}← मागे जा{% else %}← Go Back{% endif %}
             </a>
-            <a href="/" class="check-another">
+            <!-- FIX: appended a cache-busting query param so this is always
+                 treated as a fresh navigation, not a bfcache restore -->
+            <a href="/?fresh=1" class="check-another">
                 {% if lang == 'hi' %}दूसरे व्यक्ति की जांच करें{% elif lang == 'mr' %}दुसऱ्या व्यक्तीची तपासणी करा{% else %}Check Another Person{% endif %}
             </a>
             <a href="/track?lang={{ lang }}" class="track-btn-main">
@@ -512,7 +527,6 @@ function applyTranslations(lang) {
     set('lbl_accident', t.lbl_accident); set('opt_acc_yes', t.opt_acc_yes); set('opt_acc_no', t.opt_acc_no);
     set('lbl_earning', t.lbl_earning); set('opt_earn_yes', t.opt_earn_yes); set('opt_earn_no', t.opt_earn_no);
     set('submitBtn', t.submitBtn);
-    // Update error messages
     set('err_name', t.err_name); set('err_phone', t.err_phone);
     set('err_address', t.err_address); set('err_age', t.err_age);
     set('err_income', t.err_income); set('err_family', t.err_family);
@@ -525,11 +539,19 @@ function showError(fieldId, errId) {
     if (err) err.classList.add('show');
 }
 
+function clearForm() {
+    // FIX: force a real reload (bypasses bfcache) instead of a soft navigation
+    window.location.href = '/?fresh=' + Date.now();
+}
+
 function clearError(fieldId, errId) {
     const field = document.getElementById(fieldId);
     const err = document.getElementById(errId);
-    if (field) { field.classList.remove('error-field'); field.classList.add('success-field'); }
-    if (err) err.classList.remove('show');
+    if(field) {
+        field.classList.remove('error-field');
+        field.classList.add('success-field');
+    }
+    if(err) err.classList.remove('show');
 }
 
 function validateAndSubmit() {
@@ -602,6 +624,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// ============================================================
+// FIX #1: Reset the form whenever the page is restored from the
+// browser's back/forward cache (bfcache). This is the main cause
+// of "old person's data still showing" when clicking
+// "Check Another Person" / going back and forward.
+// ============================================================
+window.addEventListener('pageshow', function (event) {
+    const form = document.getElementById('mainForm');
+    if (event.persisted && form) {
+        form.reset();
+        document.querySelectorAll('.error-field, .success-field').forEach(el => {
+            el.classList.remove('error-field', 'success-field');
+        });
+        document.querySelectorAll('.field-error.show').forEach(el => {
+            el.classList.remove('show');
+        });
+    }
+});
+
 function printResult() {
     document.querySelectorAll('[id^="ps-"]').forEach(el => el.style.display = 'flex');
     window.print();
@@ -644,24 +685,60 @@ window.addEventListener('appinstalled', () => {
 </script>
 <script>
 (function(){
-    // Read lang from URL ?lang=hi etc
     var params = new URLSearchParams(window.location.search);
     var urlLang = params.get('lang');
     if(urlLang && ['en','hi','mr'].indexOf(urlLang) !== -1){
-        // Set hidden lang field in form if it exists
         var langField = document.querySelector('input[name="lang"]');
         if(langField) langField.value = urlLang;
- 
-        // Trigger language change if selectLang function exists
         if(typeof selectLang === 'function'){
             selectLang(urlLang);
         }
- 
-        // Also try clicking the correct language button
         var btn = document.querySelector('.lang-' + urlLang);
         if(btn && btn.click) btn.click();
     }
 })();
 </script>
+<!-- FLOATING CHATBOT BUTTON -->
+<a href="/chatbot" id="chat-float" style="
+    position: fixed;
+    bottom: 24px;
+    right: 20px;
+    width: 58px;
+    height: 58px;
+    background: linear-gradient(135deg, #000080, #3D2B8E);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    text-decoration: none;
+    box-shadow: 0 4px 20px rgba(0,0,80,0.4);
+    z-index: 999;
+    animation: pulse-chat 2s infinite;
+">🤖</a>
+
+<!-- Tooltip label -->
+<div style="
+    position: fixed;
+    bottom: 32px;
+    right: 86px;
+    background: #1a1a2e;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 20px;
+    z-index: 998;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+">Ask AI Assistant ✨</div>
+
+<style>
+@keyframes pulse-chat {
+    0%   { box-shadow: 0 4px 20px rgba(0,0,80,0.4); }
+    50%  { box-shadow: 0 4px 30px rgba(0,0,80,0.7), 0 0 0 8px rgba(0,0,128,0.15); }
+    100% { box-shadow: 0 4px 20px rgba(0,0,80,0.4); }
+}
+</style>
 </body>
 </html>

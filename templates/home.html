@@ -15,7 +15,7 @@
         /* LANGUAGE VISIBILITY — content only, not buttons */
         .lang-content.en,.lang-content.hi,.lang-content.mr { display:none; }
         body.lang-en .lang-content.en { display:block; }
-        body.lang-hi .lang-content.hi { display:block; }
+        body.lang-hi .lang-content.hi { display:block; } 
         body.lang-mr .lang-content.mr { display:block; }
         .en,.hi,.mr { display:none; }
         body.lang-en .en { display:block; }
@@ -282,7 +282,8 @@
             </div>
         </div>
     </div>
-  <a href="{{ url_for('index') }}?lang=en" id="start-btn" class="start-btn">
+ 
+<a href="{{ url_for('index') }}?lang=en&clear=true" id="start-btn" class="start-btn" onclick="localStorage.clear(); sessionStorage.clear();">
     <span class="en-inline">Check My Eligibility →</span>
     <span class="hi-inline">मेरी पात्रता जांचें →</span>
     <span class="mr-inline">माझी पात्रता तपासा →</span>
@@ -414,7 +415,6 @@
     </a>
 </p>
 </div>
-
 <script>
 function setLang(lang, el, e) {
     if (e) e.preventDefault();
@@ -427,10 +427,10 @@ function setLang(lang, el, e) {
     el.classList.add("active");
     localStorage.setItem("pai_lang", lang);
 
-    // Update the Eligibility Link dynamically
+    // FIX: Clear local browser storage and append clear flag to URL
     const startBtn = document.getElementById("start-btn");
     if (startBtn) {
-        startBtn.href = "{{ url_for('index') }}?lang=" + lang;
+        startBtn.href = "{{ url_for('index') }}?lang=" + lang + "&clear=true";
     }
 }
 
@@ -446,29 +446,15 @@ window.onload = function () {
     let selected = document.getElementById("btn-" + lang);
     if(selected) selected.classList.add("active");
 
-    // Initialize the Eligibility Link on page load
+    // FIX: Clear local browser storage and append clear flag to URL on load
     const startBtn = document.getElementById("start-btn");
     if (startBtn) {
-        startBtn.href = "{{ url_for('index') }}?lang=" + lang;
+        startBtn.href = "{{ url_for('index') }}?lang=" + lang + "&clear=true";
+        startBtn.addEventListener('click', function() {
+            localStorage.clear();
+            sessionStorage.clear();
+        });
     }
-};
-
-window.onload = function () {
-
-    let lang = localStorage.getItem("pai_lang") || "en";
-
-    document.body.classList.remove("lang-en","lang-hi","lang-mr");
-    document.body.classList.add("lang-" + lang);
-
-    document.querySelectorAll(".lang-btn").forEach(btn=>{
-        btn.classList.remove("active");
-    });
-
-    let selected = document.getElementById("btn-" + lang);
-    if(selected)
-        selected.classList.add("active");
-
-   
 };
 
 // Service Worker
@@ -476,5 +462,47 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("/static/service-worker.js");
 }
 </script>
+<!-- FLOATING CHATBOT BUTTON -->
+<a href="/chatbot" id="chat-float" style="
+    position: fixed;
+    bottom: 24px;
+    right: 20px;
+    width: 58px;
+    height: 58px;
+    background: linear-gradient(135deg, #000080, #3D2B8E);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    text-decoration: none;
+    box-shadow: 0 4px 20px rgba(0,0,80,0.4);
+    z-index: 999;
+    animation: pulse-chat 2s infinite;
+">🤖</a>
+
+<!-- Tooltip label -->
+<div style="
+    position: fixed;
+    bottom: 32px;
+    right: 86px;
+    background: #1a1a2e;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 20px;
+    z-index: 998;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+">Ask AI Assistant ✨</div>
+
+<style>
+@keyframes pulse-chat {
+    0%   { box-shadow: 0 4px 20px rgba(0,0,80,0.4); }
+    50%  { box-shadow: 0 4px 30px rgba(0,0,80,0.7), 0 0 0 8px rgba(0,0,128,0.15); }
+    100% { box-shadow: 0 4px 20px rgba(0,0,80,0.4); }
+}
+</style>
 </body>
 </html>
