@@ -141,9 +141,7 @@ def init_db():
        )
    ''')
 
-    # Default admin users. Passwords can be overridden via environment
-    # variables (recommended before any public deployment); if not set,
-    # they fall back to the original defaults so nothing breaks.
+    
     try:
         c.execute(
             "INSERT INTO admin_users (username, password, role, full_name) VALUES (?, ?, ?, ?)",
@@ -266,6 +264,7 @@ SCHEMES = {
         "saubhagya": ("normal", "Saubhagya Scheme (Free Electricity)", "Free Connection"),
         "jan_dhan": ("normal", "PM Jan Dhan Yojana (Free Bank Account)", "Zero Balance Account"),
         "basic": ("normal", "Basic Community Support and Ration Assistance", "As applicable"),
+        "widow_pension": ("normal", "Indira Gandhi National Widow Pension", "Rs. 300/month"),
     },
     "hi": {
         "pm_jan_arogya": ("urgent", "PM जन आरोग्य योजना (आपातकालीन चिकित्सा सहायता)", "रु. 5,00,000/वर्ष"),
@@ -284,6 +283,7 @@ SCHEMES = {
         "saubhagya": ("normal", "सौभाग्य योजना (मुफ्त बिजली)", "मुफ्त कनेक्शन"),
         "jan_dhan": ("normal", "PM जन धन योजना (मुफ्त बैंक खाता)", "शून्य बैलेंस खाता"),
         "basic": ("normal", "बुनियादी सामुदायिक सहायता और राशन सहायता", "लागू अनुसार"),
+        "widow_pension": ("normal", "इंदिरा गांधी राष्ट्रीय विधवा पेंशन", "रु. 300/माह"),
     },
     "mr": {
         "pm_jan_arogya": ("urgent", "PM जन आरोग्य योजना (आपत्कालीन वैद्यकीय मदत)", "रु. 5,00,000/वर्ष"),
@@ -302,6 +302,7 @@ SCHEMES = {
         "saubhagya": ("normal", "सौभाग्य योजना (मोफत वीज)", "मोफत कनेक्शन"),
         "jan_dhan": ("normal", "PM जन धन योजना (मोफत बँक खाते)", "शून्य शिल्लक खाते"),
         "basic": ("normal", "मूलभूत सामुदायिक मदत आणि रेशन सहाय्य", "लागू असेल तसे"),
+        "widow_pension": ("normal", "इंदिरा गांधी राष्ट्रीय विधवा पेन्शन", "रु. 300/महिना"),
     }
 }
 
@@ -339,11 +340,11 @@ SCHEME_DETAILS = {
     "annapurna": {
         "en": {"name": "Annapurna Scheme", "amount": "10 kg free food grains per month", "description": "Free food grains to senior citizens not covered under NSAP old age pension.", "eligibility": ["Age 65 years and above", "Not receiving old age pension", "Indigent/destitute"], "documents": ["Aadhaar Card", "Age Proof", "BPL Certificate"], "how_to_apply": "Apply at Gram Panchayat or Block Office.", "website": "https://dfpd.gov.in", "helpline": "1800-111-001"},
         "hi": {"name": "अन्नपूर्णा योजना", "amount": "10 किग्रा मुफ्त खाद्यान्न प्रति माह", "description": "NSAP वृद्धावस्था पेंशन के अंतर्गत न आने वाले वरिष्ठ नागरिकों को मुफ्त खाद्यान्न।", "eligibility": ["65 वर्ष और उससे अधिक आयु", "वृद्धावस्था पेंशन नहीं मिल रही", "निराश्रित"], "documents": ["आधार कार्ड", "आयु प्रमाण", "BPL प्रमाण पत्र"], "how_to_apply": "ग्राम पंचायत या ब्लॉक कार्यालय में आवेदन करें।", "website": "https://dfpd.gov.in", "helpline": "1800-111-001"},
-        "mr": {"name": "अन्नपूर्णा योजना", "amount": "10 किग्रा मोफत अन्नधान्य प्रति महिना", "description": "NSAP वृद्धापकाळ निवृत्तीवेतनाखाली न येणाऱ्या ज्येष्ठ नागरिकांना मोफत अन्नधान्य.", "eligibility": ["65 वर्षे आणि त्याहून अधिक वय", "वृद्धापकाळ निवृत्तीवेतन मिळत नाही", "निराधार"], "documents": ["आधार कार्ड", "वयाचा पुरावा", "BPL प्रमाणपत्र"], "how_to_apply": "ग्रामपंचायत किंवा गट कार्यालयात अर्ज करा.", "website": "https://dfpd.gov.in", "helpline": "1800-111-001"}
+        "mr": {"name": "अन्नपूर्णा योजना", "amount": "10 किग्रा मोफत अन्नधान्य प्रति महिना", "description": "NSAP वृद्धापकाळ निवृत्तीवेतनाखाली न येथे असणाऱ्या ज्येष्ठ नागरिकांना मोफत अन्नधान्य.", "eligibility": ["65 वर्षे आणि त्याहून अधिक वय", "वृद्धापकाळ निवृत्तीवेतन मिळत नाही", "निराधार"], "documents": ["आधार कार्ड", "वयाचा पुरावा", "BPL प्रमाणपत्र"], "how_to_apply": "ग्रामपंचायत किंवा गट कार्यालयात अर्ज करा.", "website": "https://dfpd.gov.in", "helpline": "1800-111-001"}
     },
     "ayushman": {
         "en": {"name": "Ayushman Bharat (Free Health Insurance)", "amount": "Rs. 5,00,000 per year", "description": "Health insurance cover for secondary and tertiary hospitalization for BPL families.", "eligibility": ["BPL family", "SECC 2011 listed", "No private health insurance"], "documents": ["Aadhaar Card", "Ration Card", "SECC Certificate"], "how_to_apply": "Visit nearest empanelled hospital. Show Aadhaar card for cashless treatment.", "website": "https://pmjay.gov.in", "helpline": "14555"},
-        "hi": {"name": "आयुष्मान भारत (मुफ्त स्वास्थ्य बीमा)", "amount": "रु. 5,00,000 प्रति वर्ष", "description": "BPL परिवारों के लिए अस्पताल में भर्ती के लिए स्वास्थ्य बीमा कवर।", "eligibility": ["BPL परिवार", "SECC 2011 में सूचीबद्ध", "कोई निजी स्वास्थ्य बीमा नहीं"], "documents": ["आधार कार्ड", "राशन कार्ड", "SECC प्रमाण पत्र"], "how_to_apply": "नजदीकी सूचीबद्ध अस्पताल जाएं।", "website": "https://pmjay.gov.in", "helpline": "14555"},
+        "hi": {"name": "आयुष्मान भारत (मुफ्त स्वास्थ्य बीमा)", "amount": "रु. 5,00,000 प्रति वर्ष", "description": "BPL परिवारों के लिए hospital में भर्ती के लिए स्वास्थ्य बीमा कवर।", "eligibility": ["BPL परिवार", "SECC 2011 में सूचीबद्ध", "कोई निजी स्वास्थ्य बीमा नहीं"], "documents": ["आधार कार्ड", "राशन कार्ड", "SECC प्रमाण पत्र"], "how_to_apply": "नजदीकी सूचीबद्ध अस्पताल जाएं।", "website": "https://pmjay.gov.in", "helpline": "14555"},
         "mr": {"name": "आयुष्मान भारत (मोफत आरोग्य विमा)", "amount": "रु. 5,00,000 प्रति वर्ष", "description": "BPL कुटुंबांसाठी रुग्णालयात भर्तीसाठी आरोग्य विमा कव्हर.", "eligibility": ["BPL कुटुंब", "SECC 2011 मध्ये नोंदणीकृत", "कोणताही खाजगी आरोग्य विमा नाही"], "documents": ["आधार कार्ड", "रेशन कार्ड", "SECC प्रमाणपत्र"], "how_to_apply": "जवळच्या सूचीबद्ध रुग्णालयात जा.", "website": "https://pmjay.gov.in", "helpline": "14555"}
     },
     "divyangjan": {
@@ -384,7 +385,50 @@ SCHEME_DETAILS = {
     "basic": {
         "en": {"name": "Basic Community Support and Ration Assistance", "amount": "As applicable", "description": "Local community support programs including ration assistance and basic welfare services.", "eligibility": ["Any person in need", "BPL or poor household"], "documents": ["Aadhaar Card", "Any identity proof"], "how_to_apply": "Contact nearest Gram Panchayat, Municipal Corporation, or local NGO.", "website": "https://socialjustice.gov.in", "helpline": "1800-180-6763"},
         "hi": {"name": "बुनियादी सामुदायिक सहायता और राशन सहायता", "amount": "लागू अनुसार", "description": "राशन सहायता और बुनियादी कल्याण सेवाओं सहित स्थानीय सामुदायिक सहायता।", "eligibility": ["जरूरतमंद कोई भी व्यक्ति", "BPL या गरीब परिवार"], "documents": ["आधार कार्ड", "कोई भी पहचान प्रमाण"], "how_to_apply": "निकटतम ग्राम पंचायत या स्थानीय NGO से संपर्क करें।", "website": "https://socialjustice.gov.in", "helpline": "1800-180-6763"},
-        "mr": {"name": "मूलभूत सामुदायिक मदत आणि रेशन सहाय्य", "amount": "लागू असेल तसे", "description": "रेशन मदत आणि मूलभूत कल्याण सेवांसह स्थानिक सामुदायिक मदत.", "eligibility": ["गरजू कोणताही व्यक्ती", "BPL किंवा गरीब कुटुंब"], "documents": ["आधार कार्ड", "कोणताही ओळख पुरावा"], "how_to_apply": "जवळच्या ग्रामपंचायत किंवा स्थानिक NGO शी संपर्क करा.", "website": "https://socialjustice.gov.in", "helpline": "1800-180-6763"}
+        "mr": {"name": "मूलभूत सामुदायिक मदत आणि रेशन सहाय्य", "amount": "लागू असेल तसे", "description": "रेशन मदत आणि मूलभूत कल्याण सेवांसह स्थानिक सामुदायिक मदत.", "eligibility": ["गरजू कोणताही व्यक्ती", "BPL किंवा गरीब कुटुंब"], "documents": ["आधार कार्ड", "कोणताही ओळख पुरावा"], "how_to_apply": "जवळच्याग्रामपंचायत किंवा स्थानिक NGO शी संपर्क करा.", "website": "https://socialjustice.gov.in", "helpline": "1800-180-6763"}
+    }
+}
+
+MH_KEYWORDS = [
+    'maharashtra', 'pune', 'mumbai', 'nashik', 'nagpur', 'Sambhaji Nagar',
+    'solapur', 'kolhapur', 'satara', 'sangli', 'ahmednagar', 'latur',
+    'nanded', 'osmanabad', 'beed', 'jalna', 'hingoli', 'parbhani',
+    'washim', 'akola', 'amravati', 'wardha', 'yavatmal', 'buldhana',
+    'chandrapur', 'gadchiroli', 'gondia', 'bhandara', 'raigad',
+    'ratnagiri', 'sindhudurg', 'thane', 'palghar', 'dhule', 'nandurbar',
+    'jalgaon', 'hinganghat', 'vidarbha', 'marathwada', 'konkan', 'mh'
+]
+
+MH_SCHEMES = {
+    'en': {
+        'ladki_bahin':    ('urgent', 'Ladki Bahin Yojana (Maharashtra)', 'Rs. 1,500/month'),
+        'mh_health':      ('urgent', 'Mahatma Phule Jan Arogya Yojana (MH)', 'Rs. 5 lakh/yr'),
+        'shravan_bal':    ('normal', 'Shravan Bal Seva Pension (MH)', 'Rs. 600/month'),
+        'gharkul':        ('normal', 'Ramai Awas Gharkul Yojana (MH)', 'Free House'),
+        'sanjay_gandhi':  ('normal', 'Sanjay Gandhi Niradhar Yojana (MH)', 'Rs. 600/month'),
+        'rajmata_jijau':  ('normal', 'Rajmata Jijau Mata-Bal Swasthya (MH)', 'Free maternal health'),
+        'mh_ration':      ('normal', 'Maharashtra Yellow Ration Card (MH)', 'Subsidised ration'),
+        'vayoshri_mh':    ('normal', 'Vayoshri Yojana Maharashtra (MH)', 'Free aids for elderly'),
+    },
+    'hi': {
+        'ladki_bahin':    ('urgent', 'लड़की बहन योजना (महाराष्ट्र)', 'रु. 1,500/माह'),
+        'mh_health':      ('urgent', 'महात्मा फुले जन आरोग्य योजना (MH)', 'रु. 5 लाख/वर्ष'),
+        'shravan_bal':    ('normal', 'श्रवण बाल सेवा पेंशन (MH)', 'रु. 600/माह'),
+        'gharkul':        ('normal', 'रमाई आवास घरकुल योजना (MH)', 'मुफ्त घर'),
+        'sanjay_gandhi':  ('normal', 'संजय गांधी निराधार योजना (MH)', 'रु. 600/माह'),
+        'rajmata_jijau':  ('normal', 'राजमाता जिजाऊ माता-बाल स्वास्थ्य (MH)', 'मुफ्त मातृ स्वास्थ्य'),
+        'mh_ration':      ('normal', 'महाराष्ट्र पीला राशन कार्ड (MH)', 'सब्सिडी राशन'),
+        'vayoshri_mh':    ('normal', 'वयोश्री योजना महाराष्ट्र (MH)', 'बुजुर्गों के लिए मदद'),
+    },
+    'mr': {
+        'ladki_bahin':    ('urgent', 'लाडकी बहीण योजना (महाराष्ट्र)', 'रु. 1,500/महिना'),
+        'mh_health':      ('urgent', 'महात्मा फुले जन आरोग्य योजना (MH)', 'रु. 5 lakh/वर्ष'),
+        'shravan_bal':    ('normal', 'श्रवण बाल सेवा निवृत्ती वेतन (MH)', 'रु. 600/महिना'),
+        'gharkul':        ('normal', 'रमाई आवास घरकुल योजना (MH)', 'मोफत घर'),
+        'sanjay_gandhi':  ('normal', 'संजय गांधी निराधार योजना (MH)', 'रु. 600/महिना'),
+        'rajmata_jijau':  ('normal', 'राजमाता जिजाऊ माता-बाल आरोग्य (MH)', 'मोफत माता आरोग्य'),
+        'mh_ration':      ('normal', 'महाराष्ट्र पिवळे रेशन कार्ड (MH)', 'अनुदानित रेशन'),
+        'vayoshri_mh':    ('normal', 'वयोश्री योजना महाराष्ट्र (MH)', 'वृद्धांसाठी मदत'),
     }
 }
 
@@ -422,6 +466,8 @@ def get_schemes(score, data, lang='en'):
     electricity = data['electricity']
     ration = data['ration']
     earning = data['earning_member_died']
+    income = int(data.get('income', 0) or 0)
+    address = data.get('address', '').lower()
     s = SCHEMES.get(lang, SCHEMES['en'])
     if medical == 'emergency': schemes.append(('pm_jan_arogya',) + s['pm_jan_arogya'])
     if accident == 'yes': schemes.append(('state_emergency',) + s['state_emergency'])
@@ -443,7 +489,46 @@ def get_schemes(score, data, lang='en'):
         schemes.append(('saubhagya',) + s['saubhagya'])
     if score >= 40: schemes.append(('jan_dhan',) + s['jan_dhan'])
     schemes.append(('basic',) + s['basic'])
-    return schemes
+
+    is_mh = any(kw in address for kw in MH_KEYWORDS)
+    if is_mh:
+        gender = data.get('gender', '')
+        widow = data.get('widow_status', 'no')
+        
+        # Widow Pension — central scheme
+        if widow == 'yes':
+            schemes.append(('widow_pension',) + s.get('widow_pension',
+                ('normal', 'Widow Pension Scheme', 'Rs. 300/month')))
+                
+        mh = MH_SCHEMES.get(lang, MH_SCHEMES['en'])
+        
+        # Ladki Bahin — female + Maharashtra + income limit
+        if is_mh and gender == 'female' and income < 20834:
+            schemes.append(('ladki_bahin',) + mh['ladki_bahin'])
+            
+        if medical in ['emergency', 'chronic_illness', 'disability'] or income < 10000:
+            schemes.append(('mh_health',) + mh['mh_health'])
+        if age == 'elderly':
+            schemes.append(('shravan_bal',) + mh['shravan_bal'])
+            if medical in ['disability', 'chronic_illness']:
+                schemes.append(('vayoshri_mh',) + mh['vayoshri_mh'])
+        if housing in ['homeless', 'kutcha']:
+            schemes.append(('gharkul',) + mh['gharkul'])
+        if earning == 'yes' or (income < 5000 and age == 'elderly'):
+            schemes.append(('sanjay_gandhi',) + mh['sanjay_gandhi'])
+        if age == 'child':
+            schemes.append(('rajmata_jijau',) + mh['rajmata_jijau'])
+        if ration == 'no' or income < 10000:
+            schemes.append(('mh_ration',) + mh['mh_ration'])
+        
+
+    seen = set()
+    unique = []
+    for item in schemes:
+        if item[0] not in seen:
+            seen.add(item[0])
+            unique.append(item)
+    return unique
 
 def get_priority(score, data):
     age = data['age_group']
@@ -1274,7 +1359,7 @@ def get_fallback_answer(question, lang='en'):
             'awas': "PM आवास योजना BPL परिवारों को घर बनाने के लिए ₹1,20,000 देती है।\n\nजरूरी दस्तावेज़:\n• आधार कार्ड\n• BPL प्रमाण पत्र\n• जमीन का दस्तावेज़\n• बैंक खाता विवरण\n\nग्राम पंचायत या pmaymis.gov.in पर आवेदन करें।\nहेल्पलाइन: 1800-11-6163",
             'ayushman': "आयुष्मान भारत में हर साल ₹5 लाख तक का मुफ्त इलाज मिलता है।\n\nजरूरी दस्तावेज़:\n• आधार कार्ड\n• राशन कार्ड\n\nकिसी भी सूचीबद्ध अस्पताल में जाएं।\nहेल्पलाइन: 14555",
             'pension': "वृद्धावस्था पेंशन में 60+ उम्र के BPL नागरिकों को ₹200-500 प्रति माह मिलता है।\n\nजरूरी दस्तावेज़:\n• आधार कार्ड\n• उम्र प्रमाण\n• BPL प्रमाण पत्र\n\nग्राम पंचायत में आवेदन करें।",
-            'corruption': "भ्रष्टाचार की शिकायत के लिए:\n1. ऐप में 'भ्रष्टाचार रिपोर्ट' पर क्लिक करें\n2. अधिकारी का नाम, योजना, मांगी गई राशि भरें\n3. आपको PAI-2026-XXXX ट्रैकिंग ID मिलेगी\n4. स्थिति ट्रैक करें: दर्ज → प्राप्त → कार्रवाई → हल",
+            'corruption': "भ्रष्टाचार की शिकायत के लिए:\n1. ऐप में 'भ्रष्टाचार रिपोर्ट' पर क्लिक करें\n2. के अधिकारी का नाम, योजना, मांगी गई राशि भरें\n3. आपको PAI-2026-XXXX ट्रैकिंग ID मिलेगी\n4. स्थिति ट्रैक करें: दर्ज → प्राप्त → कार्रवाई → हल",
             'default': "मैं इनमें मदद कर सकता हूं:\n• PM आवास योजना\n• आयुष्मान भारत\n• वृद्धावस्था/विधवा पेंशन\n• राशन योजनाएं\n• भ्रष्टाचार की शिकायत\n\nआप क्या जानना चाहते हैं?"
         },
         'mr': {

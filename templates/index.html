@@ -186,9 +186,6 @@
 
         {% if not result %}
         <div class="form-card">
-            <!-- FIX: autocomplete="off" prevents the browser from re-filling
-                 old values into a "fresh" form, and novalidate lets our JS
-                 validation run consistently across browsers. -->
             <form method="POST" id="mainForm" autocomplete="off" novalidate onsubmit="return validateAndSubmit()">
                 <input type="hidden" name="lang" id="langInput" value="en"/>
 
@@ -298,9 +295,26 @@
                     </select>
                 </div>
 
-                <button type="submit" class="submit-btn" id="submitBtn">Check Aid Eligibility</button>
+                <div class="form-group">
+                    <label id="lbl_gender">Gender</label>
+                    <select name="gender" required>
+                        <option value="">-- Select --</option>
+                        <option value="female" id="opt_female">Female</option>
+                        <option value="male" id="opt_male">Male</option>
+                        <option value="other" id="opt_other">Other</option>
+                    </select>
+                </div>
 
+                <div class="form-group">
+                    <label id="lbl_widow">Widow / Widower Status</label>
+                    <select name="widow_status" required>
+                        <option value="">-- Select --</option>
+                        <option value="yes" id="opt_widow_yes">Yes — Widow/Widower</option>
+                        <option value="no" id="opt_widow_no">No</option>
+                    </select>
+                </div>
                 
+                <button type="submit" class="submit-btn" id="submitBtn">Check Aid Eligibility</button>
             </form>
         </div>
         {% endif %}
@@ -361,7 +375,7 @@
                 <p>सरकारी सहायता का हर रुपया आपका है। अगर किसी अधिकारी ने पैसे काटे हैं — तुरंत रिपोर्ट करें।</p>
                 <p>सरकारी मदतीचा प्रत्येक रुपया तुमचा आहे। जर कोणत्या अधिकाऱ्याने पैसे कापले — तात्काळ तक्रार करा।</p>
                 <a href="/corruption?lang={{ lang }}" class="corruption-btn">
-                    {% if lang == 'hi' %}भ्रष्टाचार रिपोर्ट करें{% elif lang == 'mr' %}भ्रष्टाचाराची तक्रार करा{% else %}Report Corruption / Deduction of Aid{% endif %}
+                    {% if lang == 'hi' %}भรष्टाचार रिपोर्ट करें{% elif lang == 'mr' %}भ्रष्टाचाराची तक्रार करा{% else %}Report Corruption / Deduction of Aid{% endif %}
                 </a>
             </div>
         </div>
@@ -409,6 +423,10 @@ const translations = {
         opt_med_emergency: "Medical Emergency", opt_med_chronic: "Chronic Illness", opt_med_disability: "Disability", opt_med_none: "No Medical Issues",
         lbl_accident: "Any Recent Accident?", opt_acc_yes: "Yes", opt_acc_no: "No",
         lbl_earning: "Has Earning Member of Family Died?", opt_earn_yes: "Yes", opt_earn_no: "No",
+        lbl_gender: "Gender",
+        opt_female: "Female", opt_male: "Male", opt_other: "Other",
+        lbl_widow: "Widow / Widower Status",
+        opt_widow_yes: "Yes — Widow/Widower", opt_widow_no: "No",
         submitBtn: "Check Aid Eligibility",
         loading: "Checking Eligibility...", loadingSub: "Please wait a moment",
         err_name: "Please enter your full name",
@@ -416,7 +434,7 @@ const translations = {
         err_address: "Please enter your address",
         err_age: "Please select an option",
         err_income: "Please enter monthly income",
-        err_family: "Please enter family size"
+        err_family: "Please enter family size",
     },
     hi: {
         title: "गरीबी सहायता पहचानकर्ता",
@@ -439,6 +457,10 @@ const translations = {
         opt_med_emergency: "चिकित्सा आपात स्थिति", opt_med_chronic: "दीर्घकालिक बीमारी", opt_med_disability: "विकलांगता", opt_med_none: "कोई चिकित्सा समस्या नहीं",
         lbl_accident: "कोई हालिया दुर्घटना?", opt_acc_yes: "हाँ", opt_acc_no: "नहीं",
         lbl_earning: "क्या परिवार के कमाने वाले सदस्य का निधन हुआ है?", opt_earn_yes: "हाँ", opt_earn_no: "नहीं",
+        lbl_gender: "लिंग",
+        opt_female: "महिला", opt_male: "पुरुष", opt_other: "अन्य",
+        lbl_widow: "विधवा / विधुर स्थिति",
+        opt_widow_yes: "हाँ — विधवा/विधुर", opt_widow_no: "नहीं",
         submitBtn: "सहायता पात्रता जांचें",
         loading: "पात्रता जांच रही है...", loadingSub: "कृपया प्रतीक्षा करें",
         err_name: "कृपया अपना पूरा नाम दर्ज करें",
@@ -469,6 +491,10 @@ const translations = {
         opt_med_emergency: "वैद्यकीय आणीबाणी", opt_med_chronic: "दीर्घकालीन आजार", opt_med_disability: "अपंगत्व", opt_med_none: "कोणतीही वैद्यकीय समस्या नाही",
         lbl_accident: "कोणताही अलीकडील अपघात?", opt_acc_yes: "हो", opt_acc_no: "नाही",
         lbl_earning: "कुटुंबातील कमावत्या सदस्याचे निधन झाले आहे का?", opt_earn_yes: "हो", opt_earn_no: "नाही",
+        lbl_gender: "लिंग",
+        opt_female: "महिला", opt_male: "पुरुष", opt_other: "इतर",
+        lbl_widow: "विधवा / विधुर स्थिती",
+        opt_widow_yes: "हो — विधवा/विधुर", opt_widow_no: "नाही",
         submitBtn: "मदत पात्रता तपासा",
         loading: "पात्रता तपासत आहोत...", loadingSub: "कृपया थांबा",
         err_name: "कृपया तुमचे पूर्ण नाव टाका",
@@ -516,6 +542,10 @@ function applyTranslations(lang) {
     set('opt_med_emergency', t.opt_med_emergency); set('opt_med_chronic', t.opt_med_chronic); set('opt_med_disability', t.opt_med_disability); set('opt_med_none', t.opt_med_none);
     set('lbl_accident', t.lbl_accident); set('opt_acc_yes', t.opt_acc_yes); set('opt_acc_no', t.opt_acc_no);
     set('lbl_earning', t.lbl_earning); set('opt_earn_yes', t.opt_earn_yes); set('opt_earn_no', t.opt_earn_no);
+    set('lbl_gender', t.lbl_gender);
+    set('opt_female', t.opt_female); set('opt_male', t.opt_male); set('opt_other', t.opt_other);
+    set('lbl_widow', t.lbl_widow);
+    set('opt_widow_yes', t.opt_widow_yes); set('opt_widow_no', t.opt_widow_no);
     set('submitBtn', t.submitBtn);
     set('err_name', t.err_name); set('err_phone', t.err_phone);
     set('err_address', t.err_address); set('err_age', t.err_age);
@@ -530,7 +560,6 @@ function showError(fieldId, errId) {
 }
 
 function clearForm() {
-    // FIX: force a real reload (bypasses bfcache) instead of a soft navigation
     window.location.href = '/?fresh=' + Date.now();
 }
 
@@ -613,7 +642,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-
 
 window.addEventListener('pageshow', function (event) {
     const form = document.getElementById('mainForm');
