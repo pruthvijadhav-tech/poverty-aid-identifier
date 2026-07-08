@@ -264,7 +264,6 @@ SCHEMES = {
         "saubhagya": ("normal", "Saubhagya Scheme (Free Electricity)", "Free Connection"),
         "jan_dhan": ("normal", "PM Jan Dhan Yojana (Free Bank Account)", "Zero Balance Account"),
         "basic": ("normal", "Basic Community Support and Ration Assistance", "As applicable"),
-        "widow_pension": ("normal", "Indira Gandhi National Widow Pension", "Rs. 300/month"),
     },
     "hi": {
         "pm_jan_arogya": ("urgent", "PM जन आरोग्य योजना (आपातकालीन चिकित्सा सहायता)", "रु. 5,00,000/वर्ष"),
@@ -283,7 +282,6 @@ SCHEMES = {
         "saubhagya": ("normal", "सौभाग्य योजना (मुफ्त बिजली)", "मुफ्त कनेक्शन"),
         "jan_dhan": ("normal", "PM जन धन योजना (मुफ्त बैंक खाता)", "शून्य बैलेंस खाता"),
         "basic": ("normal", "बुनियादी सामुदायिक सहायता और राशन सहायता", "लागू अनुसार"),
-        "widow_pension": ("normal", "इंदिरा गांधी राष्ट्रीय विधवा पेंशन", "रु. 300/माह"),
     },
     "mr": {
         "pm_jan_arogya": ("urgent", "PM जन आरोग्य योजना (आपत्कालीन वैद्यकीय मदत)", "रु. 5,00,000/वर्ष"),
@@ -302,7 +300,6 @@ SCHEMES = {
         "saubhagya": ("normal", "सौभाग्य योजना (मोफत वीज)", "मोफत कनेक्शन"),
         "jan_dhan": ("normal", "PM जन धन योजना (मोफत बँक खाते)", "शून्य शिल्लक खाते"),
         "basic": ("normal", "मूलभूत सामुदायिक मदत आणि रेशन सहाय्य", "लागू असेल तसे"),
-        "widow_pension": ("normal", "इंदिरा गांधी राष्ट्रीय विधवा पेन्शन", "रु. 300/महिना"),
     }
 }
 
@@ -340,11 +337,11 @@ SCHEME_DETAILS = {
     "annapurna": {
         "en": {"name": "Annapurna Scheme", "amount": "10 kg free food grains per month", "description": "Free food grains to senior citizens not covered under NSAP old age pension.", "eligibility": ["Age 65 years and above", "Not receiving old age pension", "Indigent/destitute"], "documents": ["Aadhaar Card", "Age Proof", "BPL Certificate"], "how_to_apply": "Apply at Gram Panchayat or Block Office.", "website": "https://dfpd.gov.in", "helpline": "1800-111-001"},
         "hi": {"name": "अन्नपूर्णा योजना", "amount": "10 किग्रा मुफ्त खाद्यान्न प्रति माह", "description": "NSAP वृद्धावस्था पेंशन के अंतर्गत न आने वाले वरिष्ठ नागरिकों को मुफ्त खाद्यान्न।", "eligibility": ["65 वर्ष और उससे अधिक आयु", "वृद्धावस्था पेंशन नहीं मिल रही", "निराश्रित"], "documents": ["आधार कार्ड", "आयु प्रमाण", "BPL प्रमाण पत्र"], "how_to_apply": "ग्राम पंचायत या ब्लॉक कार्यालय में आवेदन करें।", "website": "https://dfpd.gov.in", "helpline": "1800-111-001"},
-        "mr": {"name": "अन्नपूर्णा योजना", "amount": "10 किग्रा मोफत अन्नधान्य प्रति महिना", "description": "NSAP वृद्धापकाळ निवृत्तीवेतनाखाली न येथे असणाऱ्या ज्येष्ठ नागरिकांना मोफत अन्नधान्य.", "eligibility": ["65 वर्षे आणि त्याहून अधिक वय", "वृद्धापकाळ निवृत्तीवेतन मिळत नाही", "निराधार"], "documents": ["आधार कार्ड", "वयाचा पुरावा", "BPL प्रमाणपत्र"], "how_to_apply": "ग्रामपंचायत किंवा गट कार्यालयात अर्ज करा.", "website": "https://dfpd.gov.in", "helpline": "1800-111-001"}
+        "mr": {"name": "अन्नपूर्णा योजना", "amount": "10 किग्रा मोफत अन्नधान्य प्रति महिना", "description": "NSAP वृद्धापकाळ निवृत्तीवेतनाखाली न येणाऱ्या ज्येष्ठ नागरिकांना मोफत अन्नधान्य.", "eligibility": ["65 वर्षे आणि त्याहून अधिक वय", "वृद्धापकाळ निवृत्तीवेतन मिळत नाही", "निराधार"], "documents": ["आधार कार्ड", "वयाचा पुरावा", "BPL प्रमाणपत्र"], "how_to_apply": "ग्रामपंचायत किंवा गट कार्यालयात अर्ज करा.", "website": "https://dfpd.gov.in", "helpline": "1800-111-001"}
     },
     "ayushman": {
         "en": {"name": "Ayushman Bharat (Free Health Insurance)", "amount": "Rs. 5,00,000 per year", "description": "Health insurance cover for secondary and tertiary hospitalization for BPL families.", "eligibility": ["BPL family", "SECC 2011 listed", "No private health insurance"], "documents": ["Aadhaar Card", "Ration Card", "SECC Certificate"], "how_to_apply": "Visit nearest empanelled hospital. Show Aadhaar card for cashless treatment.", "website": "https://pmjay.gov.in", "helpline": "14555"},
-        "hi": {"name": "आयुष्मान भारत (मुफ्त स्वास्थ्य बीमा)", "amount": "रु. 5,00,000 प्रति वर्ष", "description": "BPL परिवारों के लिए hospital में भर्ती के लिए स्वास्थ्य बीमा कवर।", "eligibility": ["BPL परिवार", "SECC 2011 में सूचीबद्ध", "कोई निजी स्वास्थ्य बीमा नहीं"], "documents": ["आधार कार्ड", "राशन कार्ड", "SECC प्रमाण पत्र"], "how_to_apply": "नजदीकी सूचीबद्ध अस्पताल जाएं।", "website": "https://pmjay.gov.in", "helpline": "14555"},
+        "hi": {"name": "आयुष्मान भारत (मुफ्त स्वास्थ्य बीमा)", "amount": "रु. 5,00,000 प्रति वर्ष", "description": "BPL परिवारों के लिए अस्पताल में भर्ती के लिए स्वास्थ्य बीमा कवर।", "eligibility": ["BPL परिवार", "SECC 2011 में सूचीबद्ध", "कोई निजी स्वास्थ्य बीमा नहीं"], "documents": ["आधार कार्ड", "राशन कार्ड", "SECC प्रमाण पत्र"], "how_to_apply": "नजदीकी सूचीबद्ध अस्पताल जाएं।", "website": "https://pmjay.gov.in", "helpline": "14555"},
         "mr": {"name": "आयुष्मान भारत (मोफत आरोग्य विमा)", "amount": "रु. 5,00,000 प्रति वर्ष", "description": "BPL कुटुंबांसाठी रुग्णालयात भर्तीसाठी आरोग्य विमा कव्हर.", "eligibility": ["BPL कुटुंब", "SECC 2011 मध्ये नोंदणीकृत", "कोणताही खाजगी आरोग्य विमा नाही"], "documents": ["आधार कार्ड", "रेशन कार्ड", "SECC प्रमाणपत्र"], "how_to_apply": "जवळच्या सूचीबद्ध रुग्णालयात जा.", "website": "https://pmjay.gov.in", "helpline": "14555"}
     },
     "divyangjan": {
@@ -382,10 +379,50 @@ SCHEME_DETAILS = {
         "hi": {"name": "PM जन धन योजना (मुफ्त बैंक खाता)", "amount": "शून्य बैलेंस खाता + RuPay डेबिट कार्ड", "description": "शून्य न्यूनतम बैलेंस और रु. 1 लाख दुर्घटना बीमा के साथ मुफ्त बैंक खाता।", "eligibility": ["कोई भी भारतीय नागरिक", "10 वर्ष और उससे अधिक आयु", "कोई मौजूदा बैंक खाता नहीं"], "documents": ["आधार कार्ड", "पासपोर्ट साइज फोटो"], "how_to_apply": "आधार कार्ड के साथ किसी भी राष्ट्रीयकृत बैंक शाखा में जाएं।", "website": "https://pmjdy.gov.in", "helpline": "1800-11-0001"},
         "mr": {"name": "PM जन धन योजना (मोफत बँक खाते)", "amount": "शून्य शिल्लक खाते + RuPay डेबिट कार्ड", "description": "शून्य किमान शिल्लक आणि रु. 1 लाख अपघात विमा सह मोफत बँक खाते.", "eligibility": ["कोणताही भारतीय नागरिक", "10 वर्षे आणि त्याहून अधिक वय", "कोणतेही विद्यमान बँक खाते नाही"], "documents": ["आधार कार्ड", "पासपोर्ट आकाराचा फोटो"], "how_to_apply": "आधार कार्डसह कोणत्याही राष्ट्रीयकृत बँक शाखेत जा.", "website": "https://pmjdy.gov.in", "helpline": "1800-11-0001"}
     },
+    "ladki_bahin": {
+        "en": {"name": "Ladki Bahin Yojana (Maharashtra)", "amount": "Rs. 1,500/month", "description": "Maharashtra government scheme providing Rs.1,500 per month financial assistance to women aged 21-65 years from economically weaker families.", "eligibility": ["Female aged 21-65 years", "Maharashtra resident", "Annual family income below Rs. 2.5 lakh", "Not a government employee or income tax payer"], "documents": ["Aadhaar Card", "Bank Account Passbook", "Income Certificate", "Age Proof", "Maharashtra Domicile Certificate"], "how_to_apply": "Apply online at ladakibahin.maharashtra.gov.in or visit nearest Gram Panchayat / Municipal office.", "website": "https://ladakibahin.maharashtra.gov.in", "helpline": "1800-120-8040"},
+        "hi": {"name": "लड़की बहन योजना (महाराष्ट्र)", "amount": "रु. 1,500/माह", "description": "महाराष्ट्र सरकार की योजना जो 21-65 वर्ष की महिलाओं को रु.1,500 प्रति माह वित्तीय सहायता देती है।", "eligibility": ["21-65 वर्ष की महिला", "महाराष्ट्र निवासी", "वार्षिक पारिवारिक आय रु. 2.5 लाख से कम", "सरकारी कर्मचारी या आयकर दाता नहीं"], "documents": ["आधार कार्ड", "बैंक पासबुक", "आय प्रमाण पत्र", "आयु प्रमाण", "महाराष्ट्र अधिवास प्रमाण पत्र"], "how_to_apply": "ladakibahin.maharashtra.gov.in पर ऑनलाइन आवेदन करें या निकटतम ग्राम पंचायत जाएं।", "website": "https://ladakibahin.maharashtra.gov.in", "helpline": "1800-120-8040"},
+        "mr": {"name": "लाडकी बहीण योजना (महाराष्ट्र)", "amount": "रु. 1,500/महिना", "description": "महाराष्ट्र सरकारची योजना जी 21-65 वर्षांच्या महिलांना रु.1,500 प्रति महिना आर्थिक मदत देते.", "eligibility": ["21-65 वर्षांची महिला", "महाराष्ट्र रहिवासी", "वार्षिक कौटुंबिक उत्पन्न रु. 2.5 लाखापेक्षा कमी", "सरकारी कर्मचारी नाही"], "documents": ["आधार कार्ड", "बँक पासबुक", "उत्पन्न प्रमाणपत्र", "वयाचा पुरावा", "महाराष्ट्र अधिवास प्रमाणपत्र"], "how_to_apply": "ladakibahin.maharashtra.gov.in वर ऑनलाइन अर्ज करा किंवा जवळच्या ग्रामपंचायतला जा.", "website": "https://ladakibahin.maharashtra.gov.in", "helpline": "1800-120-8040"}
+    },
+    "mh_health": {
+        "en": {"name": "Mahatma Phule Jan Arogya Yojana (Maharashtra)", "amount": "Rs. 5 lakh/year", "description": "Maharashtra state health insurance scheme providing cashless treatment up to Rs.5 lakh per year at empanelled hospitals.", "eligibility": ["Maharashtra resident", "Annual income below Rs. 1 lakh (Yellow/Orange ration card holders)", "BPL families", "Farmers (Shetkari)"], "documents": ["Aadhaar Card", "Ration Card (Yellow/Orange)", "Income Certificate", "Maharashtra Domicile Proof"], "how_to_apply": "Visit any empanelled government or private hospital in Maharashtra with Aadhaar and ration card.", "website": "https://www.jeevandayee.gov.in", "helpline": "155388"},
+        "hi": {"name": "महात्मा फुले जन आरोग्य योजना (महाराष्ट्र)", "amount": "रु. 5 लाख/वर्ष", "description": "महाराष्ट्र राज्य स्वास्थ्य बीमा योजना जो सूचीबद्ध अस्पतालों में रु.5 लाख तक का कैशलेस उपचार प्रदान करती है।", "eligibility": ["महाराष्ट्र निवासी", "वार्षिक आय रु. 1 लाख से कम", "BPL परिवार", "किसान (शेतकरी)"], "documents": ["आधार कार्ड", "राशन कार्ड (पीला/नारंगी)", "आय प्रमाण पत्र", "महाराष्ट्र निवास प्रमाण"], "how_to_apply": "आधार और राशन कार्ड के साथ महाराष्ट्र के किसी भी सूचीबद्ध अस्पताल में जाएं।", "website": "https://www.jeevandayee.gov.in", "helpline": "155388"},
+        "mr": {"name": "महात्मा फुले जन आरोग्य योजना (महाराष्ट्र)", "amount": "रु. 5 लाख/वर्ष", "description": "महाराष्ट्र राज्य आरोग्य विमा योजना जी सूचीबद्ध रुग्णालयांमध्ये रु.5 लाखापर्यंत कॅशलेस उपचार देते.", "eligibility": ["महाराष्ट्र रहिवासी", "वार्षिक उत्पन्न रु. 1 लाखापेक्षा कमी", "BPL कुटुंब", "शेतकरी"], "documents": ["आधार कार्ड", "रेशन कार्ड (पिवळे/नारिंगी)", "उत्पन्न प्रमाणपत्र", "महाराष्ट्र अधिवास पुरावा"], "how_to_apply": "आधार आणि रेशन कार्डसह महाराष्ट्रातील कोणत्याही सूचीबद्ध रुग्णालयात जा.", "website": "https://www.jeevandayee.gov.in", "helpline": "155388"}
+    },
+    "shravan_bal": {
+        "en": {"name": "Shravan Bal Seva Rajya Nivrutti Vetan (Maharashtra)", "amount": "Rs. 600/month", "description": "Maharashtra state old age pension scheme providing Rs.600 per month to elderly citizens aged 65 and above.", "eligibility": ["Age 65 years and above", "Maharashtra resident for 15+ years", "Annual income below Rs. 21,000", "Not receiving any other pension"], "documents": ["Aadhaar Card", "Age Proof (Birth Certificate/School Certificate)", "Income Certificate", "Bank Account Details", "Domicile Certificate"], "how_to_apply": "Apply at nearest Gram Panchayat or District Social Welfare Office.", "website": "https://sjsa.maharashtra.gov.in", "helpline": "1800-120-8040"},
+        "hi": {"name": "श्रवण बाल सेवा राज्य निवृत्ती वेतन (महाराष्ट्र)", "amount": "रु. 600/माह", "description": "महाराष्ट्र राज्य वृद्धावस्था पेंशन योजना जो 65+ वर्ष के वृद्धों को रु.600 प्रति माह देती है।", "eligibility": ["65 वर्ष और उससे अधिक", "15+ वर्ष से महाराष्ट्र निवासी", "वार्षिक आय रु. 21,000 से कम", "कोई अन्य पेंशन नहीं"], "documents": ["आधार कार्ड", "आयु प्रमाण", "आय प्रमाण पत्र", "बैंक खाता विवरण", "अधिवास प्रमाण पत्र"], "how_to_apply": "निकटतम ग्राम पंचायत या जिला समाज कल्याण कार्यालय में आवेदन करें।", "website": "https://sjsa.maharashtra.gov.in", "helpline": "1800-120-8040"},
+        "mr": {"name": "श्रवण बाल सेवा राज्य निवृत्ती वेतन (महाराष्ट्र)", "amount": "रु. 600/महिना", "description": "महाराष्ट्र राज्य वृद्धापकाळ पेन्शन योजना जी 65+ वयाच्या वृद्धांना रु.600 प्रति महिना देते.", "eligibility": ["65 वर्षे आणि त्याहून अधिक", "15+ वर्षांपासून महाराष्ट्र रहिवासी", "वार्षिक उत्पन्न रु. 21,000 पेक्षा कमी", "इतर कोणतीही पेन्शन नाही"], "documents": ["आधार कार्ड", "वयाचा पुरावा", "उत्पन्न प्रमाणपत्र", "बँक खाते तपशील", "अधिवास प्रमाणपत्र"], "how_to_apply": "जवळच्या ग्रामपंचायत किंवा जिल्हा समाज कल्याण कार्यालयात अर्ज करा.", "website": "https://sjsa.maharashtra.gov.in", "helpline": "1800-120-8040"}
+    },
+    "gharkul": {
+        "en": {"name": "Ramai Awas Gharkul Yojana (Maharashtra)", "amount": "Free Permanent House", "description": "Maharashtra government housing scheme providing free permanent houses to SC/ST/OBC/NT and other deprived communities.", "eligibility": ["SC/ST/OBC/NT community member", "Maharashtra resident", "No pucca house", "Annual income below Rs. 1 lakh", "Land ownership or government land allotment"], "documents": ["Aadhaar Card", "Caste Certificate", "Income Certificate", "Land Documents", "BPL Certificate", "Bank Account Details"], "how_to_apply": "Apply at Gram Panchayat or District Collector Office. Online at ramai.maharashtra.gov.in", "website": "https://ramai.maharashtra.gov.in", "helpline": "1800-120-8040"},
+        "hi": {"name": "रमाई आवास घरकुल योजना (महाराष्ट्र)", "amount": "मुफ्त पक्का घर", "description": "महाराष्ट्र सरकार की आवास योजना SC/ST/OBC/NT समुदाय को मुफ्त पक्का घर देती है।", "eligibility": ["SC/ST/OBC/NT समुदाय सदस्य", "महाराष्ट्र निवासी", "कोई पक्का घर नहीं", "वार्षिक आय रु. 1 लाख से कम"], "documents": ["आधार कार्ड", "जाति प्रमाण पत्र", "आय प्रमाण पत्र", "भूमि दस्तावेज", "BPL प्रमाण पत्र", "बैंक खाता"], "how_to_apply": "ग्राम पंचायत या जिला कलेक्टर कार्यालय में आवेदन करें।", "website": "https://ramai.maharashtra.gov.in", "helpline": "1800-120-8040"},
+        "mr": {"name": "रमाई आवास घरकुल योजना (महाराष्ट्र)", "amount": "मोफत पक्के घर", "description": "महाराष्ट्र सरकारची आवास योजना SC/ST/OBC/NT समुदायाला मोफत पक्के घर देते.", "eligibility": ["SC/ST/OBC/NT समुदाय सदस्य", "महाराष्ट्र रहिवासी", "पक्के घर नाही", "वार्षिक उत्पन्न रु. 1 लाखापेक्षा कमी"], "documents": ["आधार कार्ड", "जात प्रमाणपत्र", "उत्पन्न प्रमाणपत्र", "जमीन दस्तऐवज", "BPL प्रमाणपत्र", "बँक खाते"], "how_to_apply": "ग्रामपंचायत किंवा जिल्हाधिकारी कार्यालयात अर्ज करा.", "website": "https://ramai.maharashtra.gov.in", "helpline": "1800-120-8040"}
+    },
+    "sanjay_gandhi": {
+        "en": {"name": "Sanjay Gandhi Niradhar Anudan Yojana (Maharashtra)", "amount": "Rs. 600/month", "description": "Maharashtra scheme providing monthly financial assistance to destitute persons who have no means of livelihood.", "eligibility": ["Age above 18 years", "Maharashtra resident", "Destitute — no income or family support", "Widow/Divorcee/Abandoned woman", "Annual income below Rs. 21,000"], "documents": ["Aadhaar Card", "Income Certificate", "Domicile Certificate", "Bank Account Details", "Proof of destitution"], "how_to_apply": "Apply at District Social Welfare Office or Gram Panchayat.", "website": "https://sjsa.maharashtra.gov.in", "helpline": "1800-120-8040"},
+        "hi": {"name": "संजय गांधी निराधार अनुदान योजना (महाराष्ट्र)", "amount": "रु. 600/माह", "description": "महाराष्ट्र योजना जो बेसहारा व्यक्तियों को मासिक वित्तीय सहायता देती है।", "eligibility": ["18 वर्ष से अधिक", "महाराष्ट्र निवासी", "बेसहारा — कोई आय नहीं", "विधवा/तलाकशुदा/परित्यक्त महिला", "वार्षिक आय रु. 21,000 से कम"], "documents": ["आधार कार्ड", "आय प्रमाण पत्र", "अधिवास प्रमाण पत्र", "बैंक खाता विवरण"], "how_to_apply": "जिला समाज कल्याण कार्यालय या ग्राम पंचायत में आवेदन करें।", "website": "https://sjsa.maharashtra.gov.in", "helpline": "1800-120-8040"},
+        "mr": {"name": "संजय गांधी निराधार अनुदान योजना (महाराष्ट्र)", "amount": "रु. 600/महिना", "description": "महाराष्ट्र योजना जी निराधार व्यक्तींना मासिक आर्थिक मदत देते.", "eligibility": ["18 वर्षांपेक्षा जास्त", "महाराष्ट्र रहिवासी", "निराधार — उत्पन्न नाही", "विधवा/घटस्फोटित/परित्यक्त महिला", "वार्षिक उत्पन्न रु. 21,000 पेक्षा कमी"], "documents": ["आधार कार्ड", "उत्पन्न प्रमाणपत्र", "अधिवास प्रमाणपत्र", "बँक खाते तपशील"], "how_to_apply": "जिल्हा समाज कल्याण कार्यालय किंवा ग्रामपंचायतमध्ये अर्ज करा.", "website": "https://sjsa.maharashtra.gov.in", "helpline": "1800-120-8040"}
+    },
+    "rajmata_jijau": {
+        "en": {"name": "Rajmata Jijau Mata-Bal Swasthya Poshan Mission (Maharashtra)", "amount": "Free maternal & child health", "description": "Maharashtra scheme for comprehensive maternal and child health care including free nutrition, health checkups, and immunization.", "eligibility": ["Pregnant women", "Lactating mothers", "Children under 6 years", "Maharashtra resident", "BPL or low income family"], "documents": ["Aadhaar Card", "Ration Card", "Pregnancy Card / Mother Child Protection Card", "Bank Account Details"], "how_to_apply": "Register at nearest Anganwadi Centre or Primary Health Centre.", "website": "https://womenchild.maharashtra.gov.in", "helpline": "1800-120-8040"},
+        "hi": {"name": "राजमाता जिजाऊ माता-बाल स्वास्थ्य पोषण मिशन (महाराष्ट्र)", "amount": "मुफ्त मातृ एवं शिशु स्वास्थ्य", "description": "महाराष्ट्र योजना जो गर्भवती महिलाओं और बच्चों के लिए मुफ्त स्वास्थ्य सेवाएं देती है।", "eligibility": ["गर्भवती महिलाएं", "स्तनपान कराने वाली माताएं", "6 वर्ष से कम के बच्चे", "BPL या कम आय परिवार"], "documents": ["आधार कार्ड", "राशन कार्ड", "प्रेगनेंसी कार्ड", "बैंक खाता विवरण"], "how_to_apply": "निकटतम आंगनवाड़ी केंद्र या प्राथमिक स्वास्थ्य केंद्र में पंजीकरण करें।", "website": "https://womenchild.maharashtra.gov.in", "helpline": "1800-120-8040"},
+        "mr": {"name": "राजमाता जिजाऊ माता-बाल आरोग्य पोषण मिशन (महाराष्ट्र)", "amount": "मोफत माता व बाल आरोग्य", "description": "महाराष्ट्र योजना जी गर्भवती महिला आणि मुलांसाठी मोफत आरोग्य सेवा देते.", "eligibility": ["गर्भवती महिला", "स्तनपान करणाऱ्या माता", "6 वर्षांखालील मुले", "BPL किंवा कमी उत्पन्न कुटुंब"], "documents": ["आधार कार्ड", "रेशन कार्ड", "गर्भधारणा कार्ड", "बँक खाते तपशील"], "how_to_apply": "जवळच्या अंगणवाडी केंद्र किंवा प्राथमिक आरोग्य केंद्रात नोंदणी करा.", "website": "https://womenchild.maharashtra.gov.in", "helpline": "1800-120-8040"}
+    },
+    "mh_ration": {
+        "en": {"name": "Maharashtra Yellow Ration Card Scheme", "amount": "Subsidised food grains", "description": "Maharashtra state ration card for BPL families providing subsidised food grains at Fair Price Shops.", "eligibility": ["Maharashtra resident", "Annual income below Rs. 1 lakh", "BPL or economically weaker family", "No existing ration card"], "documents": ["Aadhaar Card", "Income Certificate", "Address Proof", "Passport size photos of all family members"], "how_to_apply": "Apply at nearest Gram Panchayat or Taluka Supply Office.", "website": "https://mahafood.gov.in", "helpline": "1800-22-4950"},
+        "hi": {"name": "महाराष्ट्र पीला राशन कार्ड योजना", "amount": "सब्सिडी खाद्यान्न", "description": "महाराष्ट्र BPL परिवारों के लिए पीला राशन कार्ड जो उचित मूल्य की दुकानों पर सब्सिडी वाले अनाज देता है।", "eligibility": ["महाराष्ट्र निवासी", "वार्षिक आय रु. 1 लाख से कम", "BPL परिवार", "कोई मौजूदा राशन कार्ड नहीं"], "documents": ["आधार कार्ड", "आय प्रमाण पत्र", "पता प्रमाण", "सभी सदस्यों के पासपोर्ट फोटो"], "how_to_apply": "निकटतम ग्राम पंचायत या तालुका आपूर्ति कार्यालय में आवेदन करें।", "website": "https://mahafood.gov.in", "helpline": "1800-22-4950"},
+        "mr": {"name": "महाराष्ट्र पिवळे रेशन कार्ड योजना", "amount": "अनुदानित अन्नधान्य", "description": "महाराष्ट्र BPL कुटुंबांसाठी पिवळे रेशन कार्ड जे स्वस्त धान्य दुकानांवर सवलतीच्या दरात धान्य देते.", "eligibility": ["महाराष्ट्र रहिवासी", "वार्षिक उत्पन्न रु. 1 लाखापेक्षा कमी", "BPL कुटुंब", "विद्यमान रेशन कार्ड नाही"], "documents": ["आधार कार्ड", "उत्पन्न प्रमाणपत्र", "पत्ता पुरावा", "सर्व सदस्यांचे पासपोर्ट फोटो"], "how_to_apply": "जवळच्या ग्रामपंचायत किंवा तालुका पुरवठा कार्यालयात अर्ज करा.", "website": "https://mahafood.gov.in", "helpline": "1800-22-4950"}
+    },
+    "vayoshri_mh": {
+        "en": {"name": "Vayoshri Yojana Maharashtra", "amount": "Free aids & equipment", "description": "Maharashtra scheme providing free assistive devices like hearing aids, spectacles, walking sticks, wheelchairs to elderly BPL citizens.", "eligibility": ["Age 60 years and above", "BPL category", "Maharashtra resident", "Has disability or age-related health issue"], "documents": ["Aadhaar Card", "BPL Certificate", "Age Proof", "Medical Certificate from government doctor"], "how_to_apply": "Apply at District Social Welfare Office or through Gram Panchayat.", "website": "https://sjsa.maharashtra.gov.in", "helpline": "1800-120-8040"},
+        "hi": {"name": "वयोश्री योजना महाराष्ट्र", "amount": "मुफ्त सहायक उपकरण", "description": "महाराष्ट्र योजना जो BPL बुजुर्गों को श्रवण यंत्र, चश्मा, व्हीलचेयर आदि मुफ्त देती है।", "eligibility": ["60 वर्ष और उससे अधिक", "BPL श्रेणी", "महाराष्ट्र निवासी", "विकलांगता या स्वास्थ्य समस्या"], "documents": ["आधार कार्ड", "BPL प्रमाण पत्र", "आयु प्रमाण", "सरकारी डॉक्टर का प्रमाण पत्र"], "how_to_apply": "जिला समाज कल्याण कार्यालय में आवेदन करें।", "website": "https://sjsa.maharashtra.gov.in", "helpline": "1800-120-8040"},
+        "mr": {"name": "वयोश्री योजना महाराष्ट्र", "amount": "मोफत सहाय्यक साधने", "description": "महाराष्ट्र योजना जी BPL वृद्धांना श्रवणयंत्र, चष्मा, व्हीलचेअर इ. मोफत देते.", "eligibility": ["60 वर्षे आणि त्याहून अधिक", "BPL श्रेणी", "महाराष्ट्र रहिवासी", "अपंगत्व किंवा आरोग्य समस्या"], "documents": ["आधार कार्ड", "BPL प्रमाणपत्र", "वयाचा पुरावा", "सरकारी डॉक्टरचे प्रमाणपत्र"], "how_to_apply": "जिल्हा समाज कल्याण कार्यालयात अर्ज करा.", "website": "https://sjsa.maharashtra.gov.in", "helpline": "1800-120-8040"}
+    },
     "basic": {
         "en": {"name": "Basic Community Support and Ration Assistance", "amount": "As applicable", "description": "Local community support programs including ration assistance and basic welfare services.", "eligibility": ["Any person in need", "BPL or poor household"], "documents": ["Aadhaar Card", "Any identity proof"], "how_to_apply": "Contact nearest Gram Panchayat, Municipal Corporation, or local NGO.", "website": "https://socialjustice.gov.in", "helpline": "1800-180-6763"},
         "hi": {"name": "बुनियादी सामुदायिक सहायता और राशन सहायता", "amount": "लागू अनुसार", "description": "राशन सहायता और बुनियादी कल्याण सेवाओं सहित स्थानीय सामुदायिक सहायता।", "eligibility": ["जरूरतमंद कोई भी व्यक्ति", "BPL या गरीब परिवार"], "documents": ["आधार कार्ड", "कोई भी पहचान प्रमाण"], "how_to_apply": "निकटतम ग्राम पंचायत या स्थानीय NGO से संपर्क करें।", "website": "https://socialjustice.gov.in", "helpline": "1800-180-6763"},
-        "mr": {"name": "मूलभूत सामुदायिक मदत आणि रेशन सहाय्य", "amount": "लागू असेल तसे", "description": "रेशन मदत आणि मूलभूत कल्याण सेवांसह स्थानिक सामुदायिक मदत.", "eligibility": ["गरजू कोणताही व्यक्ती", "BPL किंवा गरीब कुटुंब"], "documents": ["आधार कार्ड", "कोणताही ओळख पुरावा"], "how_to_apply": "जवळच्याग्रामपंचायत किंवा स्थानिक NGO शी संपर्क करा.", "website": "https://socialjustice.gov.in", "helpline": "1800-180-6763"}
+        "mr": {"name": "मूलभूत सामुदायिक मदत आणि रेशन सहाय्य", "amount": "लागू असेल तसे", "description": "रेशन मदत आणि मूलभूत कल्याण सेवांसह स्थानिक सामुदायिक मदत.", "eligibility": ["गरजू कोणताही व्यक्ती", "BPL किंवा गरीब कुटुंब"], "documents": ["आधार कार्ड", "कोणताही ओळख पुरावा"], "how_to_apply": "जवळच्या ग्रामपंचायत किंवा स्थानिक NGO शी संपर्क करा.", "website": "https://socialjustice.gov.in", "helpline": "1800-180-6763"}
     }
 }
 
@@ -422,7 +459,7 @@ MH_SCHEMES = {
     },
     'mr': {
         'ladki_bahin':    ('urgent', 'लाडकी बहीण योजना (महाराष्ट्र)', 'रु. 1,500/महिना'),
-        'mh_health':      ('urgent', 'महात्मा फुले जन आरोग्य योजना (MH)', 'रु. 5 lakh/वर्ष'),
+        'mh_health':      ('urgent', 'महात्मा फुले जन आरोग्य योजना (MH)', 'रु. 5 लाख/वर्ष'),
         'shravan_bal':    ('normal', 'श्रवण बाल सेवा निवृत्ती वेतन (MH)', 'रु. 600/महिना'),
         'gharkul':        ('normal', 'रमाई आवास घरकुल योजना (MH)', 'मोफत घर'),
         'sanjay_gandhi':  ('normal', 'संजय गांधी निराधार योजना (MH)', 'रु. 600/महिना'),
@@ -492,20 +529,9 @@ def get_schemes(score, data, lang='en'):
 
     is_mh = any(kw in address for kw in MH_KEYWORDS)
     if is_mh:
-        gender = data.get('gender', '')
-        widow = data.get('widow_status', 'no')
-        
-        # Widow Pension — central scheme
-        if widow == 'yes':
-            schemes.append(('widow_pension',) + s.get('widow_pension',
-                ('normal', 'Widow Pension Scheme', 'Rs. 300/month')))
-                
         mh = MH_SCHEMES.get(lang, MH_SCHEMES['en'])
-        
-        # Ladki Bahin — female + Maharashtra + income limit
-        if is_mh and gender == 'female' and income < 20834:
+        if income < 20834:
             schemes.append(('ladki_bahin',) + mh['ladki_bahin'])
-            
         if medical in ['emergency', 'chronic_illness', 'disability'] or income < 10000:
             schemes.append(('mh_health',) + mh['mh_health'])
         if age == 'elderly':
@@ -520,7 +546,6 @@ def get_schemes(score, data, lang='en'):
             schemes.append(('rajmata_jijau',) + mh['rajmata_jijau'])
         if ration == 'no' or income < 10000:
             schemes.append(('mh_ration',) + mh['mh_ration'])
-        
 
     seen = set()
     unique = []
@@ -1359,7 +1384,7 @@ def get_fallback_answer(question, lang='en'):
             'awas': "PM आवास योजना BPL परिवारों को घर बनाने के लिए ₹1,20,000 देती है।\n\nजरूरी दस्तावेज़:\n• आधार कार्ड\n• BPL प्रमाण पत्र\n• जमीन का दस्तावेज़\n• बैंक खाता विवरण\n\nग्राम पंचायत या pmaymis.gov.in पर आवेदन करें।\nहेल्पलाइन: 1800-11-6163",
             'ayushman': "आयुष्मान भारत में हर साल ₹5 लाख तक का मुफ्त इलाज मिलता है।\n\nजरूरी दस्तावेज़:\n• आधार कार्ड\n• राशन कार्ड\n\nकिसी भी सूचीबद्ध अस्पताल में जाएं।\nहेल्पलाइन: 14555",
             'pension': "वृद्धावस्था पेंशन में 60+ उम्र के BPL नागरिकों को ₹200-500 प्रति माह मिलता है।\n\nजरूरी दस्तावेज़:\n• आधार कार्ड\n• उम्र प्रमाण\n• BPL प्रमाण पत्र\n\nग्राम पंचायत में आवेदन करें।",
-            'corruption': "भ्रष्टाचार की शिकायत के लिए:\n1. ऐप में 'भ्रष्टाचार रिपोर्ट' पर क्लिक करें\n2. के अधिकारी का नाम, योजना, मांगी गई राशि भरें\n3. आपको PAI-2026-XXXX ट्रैकिंग ID मिलेगी\n4. स्थिति ट्रैक करें: दर्ज → प्राप्त → कार्रवाई → हल",
+            'corruption': "भ्रष्टाचार की शिकायत के लिए:\n1. ऐप में 'भ्रष्टाचार रिपोर्ट' पर क्लिक करें\n2. अधिकारी का नाम, योजना, मांगी गई राशि भरें\n3. आपको PAI-2026-XXXX ट्रैकिंग ID मिलेगी\n4. स्थिति ट्रैक करें: दर्ज → प्राप्त → कार्रवाई → हल",
             'default': "मैं इनमें मदद कर सकता हूं:\n• PM आवास योजना\n• आयुष्मान भारत\n• वृद्धावस्था/विधवा पेंशन\n• राशन योजनाएं\n• भ्रष्टाचार की शिकायत\n\nआप क्या जानना चाहते हैं?"
         },
         'mr': {
