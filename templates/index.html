@@ -57,6 +57,15 @@
         .field-error { color: #c62828; font-size: 11px; margin-top: 4px; display: none; }
         .field-error.show { display: block; }
         .field-hint { color: #888; font-size: 11px; margin-top: 4px; }
+        .input-with-mic { display: flex; gap: 8px; align-items: center; }
+        .input-with-mic input { flex: 1; }
+        .mic-btn { flex-shrink: 0; width: 44px; height: 44px; border-radius: 10px; border: 2px solid #e0e0e0; background: #fafafa; font-size: 18px; cursor: pointer; transition: all 0.2s; }
+        .mic-btn:hover { border-color: #FF9933; background: #fff3e0; }
+        .mic-btn.listening { border-color: #c62828; background: #ffebee; animation: mic-pulse 1s infinite; }
+        @keyframes mic-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .consent-group { display: flex; align-items: flex-start; gap: 10px; background: #fff9f0; border: 1px solid #FF9933; border-radius: 10px; padding: 12px 14px; margin: 16px 0; }
+        .consent-group input[type="checkbox"] { width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0; accent-color: #FF9933; }
+        .consent-group label { font-size: 12px; color: #555; font-weight: normal; margin-bottom: 0; line-height: 1.5; }
 
         .submit-btn { width: 100%; padding: 16px; background: linear-gradient(90deg, #FF9933, #e65c00); color: white; border: none; border-radius: 10px; font-size: 17px; cursor: pointer; font-weight: bold; margin-top: 10px; letter-spacing: 1px; transition: opacity 0.2s; }
         .submit-btn:hover { opacity: 0.9; }
@@ -186,6 +195,9 @@
 
         {% if not result %}
         <div class="form-card">
+            <!-- FIX: autocomplete="off" prevents the browser from re-filling
+                 old values into a "fresh" form, and novalidate lets our JS
+                 validation run consistently across browsers. -->
             <form method="POST" id="mainForm" autocomplete="off" novalidate onsubmit="return validateAndSubmit()">
                 <input type="hidden" name="lang" id="langInput" value="en"/>
 
@@ -194,7 +206,10 @@
 
                 <div class="form-group">
                     <label id="lbl_name">Full Name</label>
-                    <input type="text" name="person_name" id="person_name" placeholder="e.g. Ramesh Kumar" autocomplete="off" required />
+                    <div class="input-with-mic">
+                        <input type="text" name="person_name" id="person_name" placeholder="e.g. Ramesh Kumar" autocomplete="off" required />
+                        <button type="button" class="mic-btn" data-target="person_name" title="Speak your name">🎤</button>
+                    </div>
                     <div class="field-error" id="err_name">Please enter your full name</div>
                 </div>
 
@@ -207,7 +222,10 @@
 
                 <div class="form-group">
                     <label id="lbl_address">Address</label>
-                    <input type="text" name="address" id="address" placeholder="e.g. Village Rampur, Dist. Pune, Maharashtra" autocomplete="off" required />
+                    <div class="input-with-mic">
+                        <input type="text" name="address" id="address" placeholder="e.g. Village Rampur, Dist. Pune, Maharashtra" autocomplete="off" required />
+                        <button type="button" class="mic-btn" data-target="address" title="Speak your address">🎤</button>
+                    </div>
                     <div class="field-error" id="err_address">Please enter your address</div>
                 </div>
 
@@ -294,27 +312,34 @@
                         <option value="no" id="opt_earn_no">No</option>
                     </select>
                 </div>
-
                 <div class="form-group">
-                    <label id="lbl_gender">Gender</label>
-                    <select name="gender" required>
-                        <option value="">-- Select --</option>
-                        <option value="female" id="opt_female">Female</option>
-                        <option value="male" id="opt_male">Male</option>
-                        <option value="other" id="opt_other">Other</option>
-                    </select>
-                </div>
+    <label id="lbl_gender">Gender</label>
+    <select name="gender" required>
+        <option value="">-- Select --</option>
+        <option value="female" id="opt_female">Female</option>
+        <option value="male" id="opt_male">Male</option>
+        <option value="other" id="opt_other">Other</option>
+    </select>
+</div>
 
-                <div class="form-group">
-                    <label id="lbl_widow">Widow / Widower Status</label>
-                    <select name="widow_status" required>
-                        <option value="">-- Select --</option>
-                        <option value="yes" id="opt_widow_yes">Yes — Widow/Widower</option>
-                        <option value="no" id="opt_widow_no">No</option>
-                    </select>
+<div class="form-group">
+    <label id="lbl_widow">Widow / Widower Status</label>
+    <select name="widow_status" required>
+        <option value="">-- Select --</option>
+        <option value="yes" id="opt_widow_yes">Yes — Widow/Widower</option>
+        <option value="no" id="opt_widow_no">No</option>
+    </select>
+</div>
+
+                <div class="consent-group">
+                    <input type="checkbox" name="consent" id="consent" required />
+                    <label for="consent" id="lbl_consent">I agree that my details may be shared with authorized government officers only if I file a corruption complaint. My data will not be sold or shared for any other purpose.</label>
                 </div>
-                
+                <div class="field-error" id="err_consent">Please accept to continue</div>
+
                 <button type="submit" class="submit-btn" id="submitBtn">Check Aid Eligibility</button>
+
+                
             </form>
         </div>
         {% endif %}
@@ -375,7 +400,7 @@
                 <p>सरकारी सहायता का हर रुपया आपका है। अगर किसी अधिकारी ने पैसे काटे हैं — तुरंत रिपोर्ट करें।</p>
                 <p>सरकारी मदतीचा प्रत्येक रुपया तुमचा आहे। जर कोणत्या अधिकाऱ्याने पैसे कापले — तात्काळ तक्रार करा।</p>
                 <a href="/corruption?lang={{ lang }}" class="corruption-btn">
-                    {% if lang == 'hi' %}भรष्टाचार रिपोर्ट करें{% elif lang == 'mr' %}भ्रष्टाचाराची तक्रार करा{% else %}Report Corruption / Deduction of Aid{% endif %}
+                    {% if lang == 'hi' %}भ्रष्टाचार रिपोर्ट करें{% elif lang == 'mr' %}भ्रष्टाचाराची तक्रार करा{% else %}Report Corruption / Deduction of Aid{% endif %}
                 </a>
             </div>
         </div>
@@ -407,6 +432,8 @@ const translations = {
         subtitle: "Every person will receive help. Priority given to children, elderly and emergencies.",
         section_personal: "Personal Details", section_aid: "Aid Details",
         privacyNote: "Your personal details are confidential and will only be shared with authorized government officers if you file a corruption complaint.",
+        lbl_consent: "I agree that my details may be shared with authorized government officers only if I file a corruption complaint. My data will not be sold or shared for any other purpose.",
+        err_consent: "Please accept to continue",
         lbl_name: "Full Name", ph_name: "e.g. Ramesh Kumar",
         lbl_phone: "Phone Number", ph_phone: "e.g. 9876543210",
         lbl_address: "Address", ph_address: "e.g. Village Rampur, Dist. Pune, Maharashtra",
@@ -423,10 +450,6 @@ const translations = {
         opt_med_emergency: "Medical Emergency", opt_med_chronic: "Chronic Illness", opt_med_disability: "Disability", opt_med_none: "No Medical Issues",
         lbl_accident: "Any Recent Accident?", opt_acc_yes: "Yes", opt_acc_no: "No",
         lbl_earning: "Has Earning Member of Family Died?", opt_earn_yes: "Yes", opt_earn_no: "No",
-        lbl_gender: "Gender",
-        opt_female: "Female", opt_male: "Male", opt_other: "Other",
-        lbl_widow: "Widow / Widower Status",
-        opt_widow_yes: "Yes — Widow/Widower", opt_widow_no: "No",
         submitBtn: "Check Aid Eligibility",
         loading: "Checking Eligibility...", loadingSub: "Please wait a moment",
         err_name: "Please enter your full name",
@@ -434,13 +457,15 @@ const translations = {
         err_address: "Please enter your address",
         err_age: "Please select an option",
         err_income: "Please enter monthly income",
-        err_family: "Please enter family size",
+        err_family: "Please enter family size"
     },
     hi: {
         title: "गरीबी सहायता पहचानकर्ता",
         subtitle: "हर व्यक्ति को मदद मिलेगी। बच्चों, बुजुर्गों और आपात स्थितियों को प्राथमिकता।",
         section_personal: "व्यक्तिगत विवरण", section_aid: "सहायता विवरण",
         privacyNote: "आपका व्यक्तिगत विवरण गोपनीय है और केवल अधिकृत सरकारी अधिकारियों के साथ साझा किया जाएगा।",
+        lbl_consent: "मैं सहमत हूं कि मेरा विवरण केवल भ्रष्टाचार शिकायत दर्ज करने पर अधिकृत सरकारी अधिकारियों के साथ साझा किया जा सकता है। मेरा डेटा किसी अन्य उद्देश्य के लिए नहीं बेचा या साझा किया जाएगा।",
+        err_consent: "कृपया जारी रखने के लिए स्वीकार करें",
         lbl_name: "पूरा नाम", ph_name: "जैसे रमेश कुमार",
         lbl_phone: "फोन नंबर", ph_phone: "जैसे 9876543210",
         lbl_address: "पता", ph_address: "जैसे गांव रामपुर, जिला पुणे, महाराष्ट्र",
@@ -457,10 +482,6 @@ const translations = {
         opt_med_emergency: "चिकित्सा आपात स्थिति", opt_med_chronic: "दीर्घकालिक बीमारी", opt_med_disability: "विकलांगता", opt_med_none: "कोई चिकित्सा समस्या नहीं",
         lbl_accident: "कोई हालिया दुर्घटना?", opt_acc_yes: "हाँ", opt_acc_no: "नहीं",
         lbl_earning: "क्या परिवार के कमाने वाले सदस्य का निधन हुआ है?", opt_earn_yes: "हाँ", opt_earn_no: "नहीं",
-        lbl_gender: "लिंग",
-        opt_female: "महिला", opt_male: "पुरुष", opt_other: "अन्य",
-        lbl_widow: "विधवा / विधुर स्थिति",
-        opt_widow_yes: "हाँ — विधवा/विधुर", opt_widow_no: "नहीं",
         submitBtn: "सहायता पात्रता जांचें",
         loading: "पात्रता जांच रही है...", loadingSub: "कृपया प्रतीक्षा करें",
         err_name: "कृपया अपना पूरा नाम दर्ज करें",
@@ -475,6 +496,8 @@ const translations = {
         subtitle: "प्रत्येक व्यक्तीला मदत मिळेल. मुले, वृद्ध आणि आपत्कालीन परिस्थितिंना प्राधान्य.",
         section_personal: "वैयक्तिक तपशील", section_aid: "मदत तपशील",
         privacyNote: "तुमचे वैयक्तिक तपशील गोपनीय आहेत आणि केवळ अधिकृत सरकारी अधिकाऱ्यांसोबत सामायिक केले जातील.",
+        lbl_consent: "मी सहमत आहे की माझा तपशील केवळ भ्रष्टाचाराची तक्रार दाखल केल्यास अधिकृत सरकारी अधिकाऱ्यांसोबत सामायिक केला जाऊ शकतो. माझा डेटा इतर कोणत्याही कारणासाठी विकला किंवा सामायिक केला जाणार नाही.",
+        err_consent: "कृपया सुरू ठेवण्यासाठी स्वीकार करा",
         lbl_name: "पूर्ण नाव", ph_name: "उदा. रमेश कुमार",
         lbl_phone: "फोन नंबर", ph_phone: "उदा. 9876543210",
         lbl_address: "पत्ता", ph_address: "उदा. गाव रामपूर, जि. पुणे, महाराष्ट्र",
@@ -491,10 +514,6 @@ const translations = {
         opt_med_emergency: "वैद्यकीय आणीबाणी", opt_med_chronic: "दीर्घकालीन आजार", opt_med_disability: "अपंगत्व", opt_med_none: "कोणतीही वैद्यकीय समस्या नाही",
         lbl_accident: "कोणताही अलीकडील अपघात?", opt_acc_yes: "हो", opt_acc_no: "नाही",
         lbl_earning: "कुटुंबातील कमावत्या सदस्याचे निधन झाले आहे का?", opt_earn_yes: "हो", opt_earn_no: "नाही",
-        lbl_gender: "लिंग",
-        opt_female: "महिला", opt_male: "पुरुष", opt_other: "इतर",
-        lbl_widow: "विधवा / विधुर स्थिती",
-        opt_widow_yes: "हो — विधवा/विधुर", opt_widow_no: "नाही",
         submitBtn: "मदत पात्रता तपासा",
         loading: "पात्रता तपासत आहोत...", loadingSub: "कृपया थांबा",
         err_name: "कृपया तुमचे पूर्ण नाव टाका",
@@ -526,6 +545,8 @@ function applyTranslations(lang) {
     set('section_personal', t.section_personal);
     set('section_aid', t.section_aid);
     set('privacyNote', t.privacyNote);
+    set('lbl_consent', t.lbl_consent);
+    set('err_consent', t.err_consent);
     set('lbl_name', t.lbl_name); ph('person_name', t.ph_name);
     set('lbl_phone', t.lbl_phone); ph('phone', t.ph_phone);
     set('lbl_address', t.lbl_address); ph('address', t.ph_address);
@@ -542,10 +563,6 @@ function applyTranslations(lang) {
     set('opt_med_emergency', t.opt_med_emergency); set('opt_med_chronic', t.opt_med_chronic); set('opt_med_disability', t.opt_med_disability); set('opt_med_none', t.opt_med_none);
     set('lbl_accident', t.lbl_accident); set('opt_acc_yes', t.opt_acc_yes); set('opt_acc_no', t.opt_acc_no);
     set('lbl_earning', t.lbl_earning); set('opt_earn_yes', t.opt_earn_yes); set('opt_earn_no', t.opt_earn_no);
-    set('lbl_gender', t.lbl_gender);
-    set('opt_female', t.opt_female); set('opt_male', t.opt_male); set('opt_other', t.opt_other);
-    set('lbl_widow', t.lbl_widow);
-    set('opt_widow_yes', t.opt_widow_yes); set('opt_widow_no', t.opt_widow_no);
     set('submitBtn', t.submitBtn);
     set('err_name', t.err_name); set('err_phone', t.err_phone);
     set('err_address', t.err_address); set('err_age', t.err_age);
@@ -560,6 +577,7 @@ function showError(fieldId, errId) {
 }
 
 function clearForm() {
+    // FIX: force a real reload (bypasses bfcache) instead of a soft navigation
     window.location.href = '/?fresh=' + Date.now();
 }
 
@@ -601,6 +619,17 @@ function validateAndSubmit() {
     if (family && !family.value) { showError('ph_family', 'err_family'); valid = false; }
     else clearError('ph_family', 'err_family');
 
+    const consent = document.getElementById('consent');
+    const consentErr = document.getElementById('err_consent');
+    if (consent && !consent.checked) {
+        consentErr.classList.add('show');
+        consent.closest('.consent-group').style.borderColor = '#c62828';
+        valid = false;
+    } else if (consentErr) {
+        consentErr.classList.remove('show');
+        if (consent) consent.closest('.consent-group').style.borderColor = '#FF9933';
+    }
+
     if (valid) {
         const overlay = document.getElementById('loadingOverlay');
         const loadingText = document.getElementById('loadingText');
@@ -615,6 +644,46 @@ function validateAndSubmit() {
     }
     return valid;
 }
+
+// Voice input for text fields (Full Name, Address)
+(function () {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const micButtons = document.querySelectorAll('.mic-btn');
+    if (!SpeechRecognition) {
+        // Browser doesn't support voice input — hide mic buttons instead of showing a dead control
+        micButtons.forEach(btn => btn.style.display = 'none');
+        return;
+    }
+    const langMap = { en: 'en-IN', hi: 'hi-IN', mr: 'mr-IN' };
+    micButtons.forEach(btn => {
+        let recognition = null;
+        let listening = false;
+        btn.addEventListener('click', () => {
+            if (listening) {
+                if (recognition) recognition.stop();
+                return;
+            }
+            const targetId = btn.getAttribute('data-target');
+            const targetInput = document.getElementById(targetId);
+            if (!targetInput) return;
+
+            recognition = new SpeechRecognition();
+            recognition.lang = langMap[currentLang] || 'en-IN';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            recognition.onstart = () => { listening = true; btn.classList.add('listening'); };
+            recognition.onend = () => { listening = false; btn.classList.remove('listening'); };
+            recognition.onerror = () => { listening = false; btn.classList.remove('listening'); };
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                targetInput.value = transcript;
+                targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+            };
+            recognition.start();
+        });
+    });
+})();
 
 // Real-time phone validation
 document.addEventListener('DOMContentLoaded', () => {
@@ -642,6 +711,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
 
 window.addEventListener('pageshow', function (event) {
     const form = document.getElementById('mainForm');

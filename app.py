@@ -163,12 +163,12 @@ def init_db():
 
         c.execute(
             "INSERT INTO admin_users (username, password, role, full_name) VALUES (?, ?, ?, ?)",
-            ('officer1', hash_password(os.environ.get('OFFICER1_PASSWORD', 'officer2026')), 'officer', 'Rajesh Kumar Sharma IAS')
+            ('officer1', hash_password(os.environ.get('OFFICER1_PASSWORD', 'officer2026')), 'officer', 'Grievance Officer 1')
         )
 
         c.execute(
             "INSERT INTO admin_users (username, password, role, full_name) VALUES (?, ?, ?, ?)",
-            ('officer2', hash_password(os.environ.get('OFFICER2_PASSWORD', 'officer2026')), 'officer', 'Sunita Yadav IAS')
+            ('officer2', hash_password(os.environ.get('OFFICER2_PASSWORD', 'officer2026')), 'officer', 'Grievance Officer 2')
         )
 
     except:
@@ -211,40 +211,34 @@ def login_required(f):
 
 OFFICERS = {
     "en": [
-        "Alok Kumar Verma IAS (Central Vigilance Commissioner)",
-        "Sanjay K. Mishra IPS (Vigilance Commissioner, CVC)",
-        "R.C. Srinivasan IAS (Vigilance Commissioner, CVC)",
-        "Justice K.S. Deshmukh (Lokayukta, Maharashtra)",
-        "Justice Milind Gaikwad (Lokayukta, Maharashtra)",
-        "Shri P.K. Deshpande IAS (DARPG Secretary, CPGRAMS)",
-        "Amit Singh Chouhan IAS (District Collector)",
-        "Anjali Sharma IAS (District Collector)",
-        "Rohan Singh Bundela IAS (District Magistrate)",
-        "Kavita Singhal IAS (District Collector)"
+        "Central Vigilance Commission (CVC)",
+        "Office of the Vigilance Commissioner, CVC",
+        "Lokayukta Office, Maharashtra",
+        "DARPG Grievance Cell (CPGRAMS)",
+        "District Collector's Office",
+        "District Magistrate's Office",
+        "State Social Welfare Department",
+        "Taluka Grievance Redressal Cell"
     ],
     "hi": [
-        "आलोक कुमार वर्मा IAS (केंद्रीय सतर्कता आयुक्त)",
-        "संजय के. मिश्रा IPS (सतर्कता आयुक्त, CVC)",
-        "R.C. श्रीनिवासन IAS (सतर्कता आयुक्त, CVC)",
-        "न्यायमूर्ति K.S. देशमुख (लोकायुक्त, महाराष्ट्र)",
-        "न्यायमूर्ति मिलिंद गायकवाड़ (लोकायुक्त, महाराष्ट्र)",
-        "श्री P.K. देशपांडे IAS (DARPG सचिव, CPGRAMS)",
-        "अमित सिंह चौहान IAS (जिला कलेक्टर)",
-        "अंजलि शर्मा IAS (जिला कलेक्टर)",
-        "रोहन सिंह बुंदेला IAS (जिला मजिस्ट्रेट)",
-        "कविता सिंघल IAS (जिला कलेक्टर)"
+        "केंद्रीय सतर्कता आयोग (CVC)",
+        "सतर्कता आयुक्त कार्यालय, CVC",
+        "लोकायुक्त कार्यालय, महाराष्ट्र",
+        "DARPG शिकायत प्रकोष्ठ (CPGRAMS)",
+        "जिला कलेक्टर कार्यालय",
+        "जिला मजिस्ट्रेट कार्यालय",
+        "राज्य समाज कल्याण विभाग",
+        "तालुका शिकायत निवारण प्रकोष्ठ"
     ],
     "mr": [
-        "आलोक कुमार वर्मा IAS (केंद्रीय दक्षता आयुक्त)",
-        "संजय के. मिश्रा IPS (दक्षता आयुक्त, CVC)",
-        "R.C. श्रीनिवासन IAS (दक्षता आयुक्त, CVC)",
-        "न्यायमूर्ती K.S. देशमुख (लोकायुक्त, महाराष्ट्र)",
-        "न्यायमूर्ती मिलिंद गायकवाड़ (लोकायुक्त, महाराष्ट्र)",
-        "श्री P.K. देशपांडे IAS (DARPG सचिव, CPGRAMS)",
-        "अमित सिंह चौहान IAS (जिल्हाधिकारी)",
-        "अंजलि शर्मा IAS (जिल्हाधिकारी)",
-        "रोहन सिंह बुंदेला IAS (जिल्हा दंडाधिकारी)",
-        "कविता सिंघल IAS (जिल्हाधिकारी)"
+        "केंद्रीय दक्षता आयोग (CVC)",
+        "दक्षता आयुक्त कार्यालय, CVC",
+        "लोकायुक्त कार्यालय, महाराष्ट्र",
+        "DARPG तक्रार कक्ष (CPGRAMS)",
+        "जिल्हाधिकारी कार्यालय",
+        "जिल्हा दंडाधिकारी कार्यालय",
+        "राज्य समाज कल्याण विभाग",
+        "तालुका तक्रार निवारण कक्ष"
     ]
 }
 
@@ -650,6 +644,18 @@ def index():
             )
 
         lang = sanitize(request.form.get('lang', 'en'))
+
+        if not request.form.get('consent'):
+            return render_template(
+                'index.html',
+                result=None,
+                schemes=[],
+                score=0,
+                lang=lang,
+                person_name='',
+                error="Please accept the consent checkbox to continue.",
+                now=datetime.now().strftime("%d %b %Y, %I:%M %p")
+            )
 
         if 'age_group' not in request.form:
             return render_template(
