@@ -124,9 +124,17 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         phone TEXT,
         ip_address TEXT,
-        submitted_at TEXT
+        submitted_at TEXT,
+        lang TEXT DEFAULT 'en',
+        schemes_count INTEGER DEFAULT 0,
+        state TEXT
     )
     ''')
+    for col_def in ["lang TEXT DEFAULT 'en'", "schemes_count INTEGER DEFAULT 0", "state TEXT"]:
+        try:
+            c.execute(f'ALTER TABLE form_submissions ADD COLUMN {col_def}')
+        except Exception:
+            pass
     conn.execute('''
        CREATE TABLE IF NOT EXISTS success_stories (
            id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -436,6 +444,35 @@ MH_KEYWORDS = [
     'jalgaon', 'hinganghat', 'vidarbha', 'marathwada', 'konkan', 'mh'
 ]
 
+STATE_KEYWORDS = {
+    'Maharashtra': MH_KEYWORDS,
+    'Uttar Pradesh': ['uttar pradesh', 'lucknow', 'kanpur', 'varanasi', 'agra', 'noida', 'ghaziabad', 'prayagraj', 'meerut'],
+    'Bihar': ['bihar', 'patna', 'gaya', 'bhagalpur', 'muzaffarpur', 'darbhanga'],
+    'Rajasthan': ['rajasthan', 'jaipur', 'jodhpur', 'udaipur', 'kota', 'bikaner', 'ajmer'],
+    'Madhya Pradesh': ['madhya pradesh', 'bhopal', 'indore', 'gwalior', 'jabalpur', 'ujjain'],
+    'Gujarat': ['gujarat', 'ahmedabad', 'surat', 'vadodara', 'rajkot', 'bhavnagar'],
+    'West Bengal': ['west bengal', 'kolkata', 'howrah', 'durgapur', 'siliguri', 'asansol'],
+    'Tamil Nadu': ['tamil nadu', 'chennai', 'coimbatore', 'madurai', 'salem', 'tiruchirappalli'],
+    'Karnataka': ['karnataka', 'bengaluru', 'bangalore', 'mysuru', 'mysore', 'hubli', 'mangalore'],
+    'Telangana': ['telangana', 'hyderabad', 'warangal', 'nizamabad'],
+    'Andhra Pradesh': ['andhra pradesh', 'visakhapatnam', 'vijayawada', 'guntur', 'tirupati'],
+    'Delhi': ['delhi', 'new delhi'],
+    'Punjab': ['punjab', 'ludhiana', 'amritsar', 'jalandhar', 'patiala'],
+    'Haryana': ['haryana', 'gurugram', 'gurgaon', 'faridabad', 'panipat', 'karnal'],
+    'Odisha': ['odisha', 'bhubaneswar', 'cuttack', 'rourkela'],
+    'Kerala': ['kerala', 'kochi', 'thiruvananthapuram', 'kozhikode', 'thrissur'],
+    'Assam': ['assam', 'guwahati', 'dibrugarh', 'silchar'],
+    'Jharkhand': ['jharkhand', 'ranchi', 'jamshedpur', 'dhanbad'],
+    'Chhattisgarh': ['chhattisgarh', 'raipur', 'bhilai', 'bilaspur'],
+}
+
+def detect_state(address):
+    addr = (address or '').lower()
+    for state, keywords in STATE_KEYWORDS.items():
+        if any(kw.lower() in addr for kw in keywords):
+            return state
+    return None
+
 MH_SCHEMES = {
     'en': {
         'ladki_bahin':    ('urgent', 'Ladki Bahin Yojana (Maharashtra)', 'Rs. 1,500/month'),
@@ -655,18 +692,20 @@ def index():
         session['result'] = result
         session['assessment_results_ready'] = True  # Flag to show the results block
 
-        # ADD THIS REDIRECT LINE HERE:
-        return redirect(url_for('index', lang=lang))
-
-        conn = get_db_connection()
-        conn.execute(
-            'INSERT INTO form_submissions (phone, ip_address, submitted_at) VALUES (?, ?, ?)',
-            (phone, ip, datetime.now().strftime("%d %b %Y, %I:%M %p"))
-        )
-        conn.commit()
-        conn.close()
+        try:
+            conn = get_db_connection()
+            conn.execute(
+                'INSERT INTO form_submissions (phone, ip_address, submitted_at, lang, schemes_count, state) VALUES (?, ?, ?, ?, ?, ?)',
+                (phone, ip, datetime.now().strftime("%d %b %Y, %I:%M %p"), lang, len(schemes), detect_state(address))
+            )
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass
 
         log_activity('PUBLIC', 'FORM_SUBMITTED', ip, f'Form submitted for {person_name}')
+
+        return redirect(url_for('index', lang=lang))
 
     # Pull the calculated values out of the session safely.
     # FIX: use pop() (not get()) for every result-related key so the data
@@ -990,7 +1029,50 @@ def offices():
 from keep_alive import start
 start("https://poverty-aid-identifier.onrender.com")
 
-@app.route('/progress')
+@app.route('/impact')
+def impact():
+    conn = get_db_connection()
+
+    total_forms = conn.execute('SELECT COUNT(*) FROM form_submissions').fetchone()[0]
+    total_schemes_matched = conn.execute('SELECT COALESCE(SUM(schemes_count),0) FROM form_submissions').fetchone()[0]
+    states_covered = conn.execute(
+        "SELECT COUNT(DISTINCT state) FROM form_submissions WHERE state IS NOT NULL AND state != ''"
+    ).fetchone()[0]
+    districts_with_reports = conn.execute(
+        "SELECT COUNT(DISTINCT location) FROM reports WHERE fake_flag=0 AND location IS NOT NULL AND location != ''"
+    ).fetchone()[0]
+    total_complaints = conn.execute('SELECT COUNT(*) FROM reports WHERE fake_flag=0').fetchone()[0]
+    resolved_complaints = conn.execute("SELECT COUNT(*) FROM reports WHERE status='Resolved' AND fake_flag=0").fetchone()[0]
+    resolution_rate = round((resolved_complaints / total_complaints * 100)) if total_complaints > 0 else 0
+
+    lang_rows = conn.execute(
+        "SELECT lang, COUNT(*) as cnt FROM form_submissions GROUP BY lang"
+    ).fetchall()
+    conn.close()
+
+    lang_counts = {'en': 0, 'hi': 0, 'mr': 0}
+    for row in lang_rows:
+        key = row['lang'] if row['lang'] in lang_counts else 'en'
+        lang_counts[key] += row['cnt']
+    lang_total = sum(lang_counts.values()) or 1
+    lang_percent = {k: round(v / lang_total * 100) for k, v in lang_counts.items()}
+
+    lang = request.args.get('lang') or session.get('lang', 'en')
+
+    return render_template(
+        'impact.html',
+        lang=lang,
+        total_forms=total_forms,
+        total_schemes_matched=total_schemes_matched,
+        states_covered=states_covered,
+        districts_with_reports=districts_with_reports,
+        total_complaints=total_complaints,
+        resolved_complaints=resolved_complaints,
+        resolution_rate=resolution_rate,
+        lang_percent=lang_percent
+    )
+
+
 def progress():
     conn = get_db_connection()
     now = datetime.now().strftime("%d %b %Y, %I:%M %p")

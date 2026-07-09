@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Impact Dashboard — Poverty Aid Identifier</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#F4F6FB;color:#1A1A2E;}
+:root{--navy:#000080;--saffron:#FF9933;--green:#138808;--gray:#6B7280;--border:#E5E7EB;}
+.flag-bar{height:5px;background:linear-gradient(90deg,#FF9933 33%,#fff 33%,#fff 66%,#138808 66%);}
+.header{background:var(--navy);padding:20px 16px;text-align:center;}
+.header h1{color:white;font-size:20px;font-weight:800;}
+.header p{color:rgba(255,255,255,0.7);font-size:12px;margin-top:4px;}
+.container{max-width:600px;margin:0 auto;padding:20px 16px 40px;}
+.metric-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px;}
+.metric-card{background:white;border-radius:14px;padding:18px 14px;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,0.06);border-top:4px solid var(--navy);}
+.metric-card.saffron{border-top-color:var(--saffron);}
+.metric-card.green{border-top-color:var(--green);}
+.metric-card.red{border-top-color:#c62828;}
+.metric-num{font-size:28px;font-weight:800;color:var(--navy);}
+.metric-label{font-size:11px;color:var(--gray);margin-top:4px;line-height:1.4;}
+.section{background:white;border-radius:14px;padding:18px;margin-bottom:16px;box-shadow:0 4px 16px rgba(0,0,0,0.06);}
+.section-title{font-size:13px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;}
+.lang-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.lang-bar-label{width:36px;font-size:12px;font-weight:700;color:var(--dark);}
+.lang-bar-track{flex:1;height:14px;background:#F0F0F0;border-radius:8px;overflow:hidden;}
+.lang-bar-fill{height:100%;border-radius:8px;}
+.lang-bar-fill.en{background:var(--navy);}
+.lang-bar-fill.hi{background:var(--saffron);}
+.lang-bar-fill.mr{background:var(--green);}
+.lang-bar-pct{width:38px;font-size:12px;font-weight:700;color:var(--gray);text-align:right;}
+.resolution-track{height:20px;background:#F0F0F0;border-radius:10px;overflow:hidden;margin-top:8px;}
+.resolution-fill{height:100%;background:linear-gradient(90deg,var(--green),#4ade80);border-radius:10px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;}
+.resolution-fill span{color:white;font-size:11px;font-weight:700;}
+.resolution-sub{font-size:12px;color:var(--gray);margin-top:8px;}
+.footer-note{text-align:center;font-size:11px;color:var(--gray);margin-top:20px;line-height:1.6;}
+.back-link{display:block;text-align:center;color:var(--navy);font-size:13px;font-weight:700;text-decoration:none;padding:12px;background:white;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-top:10px;}
+</style>
+</head>
+<body>
+<div class="flag-bar"></div>
+<div class="header">
+    <h1>📊 Impact Dashboard</h1>
+    <p>Real-time usage data — Poverty Aid Identifier</p>
+</div>
+
+<div class="container">
+    <div class="metric-grid">
+        <div class="metric-card">
+            <div class="metric-num">{{ total_forms }}</div>
+            <div class="metric-label">Total Forms Filled</div>
+        </div>
+        <div class="metric-card saffron">
+            <div class="metric-num">{{ total_schemes_matched }}</div>
+            <div class="metric-label">Total Schemes Matched</div>
+        </div>
+        <div class="metric-card green">
+            <div class="metric-num">{{ states_covered }}</div>
+            <div class="metric-label">States Covered</div>
+        </div>
+        <div class="metric-card red">
+            <div class="metric-num">{{ districts_with_reports }}</div>
+            <div class="metric-label">Districts with Corruption Reports</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Complaint Resolution</div>
+        <div class="resolution-track">
+            <div class="resolution-fill" style="width:{{ resolution_rate }}%">
+                <span>{{ resolution_rate }}%</span>
+            </div>
+        </div>
+        <div class="resolution-sub">{{ resolved_complaints }} of {{ total_complaints }} complaints resolved</div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Languages Used</div>
+        <div class="lang-bar-row">
+            <div class="lang-bar-label">EN</div>
+            <div class="lang-bar-track"><div class="lang-bar-fill en" style="width:{{ lang_percent.en }}%"></div></div>
+            <div class="lang-bar-pct">{{ lang_percent.en }}%</div>
+        </div>
+        <div class="lang-bar-row">
+            <div class="lang-bar-label">HI</div>
+            <div class="lang-bar-track"><div class="lang-bar-fill hi" style="width:{{ lang_percent.hi }}%"></div></div>
+            <div class="lang-bar-pct">{{ lang_percent.hi }}%</div>
+        </div>
+        <div class="lang-bar-row">
+            <div class="lang-bar-label">MR</div>
+            <div class="lang-bar-track"><div class="lang-bar-fill mr" style="width:{{ lang_percent.mr }}%"></div></div>
+            <div class="lang-bar-pct">{{ lang_percent.mr }}%</div>
+        </div>
+    </div>
+
+    <a href="/home" class="back-link">← Back to Home</a>
+
+    <div class="footer-note">
+        All numbers are live, pulled directly from the application database.<br>
+        No figures on this page are hardcoded or simulated.
+    </div>
+</div>
+</body>
+</html>
