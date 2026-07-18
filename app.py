@@ -1576,7 +1576,7 @@ def impact():
         lang_percent=lang_percent
     )
 
-
+@app.route('/progress')
 def progress():
     conn = get_db_connection()
     now = datetime.now().strftime("%d %b %Y, %I:%M %p")
