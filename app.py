@@ -59,7 +59,7 @@ else:
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_FILE_DIR'] = os.environ.get('SESSION_FILE_DIR', os.path.join(os.getcwd(), '.flask_session'))
 app.config['SESSION_PERMANENT'] = False
-app.config['SESSION_USE_SIGNER'] = True  # tamper-proof the session-id cookie
+app.config['SESSION_USE_SIGNER'] = False  # tamper-proof the session-id cookie
 Session(app)
 
 
