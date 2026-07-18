@@ -10,10 +10,23 @@ import time
 import smtplib
 import os
 import re
+import json
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
 from collections import defaultdict
+from flask_session import Session
+
+# Load a local .env file automatically (if present) so GEMINI_API_KEY,
+# SECRET_KEY etc. don't need to be manually exported in every terminal
+# session. Safe to skip if python-dotenv isn't installed — falls back to
+# whatever's already in the real environment.
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    print('[INFO] python-dotenv not installed — skipping .env file. '
+          'Install with: pip install python-dotenv --break-system-packages')
 
 app = Flask(__name__)
 
@@ -23,6 +36,31 @@ app.secret_key = os.environ.get('SECRET_KEY', _SECRET_KEY_FALLBACK)
 if app.secret_key == _SECRET_KEY_FALLBACK:
     print('[WARNING] SECRET_KEY env var not set — using an insecure default. '
           'Set SECRET_KEY before deploying this publicly.')
+
+# STARTUP DIAGNOSTIC — tells you immediately, in the terminal, whether the
+# chatbot will run on real Gemini AI or fall back to the rule-based system.
+# Never prints the actual key value.
+_gemini_key_check = os.environ.get('GEMINI_API_KEY', '')
+if _gemini_key_check:
+    print(f'[OK] GEMINI_API_KEY detected (starts with "{_gemini_key_check[:6]}...", '
+          f'{len(_gemini_key_check)} chars). Chatbot will use real Gemini AI.')
+else:
+    print('[WARNING] GEMINI_API_KEY not found in environment. Chatbot will run in '
+          'RULE-BASED FALLBACK MODE ONLY — no real AI, no conversation memory, '
+          'no case-worker intake. Set GEMINI_API_KEY in a .env file or your '
+          'terminal environment and restart the app to enable real AI.')
+
+# SERVER-SIDE SESSIONS. Flask's default session is a signed cookie stored in
+# the browser (~4KB limit) — too small to hold a growing profile + chat
+# history. This switches to storing session data in files on the server;
+# the browser only keeps a small session ID cookie. For a multi-server /
+# production deployment, swap SESSION_TYPE to 'redis' (needs a Redis
+# instance) instead of 'filesystem'.
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_FILE_DIR'] = os.environ.get('SESSION_FILE_DIR', os.path.join(os.getcwd(), '.flask_session'))
+app.config['SESSION_PERMANENT'] = False
+app.config['SESSION_USE_SIGNER'] = True  # tamper-proof the session-id cookie
+Session(app)
 
 
 @app.after_request
@@ -198,6 +236,24 @@ def get_client_ip():
         return request.environ['HTTP_X_FORWARDED_FOR'].split(',')[0]
     return request.environ.get('REMOTE_ADDR', 'unknown')
 
+# Sessions are now server-side (see Session(app) above), so we're no longer
+# constrained by the browser's ~4KB cookie limit. Still capped — for reply
+# quality and Gemini token cost, not storage — to a reasonable conversation
+# window.
+CHAT_HISTORY_MAX_TURNS = 8
+CHAT_HISTORY_MAX_CHARS = 800
+
+def push_chat_history(user_text, bot_text):
+    """Append this exchange to the rolling, size-capped conversation memory
+    so the NEXT message can naturally reference it (e.g. 'tell me more
+    about the second one')."""
+    history = session.get('chat_history', [])
+    history.append({'role': 'user', 'text': user_text[:CHAT_HISTORY_MAX_CHARS]})
+    history.append({'role': 'model', 'text': bot_text[:CHAT_HISTORY_MAX_CHARS]})
+    # Keep only the last N turns (2 messages per turn)
+    history = history[-(CHAT_HISTORY_MAX_TURNS * 2):]
+    session['chat_history'] = history
+
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -256,6 +312,7 @@ SCHEMES = {
         "pm_poshan": ("normal", "PM Poshan Scheme (Nutrition for Children)", "Free Meals"),
         "icds": ("normal", "Integrated Child Development Services (ICDS)", "Free Services"),
         "old_age_pension": ("normal", "Indira Gandhi National Old Age Pension", "Rs. 200-500/month"),
+        "widow_pension": ("urgent", "Indira Gandhi National Widow Pension Scheme (IGNWPS)", "Rs. 300-500/month"),
         "annapurna": ("normal", "Annapurna Scheme (Free Food for Elderly)", "10 kg/month"),
         "ayushman": ("normal", "Ayushman Bharat (Free Health Insurance)", "Rs. 5,00,000/yr"),
         "divyangjan": ("normal", "Divyangjan Swavalamban Scheme", "Rs. 300-1500/month"),
@@ -274,6 +331,7 @@ SCHEMES = {
         "pm_poshan": ("normal", "PM पोषण योजना (बच्चों के लिए पोषण)", "मुफ्त भोजन"),
         "icds": ("normal", "एकीकृत बाल विकास सेवाएं (ICDS)", "मुफ्त सेवाएं"),
         "old_age_pension": ("normal", "इंदिरा गांधी राष्ट्रीय वृद्धावस्था पेंशन", "रु. 200-500/माह"),
+        "widow_pension": ("urgent", "इंदिरा गांधी राष्ट्रीय विधवा पेंशन योजना", "रु. 300-500/माह"),
         "annapurna": ("normal", "अन्नपूर्णा योजना (बुजुर्गों के लिए मुफ्त भोजन)", "10 किग्रा/माह"),
         "ayushman": ("normal", "आयुष्मान भारत (मुफ्त स्वास्थ्य बीमा)", "रु. 5,00,000/वर्ष"),
         "divyangjan": ("normal", "दिव्यांगजन स्वावलंबन योजना", "रु. 300-1500/माह"),
@@ -292,6 +350,7 @@ SCHEMES = {
         "pm_poshan": ("normal", "PM पोषण योजना (मुलांसाठी पोषण)", "मोफत जेवण"),
         "icds": ("normal", "एकात्मिक बाल विकास सेवा (ICDS)", "मोफत सेवा"),
         "old_age_pension": ("normal", "इंदिरा गांधी राष्ट्रीय वृद्धापकाळ निवृत्तीवेतन", "रु. 200-500/महिना"),
+        "widow_pension": ("urgent", "इंदिरा गांधी राष्ट्रीय विधवा निवृत्तीवेतन योजना", "रु. 300-500/महिना"),
         "annapurna": ("normal", "अन्नपूर्णा योजना (वृद्धांसाठी मोफत अन्न)", "10 किग्रा/महिना"),
         "ayushman": ("normal", "आयुष्मान भारत (मोफत आरोग्य विमा)", "रु. 5,00,000/वर्ष"),
         "divyangjan": ("normal", "दिव्यांगजन स्वावलंबन योजना", "रु. 300-1500/महिना"),
@@ -335,6 +394,11 @@ SCHEME_DETAILS = {
         "en": {"name": "Indira Gandhi National Old Age Pension", "amount": "Rs. 200-500 per month", "description": "Monthly pension for destitute elderly persons living below poverty line.", "eligibility": ["Age 60 years and above", "BPL household", "No regular income source"], "documents": ["Aadhaar Card", "Age Proof", "BPL Certificate", "Bank Account Details"], "how_to_apply": "Apply at Gram Panchayat or Block Development Office.", "website": "https://nsap.nic.in", "helpline": "1800-111-555"},
         "hi": {"name": "इंदिरा गांधी राष्ट्रीय वृद्धावस्था पेंशन", "amount": "रु. 200-500 प्रति माह", "description": "गरीबी रेखा से नीचे जीवन यापन करने वाले निराश्रित बुजुर्गों के लिए मासिक पेंशन।", "eligibility": ["60 वर्ष और उससे अधिक आयु", "BPL परिवार", "कोई नियमित आय स्रोत नहीं"], "documents": ["आधार कार्ड", "आयु प्रमाण", "BPL प्रमाण पत्र", "बैंक खाता विवरण"], "how_to_apply": "ग्राम पंचायत या ब्लॉक विकास कार्यालय में आवेदन करें।", "website": "https://nsap.nic.in", "helpline": "1800-111-555"},
         "mr": {"name": "इंदिरा गांधी राष्ट्रीय वृद्धापकाळ निवृत्तीवेतन", "amount": "रु. 200-500 प्रति महिना", "description": "दारिद्र्यरेषेखाली जगणाऱ्या निराधार वृद्धांसाठी मासिक निवृत्तीवेतन.", "eligibility": ["60 वर्षे आणि त्याहून अधिक वय", "BPL कुटुंब", "कोणताही नियमित उत्पन्न स्रोत नाही"], "documents": ["आधार कार्ड", "वयाचा पुरावा", "BPL प्रमाणपत्र", "बँक खाते तपशील"], "how_to_apply": "ग्रामपंचायत किंवा गट विकास कार्यालयात अर्ज करा.", "website": "https://nsap.nic.in", "helpline": "1800-111-555"}
+    },
+    "widow_pension": {
+        "en": {"name": "Indira Gandhi National Widow Pension Scheme (IGNWPS)", "amount": "Rs. 300/month (40-79 yrs), Rs. 500/month (80+)", "description": "Central pension under the National Social Assistance Programme (NSAP) for widows from BPL households. Many states add a top-up on top of the central amount.", "eligibility": ["Widow aged 40-79 years (varies slightly by state)", "BPL household / family income within the state's ceiling", "Not already receiving another social welfare pension for the same purpose"], "documents": ["Aadhaar Card", "Husband's Death Certificate", "Age Proof", "BPL Certificate", "Bank Account Details"], "how_to_apply": "Apply at Gram Panchayat / Block Office (rural) or Municipality (urban), or online via the UMANG app / nsap.nic.in.", "website": "https://nsap.nic.in", "helpline": "1800-111-555"},
+        "hi": {"name": "इंदिरा गांधी राष्ट्रीय विधवा पेंशन योजना (IGNWPS)", "amount": "रु. 300/माह (40-79 वर्ष), रु. 500/माह (80+)", "description": "BPL परिवारों की विधवाओं के लिए National Social Assistance Programme (NSAP) के तहत केंद्रीय पेंशन। कई राज्य इसमें अतिरिक्त राशि जोड़ते हैं।", "eligibility": ["विधवा की आयु 40-79 वर्ष (राज्य अनुसार थोड़ा भिन्न)", "BPL परिवार / राज्य की आय सीमा के भीतर", "किसी अन्य समान सामाजिक पेंशन का लाभ न ले रही हों"], "documents": ["आधार कार्ड", "पति का मृत्यु प्रमाण पत्र", "आयु प्रमाण", "BPL प्रमाण पत्र", "बैंक खाता विवरण"], "how_to_apply": "ग्राम पंचायत / ब्लॉक कार्यालय (ग्रामीण) या नगर पालिका (शहरी) में आवेदन करें, या UMANG ऐप / nsap.nic.in पर ऑनलाइन आवेदन करें।", "website": "https://nsap.nic.in", "helpline": "1800-111-555"},
+        "mr": {"name": "इंदिरा गांधी राष्ट्रीय विधवा निवृत्तीवेतन योजना (IGNWPS)", "amount": "रु. 300/महिना (40-79 वर्षे), रु. 500/महिना (80+)", "description": "BPL कुटुंबातील विधवांसाठी National Social Assistance Programme (NSAP) अंतर्गत केंद्रीय निवृत्तीवेतन. अनेक राज्ये यात अतिरिक्त रक्कम जोडतात.", "eligibility": ["विधवेचे वय 40-79 वर्षे (राज्यानुसार थोडे वेगळे)", "BPL कुटुंब / राज्याच्या उत्पन्न मर्यादेत", "इतर तत्सम सामाजिक निवृत्तीवेतनाचा लाभ घेत नसाव्यात"], "documents": ["आधार कार्ड", "पतीचा मृत्यू दाखला", "वयाचा पुरावा", "BPL प्रमाणपत्र", "बँक खाते तपशील"], "how_to_apply": "ग्रामपंचायत / गट कार्यालयात (ग्रामीण) किंवा नगरपालिकेत (शहरी) अर्ज करा, किंवा UMANG अॅप / nsap.nic.in वर ऑनलाइन अर्ज करा.", "website": "https://nsap.nic.in", "helpline": "1800-111-555"}
     },
     "annapurna": {
         "en": {"name": "Annapurna Scheme", "amount": "10 kg free food grains per month", "description": "Free food grains to senior citizens not covered under NSAP old age pension.", "eligibility": ["Age 65 years and above", "Not receiving old age pension", "Indigent/destitute"], "documents": ["Aadhaar Card", "Age Proof", "BPL Certificate"], "how_to_apply": "Apply at Gram Panchayat or Block Office.", "website": "https://dfpd.gov.in", "helpline": "1800-111-001"},
@@ -523,7 +587,411 @@ def calculate_score(data):
     elif data['medical'] == 'disability': score += 20
     if data['accident'] == 'yes': score += 25
     if data['earning_member_died'] == 'yes': score += 25
+    if data.get('widow_status') == 'yes': score += 15
     return score
+
+# ---------------------------------------------------------------------------
+# AI Welfare Assistant helpers
+# These turn the raw eligibility-form answers already sitting in the session
+# into a readable "User Profile" block that gets fed to Gemini, plus a couple
+# of deterministic (non-LLM) explainers for the Need Score and document
+# checklist so those specific answers are always accurate, not guessed.
+# ---------------------------------------------------------------------------
+
+PROFILE_LABELS = {
+    'en': {
+        'age_group': {'child': 'Child', 'adult': 'Adult', 'elderly': 'Senior Citizen (60+)'},
+        'housing': {'homeless': 'Homeless', 'kutcha': 'Kutcha (temporary/weak structure)', 'rented': 'Rented house', 'pucca': 'Pucca (permanent) house'},
+        'medical': {'none': 'No major medical issue', 'emergency': 'Medical Emergency', 'chronic_illness': 'Chronic Illness', 'disability': 'Disability'},
+        'yesno': {'yes': 'Yes', 'no': 'No', 'sometimes': 'Sometimes'},
+        'gender': {'male': 'Male', 'female': 'Female', 'other': 'Other'},
+        'fields': {'name': 'Name', 'age_group': 'Age Group', 'gender': 'Gender', 'widow': 'Widow', 'income': 'Monthly Income',
+                   'family_size': 'Family Size', 'housing': 'Housing', 'medical': 'Medical Condition', 'electricity': 'Electricity',
+                   'ration': 'Ration Card', 'accident': 'Recent Accident', 'earning_member_died': 'Earning Member Died Recently',
+                   'address': 'Address', 'state': 'State', 'score': 'AI Need Score', 'priority': 'Priority'},
+    },
+    'hi': {
+        'age_group': {'child': 'बच्चा', 'adult': 'वयस्क', 'elderly': 'वरिष्ठ नागरिक (60+)'},
+        'housing': {'homeless': 'बेघर', 'kutcha': 'कच्चा घर', 'rented': 'किराए का घर', 'pucca': 'पक्का घर'},
+        'medical': {'none': 'कोई बड़ी बीमारी नहीं', 'emergency': 'चिकित्सा आपातकाल', 'chronic_illness': 'पुरानी बीमारी', 'disability': 'दिव्यांगता'},
+        'yesno': {'yes': 'हां', 'no': 'नहीं', 'sometimes': 'कभी-कभी'},
+        'gender': {'male': 'पुरुष', 'female': 'महिला', 'other': 'अन्य'},
+        'fields': {'name': 'नाम', 'age_group': 'आयु समूह', 'gender': 'लिंग', 'widow': 'विधवा', 'income': 'मासिक आय',
+                   'family_size': 'परिवार का आकार', 'housing': 'आवास', 'medical': 'चिकित्सा स्थिति', 'electricity': 'बिजली',
+                   'ration': 'राशन कार्ड', 'accident': 'हाल की दुर्घटना', 'earning_member_died': 'कमाने वाले सदस्य की मृत्यु',
+                   'address': 'पता', 'state': 'राज्य', 'score': 'AI Need Score', 'priority': 'प्राथमिकता'},
+    },
+    'mr': {
+        'age_group': {'child': 'मूल', 'adult': 'प्रौढ', 'elderly': 'ज्येष्ठ नागरिक (60+)'},
+        'housing': {'homeless': 'बेघर', 'kutcha': 'कच्चे घर', 'rented': 'भाड्याचे घर', 'pucca': 'पक्के घर'},
+        'medical': {'none': 'मोठा आजार नाही', 'emergency': 'वैद्यकीय आणीबाणी', 'chronic_illness': 'दीर्घकालीन आजार', 'disability': 'अपंगत्व'},
+        'yesno': {'yes': 'होय', 'no': 'नाही', 'sometimes': 'कधी कधी'},
+        'gender': {'male': 'पुरुष', 'female': 'स्त्री', 'other': 'इतर'},
+        'fields': {'name': 'नाव', 'age_group': 'वयोगट', 'gender': 'लिंग', 'widow': 'विधवा', 'income': 'मासिक उत्पन्न',
+                   'family_size': 'कुटुंबाचा आकार', 'housing': 'निवास', 'medical': 'वैद्यकीय स्थिती', 'electricity': 'वीज',
+                   'ration': 'रेशन कार्ड', 'accident': 'अलीकडील अपघात', 'earning_member_died': 'कमावत्या सदस्याचा मृत्यू',
+                   'address': 'पत्ता', 'state': 'राज्य', 'score': 'AI Need Score', 'priority': 'प्राधान्य'},
+    },
+}
+
+def _label(category, value, lang):
+    if not value:
+        return None
+    lang_map = PROFILE_LABELS.get(lang, PROFILE_LABELS['en'])
+    return lang_map.get(category, {}).get(value, value)
+
+def build_profile_context(profile, lang='en'):
+    """Turn the stored session profile dict into a compact text block for the
+    Gemini prompt, e.g. Name / Age / Income / Need Score / Recommended Schemes.
+    Only includes fields that were actually answered."""
+    if not profile:
+        return None
+
+    F = PROFILE_LABELS.get(lang, PROFILE_LABELS['en'])['fields']
+    lines = []
+
+    if profile.get('name'):
+        lines.append(f"{F['name']}: {profile['name']}")
+    if profile.get('age_group'):
+        lines.append(f"{F['age_group']}: {_label('age_group', profile['age_group'], lang)}")
+    if profile.get('gender'):
+        lines.append(f"{F['gender']}: {_label('gender', profile['gender'], lang)}")
+    if profile.get('widow') == 'yes':
+        lines.append(f"{F['widow']}: {_label('yesno', 'yes', lang)}")
+    if profile.get('income'):
+        lines.append(f"{F['income']}: Rs. {profile['income']}")
+    if profile.get('family_size'):
+        lines.append(f"{F['family_size']}: {profile['family_size']}")
+    if profile.get('housing'):
+        lines.append(f"{F['housing']}: {_label('housing', profile['housing'], lang)}")
+    if profile.get('medical') and profile['medical'] != 'none':
+        lines.append(f"{F['medical']}: {_label('medical', profile['medical'], lang)}")
+    if profile.get('electricity'):
+        lines.append(f"{F['electricity']}: {_label('yesno', profile['electricity'], lang)}")
+    if profile.get('ration'):
+        lines.append(f"{F['ration']}: {_label('yesno', profile['ration'], lang)}")
+    if profile.get('accident') == 'yes':
+        lines.append(f"{F['accident']}: {_label('yesno', 'yes', lang)}")
+    if profile.get('earning_member_died') == 'yes':
+        lines.append(f"{F['earning_member_died']}: {_label('yesno', 'yes', lang)}")
+    if profile.get('state'):
+        lines.append(f"{F['state']}: {profile['state']}")
+    if profile.get('score') is not None:
+        lines.append(f"{F['score']}: {profile['score']} / 175")
+    if profile.get('priority'):
+        lines.append(f"{F['priority']}: {profile['priority']}")
+
+    schemes = profile.get('schemes') or []
+    if schemes:
+        scheme_lines = "\n".join(f"- {sc['name']} ({sc['amount']})" for sc in schemes)
+        lines.append(f"\nRecommended Schemes:\n{scheme_lines}")
+
+    return "User Profile:\n" + "\n".join(lines)
+
+def explain_need_score(profile, lang='en'):
+    """Deterministic, always-accurate breakdown of WHY the score is what it
+    is — mirrors calculate_score() exactly instead of letting the LLM guess."""
+    if not profile:
+        return None
+    reasons = []
+    age_group = profile.get('age_group', '')
+    income = int(profile.get('income') or 0)
+    family = int(profile.get('family_size') or 0)
+    housing = profile.get('housing', '')
+    electricity = profile.get('electricity', '')
+    ration = profile.get('ration', '')
+    medical = profile.get('medical', '')
+    accident = profile.get('accident', '')
+    earning_died = profile.get('earning_member_died', '')
+    widow = profile.get('widow', '')
+
+    texts = {
+        'en': {
+            'child': "Child (+30 pts) — children are a high priority group",
+            'elderly': "Senior citizen, 60+ (+25 pts)",
+            'income_lt5000': f"Very low income, under Rs. 5,000/month (+40 pts)",
+            'income_lt10000': f"Low income, under Rs. 10,000/month (+25 pts)",
+            'income_lt20000': f"Below-average income, under Rs. 20,000/month (+10 pts)",
+            'family_ge5': "Large family, 5 or more members (+20 pts)",
+            'family_ge3': "Medium family, 3-4 members (+10 pts)",
+            'homeless': "Currently homeless (+20 pts)",
+            'kutcha': "Living in a kutcha (temporary/weak) house (+15 pts)",
+            'rented': "Living in a rented house (+5 pts)",
+            'electricity_no': "No electricity connection (+10 pts)",
+            'electricity_sometimes': "Irregular electricity (+5 pts)",
+            'ration_no': "No ration card (+10 pts)",
+            'medical_emergency': "Ongoing medical emergency (+30 pts)",
+            'medical_chronic': "Chronic illness (+15 pts)",
+            'medical_disability': "Living with a disability (+20 pts)",
+            'accident': "Recent accident (+25 pts)",
+            'earning_died': "Family's earning member passed away recently (+25 pts)",
+            'widow': "Widow status (+15 pts) — a recognized vulnerability factor",
+            'header': "Your Need Score is {score}/175 because of:",
+            'footer': "A higher score means higher priority for urgent government help.",
+        },
+        'hi': {
+            'child': "बच्चा (+30 अंक) — बच्चे उच्च प्राथमिकता समूह हैं",
+            'elderly': "वरिष्ठ नागरिक, 60+ (+25 अंक)",
+            'income_lt5000': "बहुत कम आय, ₹5,000/माह से कम (+40 अंक)",
+            'income_lt10000': "कम आय, ₹10,000/माह से कम (+25 अंक)",
+            'income_lt20000': "औसत से कम आय, ₹20,000/माह से कम (+10 अंक)",
+            'family_ge5': "बड़ा परिवार, 5 या अधिक सदस्य (+20 अंक)",
+            'family_ge3': "मध्यम परिवार, 3-4 सदस्य (+10 अंक)",
+            'homeless': "वर्तमान में बेघर (+20 अंक)",
+            'kutcha': "कच्चे घर में रहना (+15 अंक)",
+            'rented': "किराए के घर में रहना (+5 अंक)",
+            'electricity_no': "बिजली कनेक्शन नहीं (+10 अंक)",
+            'electricity_sometimes': "अनियमित बिजली (+5 अंक)",
+            'ration_no': "राशन कार्ड नहीं (+10 अंक)",
+            'medical_emergency': "चल रही चिकित्सा आपातकाल (+30 अंक)",
+            'medical_chronic': "पुरानी बीमारी (+15 अंक)",
+            'medical_disability': "दिव्यांगता के साथ जीवन (+20 अंक)",
+            'accident': "हाल की दुर्घटना (+25 अंक)",
+            'earning_died': "परिवार के कमाने वाले सदस्य का हाल में निधन (+25 अंक)",
+            'widow': "विधवा स्थिति (+15 अंक) — एक मान्यता प्राप्त संवेदनशील कारक",
+            'header': "आपका Need Score {score}/175 है क्योंकि:",
+            'footer': "अधिक स्कोर का मतलब है तत्काल सरकारी मदद के लिए उच्च प्राथमिकता।",
+        },
+        'mr': {
+            'child': "मूल (+30 गुण) — मुले उच्च प्राधान्य गट आहेत",
+            'elderly': "ज्येष्ठ नागरिक, 60+ (+25 गुण)",
+            'income_lt5000': "खूप कमी उत्पन्न, ₹5,000/महिना पेक्षा कमी (+40 गुण)",
+            'income_lt10000': "कमी उत्पन्न, ₹10,000/महिना पेक्षा कमी (+25 गुण)",
+            'income_lt20000': "सरासरीपेक्षा कमी उत्पन्न, ₹20,000/महिना पेक्षा कमी (+10 गुण)",
+            'family_ge5': "मोठे कुटुंब, 5 किंवा अधिक सदस्य (+20 गुण)",
+            'family_ge3': "मध्यम कुटुंब, 3-4 सदस्य (+10 गुण)",
+            'homeless': "सध्या बेघर (+20 गुण)",
+            'kutcha': "कच्च्या घरात राहणे (+15 गुण)",
+            'rented': "भाड्याच्या घरात राहणे (+5 गुण)",
+            'electricity_no': "वीज जोडणी नाही (+10 गुण)",
+            'electricity_sometimes': "अनियमित वीज (+5 गुण)",
+            'ration_no': "रेशन कार्ड नाही (+10 गुण)",
+            'medical_emergency': "सुरू असलेली वैद्यकीय आणीबाणी (+30 गुण)",
+            'medical_chronic': "दीर्घकालीन आजार (+15 गुण)",
+            'medical_disability': "अपंगत्वासह जीवन (+20 गुण)",
+            'accident': "अलीकडील अपघात (+25 गुण)",
+            'earning_died': "कुटुंबातील कमावत्या सदस्याचे नुकतेच निधन (+25 गुण)",
+            'widow': "विधवा स्थिती (+15 गुण) — एक मान्यताप्राप्त असुरक्षितता घटक",
+            'header': "तुमचा Need Score {score}/175 आहे कारण:",
+            'footer': "जास्त स्कोअर म्हणजे तातडीच्या सरकारी मदतीसाठी जास्त प्राधान्य.",
+        },
+    }
+    t = texts.get(lang, texts['en'])
+
+    if age_group == 'child': reasons.append(t['child'])
+    elif age_group == 'elderly': reasons.append(t['elderly'])
+    if income < 5000: reasons.append(t['income_lt5000'])
+    elif income < 10000: reasons.append(t['income_lt10000'])
+    elif income < 20000: reasons.append(t['income_lt20000'])
+    if family >= 5: reasons.append(t['family_ge5'])
+    elif family >= 3: reasons.append(t['family_ge3'])
+    if housing == 'homeless': reasons.append(t['homeless'])
+    elif housing == 'kutcha': reasons.append(t['kutcha'])
+    elif housing == 'rented': reasons.append(t['rented'])
+    if electricity == 'no': reasons.append(t['electricity_no'])
+    elif electricity == 'sometimes': reasons.append(t['electricity_sometimes'])
+    if ration == 'no': reasons.append(t['ration_no'])
+    if medical == 'emergency': reasons.append(t['medical_emergency'])
+    elif medical == 'chronic_illness': reasons.append(t['medical_chronic'])
+    elif medical == 'disability': reasons.append(t['medical_disability'])
+    if accident == 'yes': reasons.append(t['accident'])
+    if earning_died == 'yes': reasons.append(t['earning_died'])
+    if widow == 'yes': reasons.append(t['widow'])
+
+    header = t['header'].format(score=profile.get('score', 0))
+    body = "\n".join(f"• {r}" for r in reasons) if reasons else "-"
+    return f"{header}\n\n{body}\n\n{t['footer']}"
+
+def get_combined_documents(profile, lang='en'):
+    """Combined, de-duplicated document checklist across every scheme the
+    user is recommended for, pulled from the same SCHEME_DETAILS data used
+    on the scheme detail pages — so it never invents documents."""
+    if not profile or not profile.get('schemes'):
+        return None
+    seen = []
+    for sc in profile['schemes']:
+        detail = SCHEME_DETAILS.get(sc['key'])
+        if not detail:
+            continue
+        info = detail.get(lang, detail.get('en'))
+        for doc in info.get('documents', []):
+            if doc not in seen:
+                seen.append(doc)
+    if not seen:
+        return None
+    headers = {'en': "Documents you'll need (combined checklist):",
+               'hi': "आपको जरूरी दस्तावेज़ (संयुक्त सूची):",
+               'mr': "तुम्हाला आवश्यक कागदपत्रे (एकत्रित यादी):"}
+    header = headers.get(lang, headers['en'])
+    body = "\n".join(f"• {d}" for d in seen)
+    return f"{header}\n{body}"
+
+# ---------------------------------------------------------------------------
+# Case-worker mode: lets someone just DESCRIBE their situation in the chat
+# ("I'm a 62-year-old widow from Nagpur earning Rs 4000") instead of
+# requiring the eligibility form first. Gemini only EXTRACTS structured
+# facts (JSON) from the sentence — the actual eligibility/score/scheme
+# matching is still done by your existing calculate_score()/get_schemes(),
+# so the numbers can't be hallucinated.
+# ---------------------------------------------------------------------------
+
+INTAKE_DEFAULTS = {
+    'age_group': 'adult', 'income': '0', 'family_size': '1', 'housing': 'pucca',
+    'electricity': 'yes', 'ration': 'yes', 'medical': 'none', 'accident': 'no',
+    'earning_member_died': 'no', 'widow_status': 'no', 'address': '',
+}
+# Fields we look at to decide "is this actually a self-description" vs a
+# generic question — require at least 2 of these before treating it as intake.
+INTAKE_SIGNAL_FIELDS = ['age_group', 'income', 'housing', 'medical', 'family_size', 'gender', 'widow', 'address']
+
+def _derive_age_group(age_years):
+    try:
+        y = int(age_years)
+    except (TypeError, ValueError):
+        return None
+    if y < 18: return 'child'
+    if y >= 60: return 'elderly'
+    return 'adult'
+
+def extract_case_intake(model, user_message, lang):
+    """One Gemini call that either (a) extracts structured facts if the
+    message describes the sender's own situation, or (b) just answers
+    normally if it's a generic question. Returns a dict or None on failure."""
+    extraction_prompt = f"""You are a JSON extraction engine for an Indian welfare-scheme app. Read the citizen's message below.
+
+If the message describes THIS PERSON'S OWN life situation (age, income, housing, family, health, widow status, location, etc. — like a case-worker intake), set "is_case_intake" to true and fill "extracted" with whatever facts are mentioned (use null for anything not mentioned). Otherwise (it's a generic question like "what is Ayushman Bharat" or "how do I apply"), set "is_case_intake" to false, leave "extracted" as null, and instead put a short helpful answer (max 5 lines, simple language) in "reply". If the message is VAGUE — like "I have a doubt", "I have a question", "need help" — with no actual topic mentioned, do NOT guess a topic. Instead set "is_case_intake" to false and put a short, friendly clarifying question in "reply" asking what the doubt/question is about (e.g. eligibility, documents, how to apply, Need Score, corruption reporting).
+
+Respond with ONLY raw JSON, no markdown fences, no commentary, matching exactly this shape:
+{{
+  "is_case_intake": true or false,
+  "extracted": {{
+    "name": string or null,
+    "age_years": integer or null,
+    "gender": one of "male"/"female"/"other" or null,
+    "widow": "yes" or "no" or null,
+    "income": integer (monthly income in rupees, digits only) or null,
+    "family_size": integer or null,
+    "housing": one of "homeless"/"kutcha"/"rented"/"pucca" or null,
+    "electricity": one of "yes"/"no"/"sometimes" or null,
+    "ration": "yes" or "no" or null,
+    "medical": one of "none"/"emergency"/"chronic_illness"/"disability" or null,
+    "accident": "yes" or "no" or null,
+    "earning_member_died": "yes" or "no" or null,
+    "address": string (any city/state/district mentioned) or null
+  }} or null,
+  "reply": string or null
+}}
+
+Reply language for "reply" field should be: {lang}
+
+Citizen's message: "{user_message}\""""
+
+    try:
+        resp = model.generate_content(extraction_prompt)
+        raw = resp.text.strip()
+        raw = re.sub(r'^```(json)?|```$', '', raw.strip(), flags=re.MULTILINE).strip()
+        parsed = json.loads(raw)
+        return parsed
+    except Exception as e:
+        print(f"Case-intake extraction error: {e}")
+        return None
+
+def build_profile_from_intake(extracted, lang):
+    """Fill missing fields with neutral defaults, then run the SAME
+    calculate_score()/get_schemes() used by the real eligibility form, so a
+    chat-described situation gets a real, consistent Need Score."""
+    data = dict(INTAKE_DEFAULTS)
+    age_group = extracted.get('age_group') or _derive_age_group(extracted.get('age_years'))
+    if age_group:
+        data['age_group'] = age_group
+    if extracted.get('income') is not None:
+        data['income'] = str(extracted['income'])
+    if extracted.get('family_size') is not None:
+        data['family_size'] = str(extracted['family_size'])
+    for key in ['housing', 'electricity', 'ration', 'medical', 'accident', 'earning_member_died']:
+        if extracted.get(key):
+            data[key] = extracted[key]
+    if extracted.get('widow'):
+        data['widow_status'] = extracted['widow']
+    address = extracted.get('address') or ''
+    data['address'] = address
+
+    score = calculate_score(data)
+    schemes = get_schemes(score, data, lang)
+    priority = get_priority(score, data)
+
+    return {
+        'name': extracted.get('name') or '',
+        'gender': extracted.get('gender') or '',
+        'widow': extracted.get('widow') or '',
+        'age_group': data['age_group'],
+        'income': data['income'],
+        'family_size': data['family_size'],
+        'housing': data['housing'],
+        'electricity': data['electricity'],
+        'ration': data['ration'],
+        'medical': data['medical'],
+        'accident': data['accident'],
+        'earning_member_died': data['earning_member_died'],
+        'address': address,
+        'state': detect_state(address),
+        'score': score,
+        'priority': priority,
+        'schemes': [{'key': sc[0], 'urgency': sc[1], 'name': sc[2], 'amount': sc[3]} for sc in schemes],
+        'lang': lang,
+        'source': 'chat_intake',
+        'updated_at': datetime.now().strftime("%d %b %Y, %I:%M %p"),
+    }
+
+def format_case_worker_reply(profile, lang='en'):
+    """The 'digital case worker' response: eligible schemes, documents,
+    where to apply, and the recommended order — all computed from real
+    scheme data, not invented by the LLM."""
+    schemes = profile.get('schemes') or []
+    urgent = [sc for sc in schemes if sc.get('urgency') == 'urgent']
+    normal = [sc for sc in schemes if sc.get('urgency') != 'urgent']
+    ordered = urgent + normal
+
+    where_to_apply = []
+    for sc in ordered[:4]:
+        detail = SCHEME_DETAILS.get(sc['key'])
+        if detail:
+            info = detail.get(lang, detail.get('en'))
+            how = info.get('how_to_apply', '')
+            if how and how not in where_to_apply:
+                where_to_apply.append(how)
+
+    checklist = get_combined_documents(profile, lang)
+
+    L = {
+        'en': {'greet': "Based on what you told me, here's your personal plan:",
+               'eligible': "✅ You may be eligible for:", 'order': "📋 Recommended order to apply:",
+               'where': "📍 Where to go:", 'note': "This is an estimate from our chat — fill the full eligibility form on the app for your exact Need Score and to save this permanently."},
+        'hi': {'greet': "आपने जो बताया उसके आधार पर, यह आपकी व्यक्तिगत योजना है:",
+               'eligible': "✅ आप इनके लिए पात्र हो सकते हैं:", 'order': "📋 आवेदन का सुझाया गया क्रम:",
+               'where': "📍 कहां जाएं:", 'note': "यह हमारी बातचीत पर आधारित एक अनुमान है — सटीक Need Score और स्थायी रिकॉर्ड के लिए ऐप में पूरा फॉर्म भरें।"},
+        'mr': {'greet': "तुम्ही जे सांगितले त्यानुसार, ही तुमची वैयक्तिक योजना आहे:",
+               'eligible': "✅ तुम्ही यासाठी पात्र असू शकता:", 'order': "📋 अर्ज करण्याचा सुचवलेला क्रम:",
+               'where': "📍 कुठे जावे:", 'note': "हा आमच्या संभाषणावर आधारित अंदाज आहे — अचूक Need Score आणि कायमस्वरूपी नोंदीसाठी अॅपमध्ये संपूर्ण फॉर्म भरा."},
+    }
+    t = L.get(lang, L['en'])
+
+    parts = [t['greet'], ""]
+    parts.append(t['eligible'])
+    parts.extend(f"• {sc['name']} — {sc['amount']}" for sc in ordered[:6])
+    parts.append("")
+    parts.append(t['order'])
+    parts.extend(f"{i+1}. {sc['name']}" for i, sc in enumerate(ordered[:4]))
+    if checklist:
+        parts.append("")
+        parts.append(checklist)
+    if where_to_apply:
+        parts.append("")
+        parts.append(t['where'])
+        parts.extend(f"• {w}" for w in where_to_apply[:3])
+    parts.append("")
+    parts.append(t['note'])
+    return "\n".join(parts)
 
 def get_schemes(score, data, lang='en'):
     schemes = []
@@ -534,12 +1002,14 @@ def get_schemes(score, data, lang='en'):
     electricity = data['electricity']
     ration = data['ration']
     earning = data['earning_member_died']
+    widow_status = data.get('widow_status', 'no')
     income = int(data.get('income', 0) or 0)
     address = data.get('address', '').lower()
     s = SCHEMES.get(lang, SCHEMES['en'])
     if medical == 'emergency': schemes.append(('pm_jan_arogya',) + s['pm_jan_arogya'])
     if accident == 'yes': schemes.append(('state_emergency',) + s['state_emergency'])
     if earning == 'yes': schemes.append(('national_family',) + s['national_family'])
+    if widow_status == 'yes': schemes.append(('widow_pension',) + s['widow_pension'])
     if age == 'child':
         schemes.append(('pm_poshan',) + s['pm_poshan'])
         schemes.append(('icds',) + s['icds'])
@@ -571,7 +1041,7 @@ def get_schemes(score, data, lang='en'):
                 schemes.append(('vayoshri_mh',) + mh['vayoshri_mh'])
         if housing in ['homeless', 'kutcha']:
             schemes.append(('gharkul',) + mh['gharkul'])
-        if earning == 'yes' or (income < 5000 and age == 'elderly'):
+        if earning == 'yes' or widow_status == 'yes' or (income < 5000 and age == 'elderly'):
             schemes.append(('sanjay_gandhi',) + mh['sanjay_gandhi'])
         if age == 'child':
             schemes.append(('rajmata_jijau',) + mh['rajmata_jijau'])
@@ -671,6 +1141,8 @@ def index():
         person_name = sanitize(request.form.get('person_name', ''))
         phone = sanitize(request.form.get('phone', ''))
         address = sanitize(request.form.get('address', ''))
+        gender = sanitize(request.form.get('gender', ''))
+        widow = sanitize(request.form.get('widow_status', ''))
 
         if phone and not re.match(r'^[0-9]{10}$', phone):
             return render_template(
@@ -697,6 +1169,32 @@ def index():
         session['score'] = score
         session['result'] = result
         session['assessment_results_ready'] = True  # Flag to show the results block
+
+        # Persistent profile for the AI Welfare Assistant chatbot. Unlike the
+        # keys above, this is NOT popped after one display — it stays in the
+        # session so the chatbot can use it on any page, any time later,
+        # until the person fills the form again.
+        session['profile'] = {
+            'name': person_name,
+            'gender': gender,
+            'widow': widow,
+            'age_group': request.form.get('age_group', ''),
+            'income': request.form.get('income', ''),
+            'family_size': request.form.get('family_size', ''),
+            'housing': request.form.get('housing', ''),
+            'electricity': request.form.get('electricity', ''),
+            'ration': request.form.get('ration', ''),
+            'medical': request.form.get('medical', ''),
+            'accident': request.form.get('accident', ''),
+            'earning_member_died': request.form.get('earning_member_died', ''),
+            'address': address,
+            'state': detect_state(address),
+            'score': score,
+            'priority': result,
+            'schemes': [{'key': sc[0], 'urgency': sc[1], 'name': sc[2], 'amount': sc[3]} for sc in schemes],
+            'lang': lang,
+            'updated_at': datetime.now().strftime("%d %b %Y, %I:%M %p"),
+        }
 
         try:
             conn = get_db_connection()
@@ -1357,106 +1855,267 @@ def reject_story(story_id):
 @app.route('/chatbot')
 def chatbot_page():
     lang = request.args.get('lang', session.get('lang', 'en'))
-    return render_template('chatbot.html', lang=lang)
- 
- 
+    profile = session.get('profile')
+    return render_template('chatbot.html', lang=lang, profile=profile)
+
+
 @app.route('/chatbot', methods=['POST'])
 def chatbot_reply():
+    data = None
     try:
         data = request.get_json()
         user_message = data.get('message', '').strip()
         lang = data.get('lang', 'en')
- 
+
         if not user_message:
             return jsonify({'reply': 'Please ask a question.'})
- 
+
         # Sanitize input
         user_message = sanitize(user_message)
- 
+
+        # The eligibility form the person already filled in — if it exists,
+        # the assistant should use it instead of asking generic questions.
+        profile = session.get('profile')
+
+        # A couple of question types get a deterministic, always-accurate
+        # answer computed directly from the profile instead of asking Gemini
+        # to guess — this keeps the Need Score explanation and document
+        # checklist 100% consistent with what calculate_score()/get_schemes()
+        # actually did.
+        q = user_message.lower()
+        score_question = any(k in q for k in [
+            'need score', 'why is my score', 'why my score', 'score high', 'score so high',
+            'स्कोर', 'गुण'
+        ])
+        doc_question = any(k in q for k in [
+            'document', 'documents', 'papers', 'paper', 'missing document',
+            'दस्तावेज़', 'कागदपत्र', 'कागद'
+        ])
+
+        if profile and score_question:
+            explanation = explain_need_score(profile, lang)
+            if explanation:
+                push_chat_history(user_message, explanation)
+                log_activity('CHATBOT', 'QUERY', get_client_ip(), f'Lang: {lang} | Q(score): {user_message[:50]}')
+                return jsonify({'reply': explanation})
+
+        if profile and doc_question:
+            checklist = get_combined_documents(profile, lang)
+            if checklist:
+                push_chat_history(user_message, checklist)
+                log_activity('CHATBOT', 'QUERY', get_client_ip(), f'Lang: {lang} | Q(docs): {user_message[:50]}')
+                return jsonify({'reply': checklist})
+
         # Get Gemini API key
         api_key = os.environ.get('GEMINI_API_KEY', '')
- 
+
         if not api_key:
-            # Fallback if no API key — rule based answers
-            return jsonify({'reply': get_fallback_answer(user_message, lang)})
- 
+            # Fallback if no API key — rule based answers, profile-aware
+            fallback_reply = get_fallback_answer(user_message, lang, profile)
+            push_chat_history(user_message, fallback_reply)
+            return jsonify({'reply': fallback_reply})
+
         # Configure Gemini
         import google.generativeai as genai
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
- 
+        model = genai.GenerativeModel('gemini-3.5-flash')
+
+        # CASE-WORKER MODE: if this person hasn't filled the eligibility form
+        # yet, see if their message is actually a self-description ("I'm a
+        # 62-year-old widow from Nagpur earning Rs 4000") rather than a plain
+        # FAQ. One Gemini call either extracts structured facts (which we
+        # then run through the real scoring engine) or just answers the FAQ.
+        if not profile:
+            intake = extract_case_intake(model, user_message, lang)
+            if intake and intake.get('is_case_intake'):
+                extracted = intake.get('extracted') or {}
+                signal_count = sum(1 for f in INTAKE_SIGNAL_FIELDS if extracted.get(f) not in (None, ''))
+                if signal_count >= 2:
+                    new_profile = build_profile_from_intake(extracted, lang)
+                    session['profile'] = new_profile  # remembered for follow-up questions too
+                    reply = format_case_worker_reply(new_profile, lang)
+                    push_chat_history(user_message, reply)
+                    log_activity('CHATBOT', 'CASE_INTAKE', get_client_ip(), f'Lang: {lang} | Q: {user_message[:50]}')
+                    return jsonify({'reply': reply})
+            elif intake and intake.get('reply'):
+                # Not a self-description — Gemini already answered it in the same call.
+                push_chat_history(user_message, intake['reply'])
+                log_activity('CHATBOT', 'QUERY', get_client_ip(), f'Lang: {lang} | Q: {user_message[:50]}')
+                return jsonify({'reply': intake['reply']})
+            # If extraction failed entirely, fall through to the normal flow below.
+
         # System prompt based on language
         system_prompts = {
-            'en': """You are a helpful AI assistant for Poverty Aid Identifier — a free civic tech app that helps India's poorest citizens find government schemes they qualify for.
- 
+            'en': """You are the AI Welfare Assistant for Poverty Aid Identifier — a free civic tech app that helps India's poorest citizens find government schemes they qualify for.
+
 You help citizens with:
 1. Information about 16 government schemes: PM Jan Arogya Yojana, PM Awas Yojana, Ayushman Bharat, Antyodaya Anna Yojana, National Family Benefit Scheme, PM Ujjwala Yojana, Old Age Pension (IGNOAPS), Widow Pension, Divyangjan Swavalamban, Accessible India Campaign, PM Poshan, ICDS, Annapurna Scheme, Saubhagya, PM Jan Dhan Yojana, Basic Community Support
 2. Documents needed for each scheme
 3. How to apply for schemes
 4. Corruption reporting — citizens can file complaints at /corruption and track with tracking ID
 5. How the AI Need Score works (0-175 points across 9 parameters)
- 
+
 Rules:
-- Keep answers short and clear — max 4-5 lines
+- Keep answers short and clear — max 4-5 lines, use bullet points for lists/steps
 - Use simple language — the user may be poor or uneducated
 - Always be helpful and kind
 - If asked about something unrelated to welfare schemes, gently redirect to schemes
 - Mention relevant helpline numbers when appropriate
-- Do NOT make up information — only answer what you know about these schemes""",
- 
-            'hi': """आप Poverty Aid Identifier के लिए एक सहायक AI हैं — एक मुफ्त civic tech ऐप जो भारत के गरीब नागरिकों को सरकारी योजनाएं खोजने में मदद करता है।
- 
+- Do NOT make up information — only answer what you know about these schemes
+- This is an ongoing conversation — refer back naturally to what was said earlier if the person asks a follow-up ("tell me more about the second one", "what about that scheme you mentioned").
+- If the person's message is vague — like "I have a doubt", "I have a question", "need help" — with no actual topic mentioned, do NOT guess or dump a generic list. Ask a short, friendly clarifying question first, e.g. "Sure, what's your doubt about — eligibility, documents, or how to apply?"
+- If a "User Profile" is given below, this person has ALREADY filled the eligibility form. Act like a personal welfare officer: use their exact details (name, income, housing, schemes, etc.) instead of asking for them again. Personalize eligibility answers, next-step advice, and document lists to THIS person's profile and recommended schemes specifically.""",
+
+            'hi': """आप Poverty Aid Identifier के लिए AI Welfare Assistant हैं — एक मुफ्त civic tech ऐप जो भारत के गरीब नागरिकों को सरकारी योजनाएं खोजने में मदद करता है।
+
 आप इनके बारे में मदद करते हैं:
 1. 16 सरकारी योजनाओं की जानकारी
 2. हर योजना के लिए जरूरी दस्तावेज़
 3. आवेदन कैसे करें
 4. भ्रष्टाचार की शिकायत कैसे करें
- 
+
 नियम:
 - जवाब छोटे और सरल रखें — 4-5 लाइन से ज्यादा नहीं
 - आसान हिंदी में बोलें — उपयोगकर्ता पढ़ा-लिखा नहीं हो सकता
 - हमेशा दयालु और मददगार रहें
-- झूठी जानकारी न दें""",
- 
-            'mr': """तुम्ही Poverty Aid Identifier साठी एक सहाय्यक AI आहात — एक मोफत civic tech अॅप जे भारतातील गरीब नागरिकांना सरकारी योजना शोधण्यास मदत करते.
- 
+- झूठी जानकारी न दें
+- यह एक चालू बातचीत है — अगर व्यक्ति पहले कही गई बात के बारे में पूछे ("दूसरे वाले के बारे में बताओ"), तो पिछली बात को याद रखते हुए जवाब दें।
+- अगर व्यक्ति का संदेश अस्पष्ट है — जैसे "मुझे एक शक है", "मुझे सवाल है", "मदद चाहिए" — और कोई असली विषय नहीं बताया गया है, तो अंदाजा मत लगाइए या सामान्य सूची मत भेजिए। पहले एक छोटा, दोस्ताना स्पष्टीकरण वाला सवाल पूछें, जैसे "जरूर, आपका सवाल किस बारे में है — पात्रता, दस्तावेज़, या आवेदन कैसे करें?"
+- अगर नीचे "User Profile" दिया गया है, तो इस व्यक्ति ने पहले ही फॉर्म भर दिया है। दोबारा जानकारी मत मांगिए — इनकी असल जानकारी (नाम, आय, आवास, योजनाएं) के आधार पर व्यक्तिगत जवाब दें।""",
+
+            'mr': """तुम्ही Poverty Aid Identifier साठी AI Welfare Assistant आहात — एक मोफत civic tech अॅप जे भारतातील गरीब नागरिकांना सरकारी योजना शोधण्यास मदत करते.
+
 तुम्ही यासाठी मदत करता:
 1. 16 सरकारी योजनांची माहिती
 2. प्रत्येक योजनेसाठी आवश्यक कागदपत्रे
 3. अर्ज कसा करावा
 4. भ्रष्टाचाराची तक्रार कशी करावी
- 
+
 नियम:
 - उत्तरे छोटी आणि स्पष्ट ठेवा — 4-5 ओळींपेक्षा जास्त नाही
 - सोप्या मराठीत बोला
 - नेहमी दयाळू आणि मदत करणारे राहा
-- खोटी माहिती देऊ नका"""
+- खोटी माहिती देऊ नका
+- ही एक सुरू असलेली संभाषण आहे — व्यक्तीने आधी सांगितलेल्याबद्दल पुढचा प्रश्न विचारल्यास ("दुसऱ्याबद्दल सांग"), आधीचे लक्षात ठेवून उत्तर द्या.
+- व्यक्तीचा संदेश अस्पष्ट असल्यास — जसे "मला शंका आहे", "प्रश्न आहे", "मदत हवी" — आणि खरा विषय सांगितलेला नसल्यास, अंदाज लावू नका किंवा सामान्य यादी पाठवू नका. आधी एक छोटा, मैत्रीपूर्ण स्पष्टीकरण देणारा प्रश्न विचारा, जसे "नक्कीच, तुमचा प्रश्न कशाबद्दल आहे — पात्रता, कागदपत्रे, की अर्ज कसा करावा?"
+- खाली "User Profile" दिलेले असल्यास, या व्यक्तीने आधीच फॉर्म भरला आहे. पुन्हा माहिती विचारू नका — त्यांच्या खऱ्या माहितीच्या (नाव, उत्पन्न, निवास, योजना) आधारे वैयक्तिक उत्तर द्या."""
         }
- 
+
         system_prompt = system_prompts.get(lang, system_prompts['en'])
-        full_prompt = system_prompt + "\n\nUser question: " + user_message
- 
-        # Call Gemini
-        response = model.generate_content(full_prompt)
+
+        profile_block = build_profile_context(profile, lang)
+        system_instruction = system_prompt + ("\n\n" + profile_block if profile_block else "")
+
+        # Real multi-turn memory: rebuild a chat session from the last few
+        # exchanges stored in session['chat_history'], so follow-up doubts
+        # ("tell me more about the second one") actually have context.
+        chat_model = genai.GenerativeModel('gemini-3.5-flash', system_instruction=system_instruction)
+        gemini_history = [
+            {'role': h['role'], 'parts': [h['text']]}
+            for h in session.get('chat_history', [])
+        ]
+        chat = chat_model.start_chat(history=gemini_history)
+        response = chat.send_message(user_message)
         reply = response.text.strip()
- 
+
+        push_chat_history(user_message, reply)
+
         # Log the interaction
         log_activity('CHATBOT', 'QUERY', get_client_ip(),
             f'Lang: {lang} | Q: {user_message[:50]}')
- 
+
         return jsonify({'reply': reply})
- 
+
     except Exception as e:
         print(f"Chatbot error: {e}")
         return jsonify({'reply': get_fallback_answer(
             data.get('message', '') if data else '',
-            data.get('lang', 'en') if data else 'en'
+            data.get('lang', 'en') if data else 'en',
+            session.get('profile')
         )})
- 
- 
-def get_fallback_answer(question, lang='en'):
-    """Rule-based fallback when Gemini API is not available"""
-    q = question.lower()
+
+
+def get_fallback_answer(question, lang='en', profile=None):
+    """Rule-based fallback when Gemini API is not available. Profile-aware:
+    if the person already filled the eligibility form, 'what next' and the
+    generic default answer are personalized to their recommended schemes."""
+    q = question.lower().strip()
+
+    # VAGUE INPUT: "I have a doubt", "I have a question", "need help" etc.
+    # don't say WHAT the doubt is about — a real case worker would ask back,
+    # not dump a generic list. This has to be checked BEFORE anything else,
+    # and only when the message doesn't already contain a real topic keyword.
+    vague_phrases = [
+        'i have a doubt', 'i have doubts', 'i have some doubt', 'i have a question',
+        'i have some questions', 'need help', 'i need help', 'can you help',
+        'help me', 'i have a query', 'confused', 'doubt', 'query',
+        'मुझे शक है', 'मुझे संदेह है', 'मेरा एक सवाल है', 'मदद चाहिए', 'सवाल है',
+        'मला शंका आहे', 'मला मदत हवी', 'प्रश्न आहे',
+    ]
+    topic_keywords = [
+        'awas', 'ayushman', 'pension', 'widow', 'ration', 'antyodaya', 'jan dhan',
+        'ujjwala', 'corruption', 'score', 'document', 'papers', 'apply', 'eligib',
+        'ladki bahin', 'saubhagya', 'poshan', 'icds', 'divyangjan', 'accessible',
+        'आवास', 'आयुष्मान', 'पेंशन', 'विधवा', 'राशन', 'भ्रष्टाचार', 'स्कोर', 'दस्तावेज़',
+        'निवृत्तीवेतन', 'रेशन', 'भ्रष्टाचार', 'कागदपत्र',
+    ]
+    is_vague = any(p in q for p in vague_phrases) and not any(t in q for t in topic_keywords)
+    if is_vague:
+        clarify = {
+            'en': "Sure, I'm here to help — what's your doubt about? For example, you can ask me:\n• \"Am I eligible for [scheme name]?\"\n• \"What documents do I need?\"\n• \"How do I apply?\"\n• \"Why is my Need Score high?\"\n• \"How do I report corruption?\"\n\nJust tell me what's on your mind.",
+            'hi': "जरूर, मैं मदद के लिए यहां हूं — आपका सवाल किस बारे में है? जैसे आप पूछ सकते हैं:\n• \"क्या मैं [योजना का नाम] के लिए पात्र हूं?\"\n• \"मुझे कौन से दस्तावेज़ चाहिए?\"\n• \"आवेदन कैसे करें?\"\n• \"मेरा Need Score ज्यादा क्यों है?\"\n• \"भ्रष्टाचार की शिकायत कैसे करें?\"\n\nबस बताइए आपके मन में क्या है।",
+            'mr': "नक्कीच, मी मदतीसाठी इथे आहे — तुमचा प्रश्न कशाबद्दल आहे? उदाहरणार्थ तुम्ही विचारू शकता:\n• \"मी [योजनेचे नाव] साठी पात्र आहे का?\"\n• \"मला कोणती कागदपत्रे हवीत?\"\n• \"अर्ज कसा करावा?\"\n• \"माझा Need Score जास्त का आहे?\"\n• \"भ्रष्टाचाराची तक्रार कशी करावी?\"\n\nफक्त सांगा तुमच्या मनात काय आहे.",
+        }
+        return clarify.get(lang, clarify['en'])
+
+    # Official scheme names are long ("Indira Gandhi National Widow Pension
+    # Scheme") so a citizen typing a short casual phrase ("widow pension")
+    # wouldn't match by substring alone. These aliases cover the common
+    # short ways people actually ask about a scheme.
+    SCHEME_QUERY_ALIASES = {
+        'widow_pension': ['widow pension', 'vidhwa pension', 'विधवा पेंशन', 'विधवा निवृत्तीवेतन'],
+        'old_age_pension': ['old age pension', 'vridha pension', 'वृद्धावस्था पेंशन', 'वृद्धापकाळ'],
+        'pm_awas': ['awas yojana', 'pm awas', 'आवास योजना'],
+        'ayushman': ['ayushman bharat', 'ayushman', 'आयुष्मान'],
+        'ladki_bahin': ['ladki bahin', 'लाडकी बहीण'],
+        'ujjwala': ['ujjwala', 'gas connection', 'उज्ज्वला'],
+        'jan_dhan': ['jan dhan', 'bank account scheme', 'जन धन'],
+        'antyodaya': ['antyodaya', 'ration scheme', 'अंत्योदय'],
+        'divyangjan': ['divyangjan', 'disability pension', 'दिव्यांगजन'],
+    }
+
+    if profile:
+        recommended_keys = {sc['key'] for sc in (profile.get('schemes') or [])}
+        for key, detail in SCHEME_DETAILS.items():
+            info = detail.get(lang, detail.get('en'))
+            scheme_name = info.get('name', '')
+            simple_name = scheme_name.split('(')[0].strip().lower()
+            aliases = SCHEME_QUERY_ALIASES.get(key, [])
+            matched = (simple_name and simple_name in q and len(simple_name) > 3) or any(a in q for a in aliases)
+            if matched:
+                if key in recommended_keys:
+                    templates = {'en': f"Yes — based on your profile, you ARE eligible for {scheme_name} ({info.get('amount','')}). It's already in your recommended list.",
+                                 'hi': f"हां — आपकी प्रोफ़ाइल के अनुसार, आप {scheme_name} ({info.get('amount','')}) के लिए पात्र हैं। यह पहले से आपकी सुझाई गई सूची में है।",
+                                 'mr': f"होय — तुमच्या प्रोफाइलनुसार, तुम्ही {scheme_name} ({info.get('amount','')}) साठी पात्र आहात. ही आधीच तुमच्या शिफारस केलेल्या यादीत आहे."}
+                else:
+                    elig = ", ".join(info.get('eligibility', []))
+                    templates = {'en': f"Based on your current profile, {scheme_name} isn't in your recommended list. Its eligibility needs: {elig}.",
+                                 'hi': f"आपकी वर्तमान प्रोफ़ाइल के अनुसार, {scheme_name} आपकी सुझाई गई सूची में नहीं है। इसकी पात्रता शर्तें: {elig}.",
+                                 'mr': f"तुमच्या सध्याच्या प्रोफाइलनुसार, {scheme_name} तुमच्या शिफारस केलेल्या यादीत नाही. पात्रता अटी: {elig}."}
+                return templates.get(lang, templates['en'])
+
+    next_keywords = ['what should i do', 'what next', 'next step', 'what do i do', 'आगे क्या', 'पुढे काय']
+    if profile and any(k in q for k in next_keywords):
+        schemes = profile.get('schemes') or []
+        if schemes:
+            top = schemes[:3]
+            headers = {'en': "Based on your profile, here's what to do next:",
+                       'hi': "आपकी प्रोफ़ाइल के आधार पर, अब यह करें:",
+                       'mr': "तुमच्या प्रोफाइलनुसार, आता हे करा:"}
+            steps = "\n".join(f"{i+1}. Apply for {sc['name']} ({sc['amount']})" for i, sc in enumerate(top))
+            checklist = get_combined_documents(profile, lang)
+            doc_line = ("\n\n" + checklist) if checklist else ""
+            return f"{headers.get(lang, headers['en'])}\n\n{steps}{doc_line}"
  
     fallbacks = {
         'en': {
@@ -1498,6 +2157,12 @@ def get_fallback_answer(question, lang='en'):
     elif 'ration' in q or 'antyodaya' in q or 'food' in q or 'राशन' in q or 'रेशन' in q:
         return f.get('ration', f['default'])
     else:
+        if profile and profile.get('schemes'):
+            names = ", ".join(sc['name'] for sc in profile['schemes'][:4])
+            headers = {'en': f"Based on your profile, you're recommended for: {names}.\n\nAsk me things like 'what should I do next', 'why is my score high', or 'which documents am I missing'.",
+                       'hi': f"आपकी प्रोफ़ाइल के आधार पर, ये योजनाएं आपके लिए सुझाई गई हैं: {names}.\n\nमुझसे पूछें: 'आगे क्या करें', 'मेरा स्कोर ज्यादा क्यों है', या 'कौन से दस्तावेज़ बाकी हैं'।",
+                       'mr': f"तुमच्या प्रोफाइलनुसार, या योजना तुम्हाला सुचवल्या आहेत: {names}.\n\nमला विचारा: 'पुढे काय करावे', 'माझा स्कोर जास्त का आहे', किंवा 'कोणती कागदपत्रे बाकी आहेत'."}
+            return headers.get(lang, headers['en'])
         return f['default']
 
 if __name__ == '__main__':

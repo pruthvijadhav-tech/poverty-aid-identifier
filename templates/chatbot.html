@@ -94,11 +94,11 @@
 <div class="quick-section">
     <div class="quick-title" id="quick-title">QUICK QUESTIONS</div>
     <div class="quick-btns" id="quick-btns">
-        <button class="quick-btn" onclick="askQuick(this.textContent)">PM Awas documents needed?</button>
-        <button class="quick-btn" onclick="askQuick(this.textContent)">How to apply for Ayushman?</button>
-        <button class="quick-btn" onclick="askQuick(this.textContent)">Old age pension eligibility?</button>
+        <button class="quick-btn" onclick="askQuick(this.textContent)">What should I do next?</button>
+        <button class="quick-btn" onclick="askQuick(this.textContent)">Why is my Need Score high?</button>
+        <button class="quick-btn" onclick="askQuick(this.textContent)">Which documents am I missing?</button>
         <button class="quick-btn" onclick="askQuick(this.textContent)">Report corruption how?</button>
-        <button class="quick-btn" onclick="askQuick(this.textContent)">What is Need Score?</button>
+        <button class="quick-btn" onclick="askQuick(this.textContent)">Old age pension eligibility?</button>
     </div>
 </div>
 
@@ -106,8 +106,13 @@
     <div class="msg bot">
         <div class="msg-avatar">🤖</div>
         <div class="welcome-card">
-            <h2 id="welcome-title">Hello! I'm your AI Assistant</h2>
+            {% if profile and profile.schemes %}
+            <h2 id="welcome-title">Hello {{ profile.name or 'there' }}! I already know your profile.</h2>
+            <p id="welcome-text">Need Score: {{ profile.score }}/175 &middot; {{ profile.schemes|length }} scheme{{ 's' if profile.schemes|length != 1 else '' }} recommended, including {{ profile.schemes[0].name }}. Ask me "what should I do next?" and I'll guide you personally.</p>
+            {% else %}
+            <h2 id="welcome-title">Hello! I'm your AI Welfare Assistant</h2>
             <p id="welcome-text">I can help you with government schemes, documents needed, how to apply, and corruption reporting. Ask me anything in English, Hindi, or Marathi!</p>
+            {% endif %}
             <div class="powered-by">✨ Powered by Google Gemini AI</div>
         </div>
     </div>
@@ -124,16 +129,16 @@ var currentLang = 'en';
 var translations = {
     en: {
         quickTitle: 'QUICK QUESTIONS',
-        quickBtns: ['PM Awas documents needed?', 'How to apply for Ayushman?', 'Old age pension eligibility?', 'Report corruption how?', 'What is Need Score?'],
+        quickBtns: ['What should I do next?', 'Why is my Need Score high?', 'Which documents am I missing?', 'Report corruption how?', 'Old age pension eligibility?'],
         placeholder: 'Ask about any scheme...',
-        welcomeTitle: "Hello! I'm your AI Assistant",
+        welcomeTitle: "Hello! I'm your AI Welfare Assistant",
         welcomeText: "I can help you with government schemes, documents needed, how to apply, and corruption reporting. Ask me anything!",
         thinking: 'Thinking...',
         error: 'Sorry, something went wrong. Please try again.'
     },
     hi: {
         quickTitle: 'जल्दी पूछें',
-        quickBtns: ['PM Awas के लिए दस्तावेज़?', 'आयुष्मान कैसे करें आवेदन?', 'वृद्धावस्था पेंशन पात्रता?', 'भ्रष्टाचार कैसे रिपोर्ट करें?', 'Need Score क्या है?'],
+        quickBtns: ['आगे क्या करना चाहिए?', 'मेरा Need Score ज्यादा क्यों है?', 'कौन से दस्तावेज़ बाकी हैं?', 'भ्रष्टाचार कैसे रिपोर्ट करें?', 'वृद्धावस्था पेंशन पात्रता?'],
         placeholder: 'कोई भी योजना के बारे में पूछें...',
         welcomeTitle: 'नमस्ते! मैं आपका AI सहायक हूं',
         welcomeText: 'मैं सरकारी योजनाओं, जरूरी दस्तावेज़ों, आवेदन कैसे करें और भ्रष्टाचार की शिकायत में मदद कर सकता हूं।',
@@ -142,7 +147,7 @@ var translations = {
     },
     mr: {
         quickTitle: 'त्वरित प्रश्न',
-        quickBtns: ['PM Awas साठी कागदपत्रे?', 'आयुष्मानसाठी अर्ज कसा?', 'वृद्धापकाळ पेन्शन पात्रता?', 'भ्रष्टाचार तक्रार कशी?', 'Need Score म्हणजे काय?'],
+        quickBtns: ['पुढे काय करावे?', 'माझा Need Score जास्त का आहे?', 'कोणती कागदपत्रे बाकी आहेत?', 'भ्रष्टाचार तक्रार कशी?', 'वृद्धापकाळ पेन्शन पात्रता?'],
         placeholder: 'कोणत्याही योजनेबद्दल विचारा...',
         welcomeTitle: 'नमस्कार! मी तुमचा AI सहायक आहे',
         welcomeText: 'मी सरकारी योजना, आवश्यक कागदपत्रे, अर्ज कसा करावा आणि भ्रष्टाचाराची तक्रार याबद्दल मदत करू शकतो.',
