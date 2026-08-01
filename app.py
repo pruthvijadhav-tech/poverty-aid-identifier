@@ -1,7 +1,8 @@
 from flask import Flask, render_template, request, session, redirect, url_for, jsonify
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
-import google.generativeai as genai
+from google import genai
+from google.genai import types as genai_types
 import random
 import string
 import sqlite3
@@ -11,6 +12,7 @@ import smtplib
 import os
 import re
 import json
+import difflib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
@@ -29,6 +31,8 @@ except ImportError:
           'Install with: pip install python-dotenv --break-system-packages')
 
 app = Flask(__name__)
+
+GEMINI_MODEL = 'gemini-3.5-flash'
 
 
 _SECRET_KEY_FALLBACK = 'poverty_aid_secret_key_2026_secure_fallback'
@@ -56,10 +60,11 @@ else:
 # the browser only keeps a small session ID cookie. For a multi-server /
 # production deployment, swap SESSION_TYPE to 'redis' (needs a Redis
 # instance) instead of 'filesystem'.
-app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_FILE_DIR'] = os.environ.get('SESSION_FILE_DIR', os.path.join(os.getcwd(), '.flask_session'))
+from cachelib.file import FileSystemCache as _FSCache
+_session_dir = os.environ.get('SESSION_FILE_DIR', os.path.join(os.getcwd(), '.flask_session'))
+app.config['SESSION_TYPE'] = 'cachelib'
+app.config['SESSION_CACHELIB'] = _FSCache(threshold=500, default_timeout=0, cache_dir=_session_dir)
 app.config['SESSION_PERMANENT'] = False
-app.config['SESSION_USE_SIGNER'] = False  # tamper-proof the session-id cookie
 Session(app)
 
 
@@ -121,6 +126,7 @@ def init_db():
         location TEXT,
         status TEXT DEFAULT 'Filed',
         fake_flag INTEGER DEFAULT 0,
+        duplicate_flag INTEGER DEFAULT 0,
         assigned_officer TEXT,
         authority TEXT,
         filed_date TEXT,
@@ -131,6 +137,13 @@ def init_db():
         lang TEXT DEFAULT 'en'
     )
     ''')
+    # Migration for existing databases created before duplicate_flag existed
+    # — CREATE TABLE IF NOT EXISTS above is a no-op on an already-existing
+    # table, so this ALTER is needed to add the column to real deployments.
+    try:
+        c.execute('ALTER TABLE reports ADD COLUMN duplicate_flag INTEGER DEFAULT 0')
+    except sqlite3.OperationalError:
+        pass  # column already exists
 
     # Admin Users Table
     c.execute('''
@@ -187,6 +200,96 @@ def init_db():
        )
    ''')
 
+    # Application Outcome Tracking — the feedback loop. One row per
+    # (application, recommended scheme). Lets us learn whether a
+    # recommendation actually turned into real help, not just a suggestion.
+    c.execute('''
+    CREATE TABLE IF NOT EXISTS application_outcomes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        application_id TEXT,
+        phone TEXT,
+        person_name TEXT,
+        scheme_key TEXT,
+        scheme_name TEXT,
+        status TEXT DEFAULT 'not_applied',
+        notes TEXT,
+        created_at TEXT,
+        updated_at TEXT,
+        lang TEXT DEFAULT 'en'
+    )
+    ''')
+
+    # Fraud / duplicate detection. Stores a lightweight snapshot of each
+    # eligibility submission so a NEW submission can be compared against a
+    # phone number's own history — flags anomalies for admin REVIEW only,
+    # never blocks or rejects a citizen automatically.
+    c.execute('''
+    CREATE TABLE IF NOT EXISTS submission_fingerprints (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        phone TEXT,
+        ip_address TEXT,
+        age_group TEXT,
+        gender TEXT,
+        widow_status TEXT,
+        income INTEGER,
+        family_size INTEGER,
+        submitted_at TEXT
+    )
+    ''')
+
+    # Persistent record of every eligibility application — whether filed by
+    # the citizen themselves or by a volunteer/NGO worker on their behalf.
+    # Session data (session['profile']) only lives in ONE browser; this
+    # table is what lets a volunteer's dashboard show past filings, and
+    # keeps a durable audit trail of who filed what for whom.
+    c.execute('''
+    CREATE TABLE IF NOT EXISTS applications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        application_id TEXT UNIQUE,
+        person_name TEXT,
+        phone TEXT,
+        state TEXT,
+        score INTEGER,
+        priority TEXT,
+        schemes_count INTEGER,
+        lang TEXT DEFAULT 'en',
+        filed_by_volunteer TEXT,
+        filed_by_volunteer_name TEXT,
+        created_at TEXT
+    )
+    ''')
+
+    # IVR/keypad-phone support. Each incoming call is a series of separate,
+    # stateless webhook requests from the telephony provider (Twilio/Exotel)
+    # — this table is what lets us remember what the caller already
+    # answered between one keypress and the next.
+    c.execute('''
+    CREATE TABLE IF NOT EXISTS ivr_sessions (
+        call_sid TEXT PRIMARY KEY,
+        phone TEXT,
+        lang TEXT DEFAULT 'en',
+        age_group TEXT,
+        income TEXT,
+        housing TEXT,
+        widow_status TEXT,
+        medical TEXT,
+        created_at TEXT,
+        updated_at TEXT
+    )
+    ''')
+
+    # Audit Ledger Table for Corruption Complaints
+    c.execute('''
+    CREATE TABLE IF NOT EXISTS audit_ledger (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tracking_id TEXT,
+        status TEXT,
+        timestamp TEXT,
+        prev_hash TEXT,
+        block_hash TEXT
+    )
+    ''')
+
     
     try:
         c.execute(
@@ -218,6 +321,50 @@ def init_db():
 
 init_db()
 
+def add_ledger_entry(tracking_id, status):
+    try:
+        conn = get_db_connection()
+        last_block = conn.execute('SELECT * FROM audit_ledger ORDER BY id DESC LIMIT 1').fetchone()
+        prev_hash = 'GENESIS'
+        if last_block:
+            prev_hash = last_block['block_hash']
+        
+        timestamp = datetime.now().strftime("%d %b %Y, %I:%M:%S %p")
+        hash_input = f"{tracking_id}|{status}|{timestamp}|{prev_hash}"
+        block_hash = hashlib.sha256(hash_input.encode('utf-8')).hexdigest()
+        
+        conn.execute('''
+            INSERT INTO audit_ledger (tracking_id, status, timestamp, prev_hash, block_hash)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (tracking_id, status, timestamp, prev_hash, block_hash))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[ERROR] add_ledger_entry failed: {e}")
+
+def verify_ledger():
+    try:
+        conn = get_db_connection()
+        blocks = conn.execute('SELECT * FROM audit_ledger ORDER BY id ASC').fetchall()
+        conn.close()
+        
+        expected_prev = 'GENESIS'
+        for block in blocks:
+            if block['prev_hash'] != expected_prev:
+                return False, block['id'], f"Chain broken: prev_hash mismatch at block {block['id']} (expected {expected_prev[:8]}..., got {block['prev_hash'][:8]}...)"
+            
+            hash_input = f"{block['tracking_id']}|{block['status']}|{block['timestamp']}|{block['prev_hash']}"
+            calculated_hash = hashlib.sha256(hash_input.encode('utf-8')).hexdigest()
+            
+            if block['block_hash'] != calculated_hash:
+                return False, block['id'], f"Integrity error: block hash mismatch at block {block['id']}"
+                
+            expected_prev = block['block_hash']
+            
+        return True, None, "Audit Ledger verified: Integrity intact (All hashes valid)"
+    except Exception as e:
+        return False, None, f"Verification failed: {e}"
+
 def log_activity(username, action, ip, details, suspicious=0):
     try:
         conn = sqlite3.connect('reports.db')
@@ -235,6 +382,124 @@ def get_client_ip():
     if request.environ.get('HTTP_X_FORWARDED_FOR'):
         return request.environ['HTTP_X_FORWARDED_FOR'].split(',')[0]
     return request.environ.get('REMOTE_ADDR', 'unknown')
+
+# ---------------------------------------------------------------------------
+# Document OCR: let someone photograph their Aadhaar / Ration Card and
+# auto-fill the eligibility form instead of typing everything. Uses Gemini's
+# vision capability (same API key/model already in use for the chatbot).
+#
+# PRIVACY: the uploaded image is processed ENTIRELY IN MEMORY and never
+# written to disk or the database. It exists only for the duration of this
+# one request, then is discarded when the function returns.
+# ---------------------------------------------------------------------------
+
+ALLOWED_DOC_MIME_TYPES = {'image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'}
+MAX_DOC_UPLOAD_BYTES = 8 * 1024 * 1024  # 8 MB
+
+def extract_document_fields(client, image_bytes, mime_type):
+    """One Gemini vision call: read an Aadhaar/Ration Card photo and pull out
+    the fields our eligibility form needs. Returns a dict or raises.
+
+    Retries automatically on transient server overload (503/429) — Gemini's
+    own error message for these literally says the spike is usually
+    temporary, so a short retry meaningfully helps in practice. Does NOT
+    retry on other errors (bad image, parse failure, etc.) — those would
+    just fail the same way again, so retrying only adds latency."""
+    prompt = """You are reading a photo of an Indian identity document (Aadhaar Card or Ration Card) to help someone auto-fill a government welfare eligibility form. Extract ONLY what is actually printed and clearly legible in the image — do not guess or infer anything not visibly present.
+
+Respond with ONLY raw JSON, no markdown fences, no commentary, matching exactly this shape:
+{
+  "document_type": "aadhaar" or "ration_card" or "unknown",
+  "name": string or null,
+  "date_of_birth": string in DD-MM-YYYY format or null,
+  "age_years": integer (computed from date_of_birth if visible, else null) or null,
+  "gender": one of "male"/"female"/"other" or null,
+  "address": string (full address as printed) or null,
+  "legible": true or false (false if the image is too blurry/dark/cropped to read reliably)
+}
+
+If the image does not appear to be an Aadhaar Card or Ration Card at all, set document_type to "unknown" and all other fields to null."""
+
+    image_part = genai_types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
+
+    max_attempts = 3
+    backoff_seconds = [1.5, 3]  # delay before attempt 2 and attempt 3
+    last_error = None
+
+    for attempt in range(max_attempts):
+        try:
+            response = client.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=[prompt, image_part],
+            )
+            raw = response.text.strip()
+            raw = re.sub(r'^```(json)?|```$', '', raw.strip(), flags=re.MULTILINE).strip()
+            return json.loads(raw)
+        except Exception as e:
+            last_error = e
+            error_text = str(e)
+            is_transient = ('503' in error_text or 'UNAVAILABLE' in error_text
+                             or '429' in error_text or 'RESOURCE_EXHAUSTED' in error_text)
+            if is_transient and attempt < max_attempts - 1:
+                print(f"OCR attempt {attempt + 1} hit transient error, retrying in {backoff_seconds[attempt]}s: {error_text[:150]}")
+                time.sleep(backoff_seconds[attempt])
+                continue
+            raise last_error
+
+@app.route('/ocr-extract', methods=['POST'])
+def ocr_extract():
+    """Receives an uploaded document photo, extracts fields via Gemini
+    vision, and returns them as JSON for the frontend to auto-fill the form.
+    The image itself is never saved anywhere."""
+    ip = get_client_ip()
+    try:
+        if 'document' not in request.files:
+            return jsonify({'success': False, 'error': 'No file uploaded'}), 400
+
+        file = request.files['document']
+        if not file or file.filename == '':
+            return jsonify({'success': False, 'error': 'No file selected'}), 400
+
+        mime_type = file.mimetype or ''
+        if mime_type not in ALLOWED_DOC_MIME_TYPES:
+            return jsonify({'success': False, 'error': 'Please upload a JPG, PNG, or WEBP image'}), 400
+
+        image_bytes = file.read()
+        if len(image_bytes) > MAX_DOC_UPLOAD_BYTES:
+            return jsonify({'success': False, 'error': 'Image too large (max 8MB)'}), 400
+        if len(image_bytes) == 0:
+            return jsonify({'success': False, 'error': 'Empty file'}), 400
+
+        api_key = os.environ.get('GEMINI_API_KEY', '')
+        if not api_key:
+            return jsonify({'success': False, 'error': 'Document scanning needs AI to be configured. Please fill the form manually.'}), 503
+
+        client = genai.Client(api_key=api_key)
+        extracted = extract_document_fields(client, image_bytes, mime_type)
+        # image_bytes and file go out of scope here — nothing persisted.
+
+        if extracted.get('document_type') == 'unknown':
+            log_activity('OCR', 'UNRECOGNIZED_DOCUMENT', ip, 'Uploaded image not recognized as Aadhaar/Ration Card')
+            return jsonify({'success': False, 'error': "Couldn't recognize this as an Aadhaar or Ration Card. Please try a clearer photo, or fill the form manually."})
+
+        if extracted.get('legible') is False:
+            log_activity('OCR', 'ILLEGIBLE_DOCUMENT', ip, 'Uploaded document image too blurry/unclear')
+            return jsonify({'success': False, 'error': "The image is too blurry to read clearly. Please retake the photo in good light, or fill the form manually."})
+
+        log_activity('OCR', 'DOCUMENT_EXTRACTED', ip, f"Type: {extracted.get('document_type')}")
+        extracted['age_group'] = _derive_age_group(extracted.get('age_years'))
+        return jsonify({'success': True, 'extracted': extracted})
+
+    except json.JSONDecodeError:
+        log_activity('OCR', 'EXTRACTION_PARSE_ERROR', ip, 'Gemini response was not valid JSON', suspicious=0)
+        return jsonify({'success': False, 'error': 'Could not read the document clearly. Please fill the form manually.'})
+    except Exception as e:
+        error_text = str(e)
+        print(f"OCR extraction error: {e}")
+        log_activity('OCR', 'EXTRACTION_ERROR', ip, error_text[:200], suspicious=0)
+        if '503' in error_text or 'UNAVAILABLE' in error_text or '429' in error_text or 'RESOURCE_EXHAUSTED' in error_text:
+            return jsonify({'success': False, 'error': "Document scanning is busy right now (high demand). Please try again in a minute, or fill the form manually."})
+        return jsonify({'success': False, 'error': 'Something went wrong reading the document. Please fill the form manually.'})
 
 # Sessions are now server-side (see Session(app) above), so we're no longer
 # constrained by the browser's ~4KB cookie limit. Still capped — for reply
@@ -264,6 +529,28 @@ def login_required(f):
             return redirect(url_for('admin_login'))
         return f(*args, **kwargs)
     return decorated
+
+def role_required(*allowed_roles):
+    """Like login_required, but also checks the account's role. Used to
+    keep volunteer accounts (which can only see their own filed
+    applications) out of the full admin dashboard (which sees every
+    citizen's complaint data)."""
+    def wrapper(f):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            if not session.get('admin_logged_in'):
+                ip = get_client_ip()
+                log_activity('UNKNOWN', 'UNAUTHORIZED_ACCESS_ATTEMPT',
+                    ip, f'Tried to access {request.path} without login', suspicious=1)
+                return redirect(url_for('admin_login'))
+            if session.get('admin_role') not in allowed_roles:
+                ip = get_client_ip()
+                log_activity(session.get('admin_username', 'UNKNOWN'), 'ROLE_ACCESS_DENIED',
+                    ip, f"Role '{session.get('admin_role')}' tried to access {request.path}", suspicious=1)
+                return redirect(url_for('admin_login'))
+            return f(*args, **kwargs)
+        return decorated
+    return wrapper
 
 OFFICERS = {
     "en": [
@@ -853,7 +1140,7 @@ def _derive_age_group(age_years):
     if y >= 60: return 'elderly'
     return 'adult'
 
-def extract_case_intake(model, user_message, lang):
+def extract_case_intake(client, user_message, lang):
     """One Gemini call that either (a) extracts structured facts if the
     message describes the sender's own situation, or (b) just answers
     normally if it's a generic question. Returns a dict or None on failure."""
@@ -887,13 +1174,46 @@ Reply language for "reply" field should be: {lang}
 Citizen's message: "{user_message}\""""
 
     try:
-        resp = model.generate_content(extraction_prompt)
+        resp = client.models.generate_content(model=GEMINI_MODEL, contents=extraction_prompt)
         raw = resp.text.strip()
         raw = re.sub(r'^```(json)?|```$', '', raw.strip(), flags=re.MULTILINE).strip()
         parsed = json.loads(raw)
         return parsed
     except Exception as e:
         print(f"Case-intake extraction error: {e}")
+        return None
+
+def extract_outcome_update(client, user_message, profile, lang='en'):
+    """One Gemini call: does this message report an application outcome
+    ('I got approved for widow pension', 'my Ayushman application was
+    rejected')? If so, match it to one of THIS person's actual recommended
+    schemes and figure out the new status. Returns a dict or None."""
+    schemes = profile.get('schemes') or []
+    if not schemes:
+        return None
+    scheme_list = "\n".join(f'- key: "{sc["key"]}", name: "{sc["name"]}"' for sc in schemes)
+
+    prompt = f"""A citizen is chatting with a welfare-scheme assistant. Their recommended schemes are:
+{scheme_list}
+
+Their message: "{user_message}"
+
+Does this message report the outcome of applying for one of these schemes (e.g. "I got approved for X", "my application was rejected", "I applied for X last week", "still waiting")? If yes, match it to the closest scheme from the list above by its exact "key" value, and determine the status.
+
+Respond with ONLY raw JSON, no markdown fences, no commentary:
+{{
+  "is_outcome_update": true or false,
+  "scheme_key": the exact "key" string from the list above that best matches, or null if unclear which scheme,
+  "status": one of "applied"/"under_review"/"approved"/"rejected"/"not_applied" (use "under_review" for things like "still waiting", "no update yet", "they're processing it"), or null if is_outcome_update is false
+}}"""
+
+    try:
+        resp = client.models.generate_content(model=GEMINI_MODEL, contents=prompt)
+        raw = resp.text.strip()
+        raw = re.sub(r'^```(json)?|```$', '', raw.strip(), flags=re.MULTILINE).strip()
+        return json.loads(raw)
+    except Exception as e:
+        print(f"Outcome extraction error: {e}")
         return None
 
 def build_profile_from_intake(extracted, lang):
@@ -920,8 +1240,36 @@ def build_profile_from_intake(extracted, lang):
     schemes = get_schemes(score, data, lang)
     priority = get_priority(score, data)
 
+    # Persist this the SAME way the web form and volunteer flow do — so
+    # /track-outcome and the "STATUS <ID>" SMS command actually work for
+    # applications that started as a chat or SMS conversation, not just
+    # ones that went through the form.
+    application_id = generate_application_id()
+    phone = extracted.get('phone') or ''
+    name = extracted.get('name') or ''
+    now_str = datetime.now().strftime("%d %b %Y, %I:%M %p")
+    try:
+        conn = get_db_connection()
+        conn.execute(
+            '''INSERT INTO applications
+               (application_id, person_name, phone, state, score, priority, schemes_count, lang, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            (application_id, name, phone, detect_state(address), score, priority, len(schemes), lang, now_str)
+        )
+        for sc in schemes:
+            conn.execute(
+                '''INSERT INTO application_outcomes
+                   (application_id, phone, person_name, scheme_key, scheme_name, status, created_at, updated_at, lang)
+                   VALUES (?, ?, ?, ?, ?, 'not_applied', ?, ?, ?)''',
+                (application_id, phone, name, sc[0], sc[2], now_str, now_str, lang)
+            )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Chat/SMS intake persistence error: {e}")
+
     return {
-        'name': extracted.get('name') or '',
+        'name': name,
         'gender': extracted.get('gender') or '',
         'widow': extracted.get('widow') or '',
         'age_group': data['age_group'],
@@ -939,8 +1287,9 @@ def build_profile_from_intake(extracted, lang):
         'priority': priority,
         'schemes': [{'key': sc[0], 'urgency': sc[1], 'name': sc[2], 'amount': sc[3]} for sc in schemes],
         'lang': lang,
+        'application_id': application_id,
         'source': 'chat_intake',
-        'updated_at': datetime.now().strftime("%d %b %Y, %I:%M %p"),
+        'updated_at': now_str,
     }
 
 def format_case_worker_reply(profile, lang='en'):
@@ -1069,10 +1418,343 @@ def get_priority(score, data):
 def generate_tracking_id():
     return "PAI-2026-" + ''.join(random.choices(string.digits, k=4))
 
+def generate_application_id():
+    return "APP-2026-" + ''.join(random.choices(string.digits, k=4))
+
 def get_db_connection():
     conn = sqlite3.connect('reports.db', check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
+
+OUTCOME_STATUSES = {'not_applied', 'applied', 'under_review', 'approved', 'rejected'}
+
+def get_outcome_rows(application_id):
+    """All scheme outcome rows for one application, as a list of dicts."""
+    if not application_id:
+        return []
+    conn = get_db_connection()
+    rows = conn.execute(
+        'SELECT * FROM application_outcomes WHERE application_id = ? ORDER BY id',
+        (application_id,)
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def update_outcome_status(application_id, scheme_key, status, notes=''):
+    """Update one scheme's outcome status for one application. Returns True
+    if a matching row was found and updated."""
+    if status not in OUTCOME_STATUSES:
+        return False
+    conn = get_db_connection()
+    cur = conn.execute(
+        'UPDATE application_outcomes SET status = ?, notes = ?, updated_at = ? WHERE application_id = ? AND scheme_key = ?',
+        (status, notes, datetime.now().strftime("%d %b %Y, %I:%M %p"), application_id, scheme_key)
+    )
+    conn.commit()
+    updated = cur.rowcount > 0
+    conn.close()
+    return updated
+
+# ---------------------------------------------------------------------------
+# Fraud / duplicate detection.
+#
+# Design principle: FLAG FOR ADMIN REVIEW, NEVER AUTO-REJECT. A citizen's
+# income or living situation can genuinely change between submissions —
+# treating that as proof of fraud and blocking them would be far more
+# harmful than the fraud itself. These functions only ever produce a
+# reviewable signal (a suspicious activity log entry, or an existing
+# tracking ID reused), never a denial.
+# ---------------------------------------------------------------------------
+
+def check_submission_anomaly(phone, ip, age_group, gender, widow_status, income, family_size):
+    """Compares a new eligibility submission against this phone number's
+    own recent history. Returns a list of human-readable anomaly reasons
+    (empty list = nothing unusual). Always records the new fingerprint,
+    regardless of outcome, so future submissions can compare against it."""
+    reasons = []
+    conn = get_db_connection()
+
+    if phone:
+        recent = conn.execute(
+            'SELECT * FROM submission_fingerprints WHERE phone = ? ORDER BY id DESC LIMIT 5',
+            (phone,)
+        ).fetchall()
+
+        if recent:
+            last = dict(recent[0])
+            try:
+                income_val = int(income or 0)
+                last_income = int(last['income'] or 0)
+                if last_income > 0 and income_val > 0:
+                    pct_change = abs(income_val - last_income) / last_income
+                    if pct_change > 0.4:
+                        reasons.append(f"Income changed sharply: Rs.{last_income} -> Rs.{income_val} ({int(pct_change*100)}% change)")
+            except (ValueError, ZeroDivisionError):
+                pass
+
+            if last['age_group'] and age_group and last['age_group'] != age_group:
+                reasons.append(f"Age group changed: {last['age_group']} -> {age_group}")
+            if last['gender'] and gender and last['gender'] != gender:
+                reasons.append(f"Gender changed: {last['gender']} -> {gender}")
+            if last['widow_status'] and widow_status and last['widow_status'] != widow_status:
+                reasons.append(f"Widow status changed: {last['widow_status']} -> {widow_status}")
+
+        # Rapid resubmission check (last 24 hours, same phone)
+        very_recent = conn.execute(
+            'SELECT COUNT(*) as cnt FROM submission_fingerprints WHERE phone = ? AND submitted_at > ?',
+            (phone, (datetime.now() - timedelta(hours=24)).isoformat())
+        ).fetchone()
+        if very_recent and very_recent['cnt'] >= 3:
+            reasons.append(f"{very_recent['cnt']} submissions from this phone number in the last 24 hours")
+
+    conn.execute(
+        '''INSERT INTO submission_fingerprints
+           (phone, ip_address, age_group, gender, widow_status, income, family_size, submitted_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+        (phone, ip, age_group, gender, widow_status, income, family_size, datetime.now().isoformat())
+    )
+    conn.commit()
+    conn.close()
+    return reasons
+
+def find_recent_similar_complaint(phone, scheme, official_name, description):
+    """Looks for a near-duplicate corruption complaint from the same phone
+    number in the last 7 days (same scheme + similar description). Returns
+    the existing tracking_id if found, else None. This protects the
+    citizen from accidentally filing (and having to track) multiple
+    entries for what's really one incident — it is NOT used to dismiss
+    complaints as fake."""
+    if not phone:
+        return None
+    conn = get_db_connection()
+    seven_days_ago = (datetime.now() - timedelta(days=7)).strftime("%d %b %Y")
+    candidates = conn.execute(
+        'SELECT tracking_id, description FROM reports WHERE phone = ? AND scheme = ? ORDER BY id DESC LIMIT 5',
+        (phone, scheme)
+    ).fetchall()
+    conn.close()
+
+    for row in candidates:
+        similarity = difflib.SequenceMatcher(None, (description or '').lower(), (row['description'] or '').lower()).ratio()
+        if similarity > 0.75:
+            return row['tracking_id']
+    return None
+
+# ---------------------------------------------------------------------------
+# KEYPAD-PHONE SUPPORT (SMS + IVR)
+#
+# A genuine feature/keypad phone cannot run this (or any) web app — it has
+# no browser. SMS and phone calls are the only channels that reach such a
+# device. These routes are built for Twilio-style webhooks (Exotel and most
+# India-friendly providers use a very similar POST format) — going fully
+# live still requires signing up for a real number with one of those
+# providers, which needs to be done outside this codebase.
+#
+# Both channels run through the SAME calculate_score()/get_schemes() engine
+# as the web form and chatbot — no separate/duplicated eligibility logic.
+# ---------------------------------------------------------------------------
+
+def twiml_response(inner_xml):
+    return f'<?xml version="1.0" encoding="UTF-8"?><Response>{inner_xml}</Response>'
+
+def twiml_message(text):
+    """SMS reply."""
+    from xml.sax.saxutils import escape
+    return twiml_response(f'<Message>{escape(text)}</Message>')
+
+def twiml_gather_digits(prompt_text, action_url, num_digits=1, lang_voice='en-IN'):
+    """Voice prompt that waits for one keypress, then posts to action_url."""
+    from xml.sax.saxutils import escape
+    return twiml_response(
+        f'<Gather numDigits="{num_digits}" action="{action_url}" method="POST" timeout="8">'
+        f'<Say language="{lang_voice}">{escape(prompt_text)}</Say>'
+        f'</Gather>'
+        f'<Say language="{lang_voice}">{escape("Sorry, we did not receive your input. Goodbye." if lang_voice == "en-IN" else "माफ करें, कोई जवाब नहीं मिला। धन्यवाद।")}</Say>'
+    )
+
+def twiml_say_hangup(text, lang_voice='en-IN'):
+    from xml.sax.saxutils import escape
+    return twiml_response(f'<Say language="{lang_voice}">{escape(text)}</Say><Hangup/>')
+
+IVR_VOICE_LANG = {'en': 'en-IN', 'hi': 'hi-IN', 'mr': 'en-IN'}  # Marathi TTS isn't reliably available on most providers — falls back to English voice, spoken text still shown for reference
+
+def get_ivr_session(call_sid):
+    conn = get_db_connection()
+    row = conn.execute('SELECT * FROM ivr_sessions WHERE call_sid = ?', (call_sid,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+def upsert_ivr_session(call_sid, phone=None, **fields):
+    conn = get_db_connection()
+    existing = conn.execute('SELECT call_sid FROM ivr_sessions WHERE call_sid = ?', (call_sid,)).fetchone()
+    now = datetime.now().strftime("%d %b %Y, %I:%M %p")
+    if existing:
+        set_clause = ", ".join(f"{k} = ?" for k in fields)
+        conn.execute(f'UPDATE ivr_sessions SET {set_clause}, updated_at = ? WHERE call_sid = ?',
+                     (*fields.values(), now, call_sid))
+    else:
+        cols = ['call_sid', 'phone', 'created_at', 'updated_at'] + list(fields.keys())
+        vals = [call_sid, phone, now, now] + list(fields.values())
+        placeholders = ", ".join(['?'] * len(vals))
+        conn.execute(f'INSERT INTO ivr_sessions ({", ".join(cols)}) VALUES ({placeholders})', vals)
+    conn.commit()
+    conn.close()
+
+# Income bucket (DTMF choice) -> representative rupee value for scoring
+IVR_INCOME_MAP = {'1': '3000', '2': '7500', '3': '15000', '4': '25000'}
+IVR_HOUSING_MAP = {'1': 'homeless', '2': 'kutcha', '3': 'rented', '4': 'pucca'}
+IVR_AGE_MAP = {'1': 'child', '2': 'adult', '3': 'elderly'}
+
+@app.route('/sms-webhook', methods=['POST'])
+def sms_webhook():
+    """Twilio-style inbound SMS webhook. Supports:
+    - Freeform text describing the person's situation (reuses the same
+      Gemini extraction as the chatbot's case-worker mode)
+    - "STATUS APP-2026-XXXX" to check an application's outcome status
+    """
+    from_number = request.form.get('From', '').strip()
+    body = (request.form.get('Body') or '').strip()
+    ip = get_client_ip()
+    log_activity('SMS', 'INBOUND', ip, f'From {from_number}: {body[:100]}')
+
+    if not body:
+        return twiml_message("Please text us your situation, e.g. '62 year old widow from Nagpur earning 4000 rupees'."), 200, {'Content-Type': 'text/xml'}
+
+    # STATUS lookup command
+    status_match = re.match(r'^status\s+(APP-\d{4}-\d+)', body, re.IGNORECASE)
+    if status_match:
+        app_id = status_match.group(1).upper()
+        outcomes = get_outcome_rows(app_id)
+        if not outcomes:
+            reply = f"No application found with ID {app_id}. Please check and try again."
+        else:
+            lines = [f"{o['scheme_name'][:30]}: {o['status'].replace('_', ' ')}" for o in outcomes[:5]]
+            reply = f"Status for {app_id}:\n" + "\n".join(lines)
+        return twiml_message(reply), 200, {'Content-Type': 'text/xml'}
+
+    # Freeform intake — reuse the exact same extraction used by the chatbot
+    api_key = os.environ.get('GEMINI_API_KEY', '')
+    if not api_key:
+        return twiml_message("This service needs setup on our end. Please try the web app, or call our helpline."), 200, {'Content-Type': 'text/xml'}
+
+    client = genai.Client(api_key=api_key)
+    intake = extract_case_intake(client, body, 'en')
+    if not intake or not intake.get('is_case_intake'):
+        fallback_reply = (intake or {}).get('reply') or "Please text your age, income, and location, e.g. '62 year old widow from Nagpur earning 4000 rupees'."
+        return twiml_message(fallback_reply[:300]), 200, {'Content-Type': 'text/xml'}
+
+    extracted = intake.get('extracted') or {}
+    signal_count = sum(1 for f in INTAKE_SIGNAL_FIELDS if extracted.get(f) not in (None, ''))
+    if signal_count < 2:
+        return twiml_message("We need a bit more detail — please include your age, income, and location."), 200, {'Content-Type': 'text/xml'}
+
+    extracted['phone'] = from_number
+    profile = build_profile_from_intake(extracted, 'en')
+    top_schemes = profile['schemes'][:3]
+    scheme_lines = "\n".join(f"- {sc['name'][:35]} ({sc['amount']})" for sc in top_schemes)
+    reply = (f"You may be eligible for {len(profile['schemes'])} scheme(s):\n{scheme_lines}\n"
+              f"App ID: {profile.get('application_id', 'N/A')}\nReply STATUS <ID> anytime to check progress.")
+    return twiml_message(reply[:1500]), 200, {'Content-Type': 'text/xml'}
+
+@app.route('/voice-webhook', methods=['POST'])
+def voice_webhook():
+    """First webhook Twilio/Exotel calls when someone dials in. Offers a
+    language choice, then hands off to the step-by-step questionnaire."""
+    call_sid = request.form.get('CallSid', '')
+    from_number = request.form.get('From', '')
+    upsert_ivr_session(call_sid, phone=from_number)
+    log_activity('IVR', 'CALL_STARTED', get_client_ip(), f'CallSid {call_sid} from {from_number}')
+
+    prompt = "Welcome to Poverty Aid Identifier. For English, press 1. Hindi ke liye 2 dabayen."
+    return twiml_gather_digits(prompt, '/voice-collect?step=lang', num_digits=1), 200, {'Content-Type': 'text/xml'}
+
+@app.route('/voice-collect', methods=['POST'])
+def voice_collect():
+    """Handles every step of the DTMF questionnaire. `step` in the query
+    string says which question was just answered; responds with the next
+    question, or the final results once all answers are in."""
+    step = request.args.get('step', 'lang')
+    digit = request.form.get('Digits', '')
+    call_sid = request.form.get('CallSid', '')
+    session_data = get_ivr_session(call_sid) or {}
+    lang = session_data.get('lang', 'en')
+    voice = IVR_VOICE_LANG.get(lang, 'en-IN')
+
+    if step == 'lang':
+        lang = 'hi' if digit == '2' else 'en'
+        upsert_ivr_session(call_sid, lang=lang)
+        voice = IVR_VOICE_LANG.get(lang, 'en-IN')
+        prompt = ("Press 1 if you are a child, 2 for adult, 3 for senior citizen above 60."
+                  if lang == 'en' else
+                  "Bachche ke liye 1, vayask ke liye 2, 60 se upar ke liye 3 dabayen.")
+        return twiml_gather_digits(prompt, '/voice-collect?step=age', num_digits=1, lang_voice=voice), 200, {'Content-Type': 'text/xml'}
+
+    if step == 'age':
+        upsert_ivr_session(call_sid, age_group=IVR_AGE_MAP.get(digit, 'adult'))
+        prompt = ("What is your monthly income? Press 1 for under 5000 rupees, 2 for 5000 to 10000, "
+                  "3 for 10000 to 20000, 4 for above 20000."
+                  if lang == 'en' else
+                  "Aapki mahine ki aay kitni hai? 5000 se kam ke liye 1, 5000 se 10000 ke liye 2, "
+                  "10000 se 20000 ke liye 3, 20000 se zyada ke liye 4 dabayen.")
+        return twiml_gather_digits(prompt, '/voice-collect?step=income', num_digits=1, lang_voice=voice), 200, {'Content-Type': 'text/xml'}
+
+    if step == 'income':
+        upsert_ivr_session(call_sid, income=IVR_INCOME_MAP.get(digit, '10000'))
+        prompt = ("What is your housing? Press 1 for homeless, 2 for a kutcha house, 3 for rented, 4 for a pucca house."
+                  if lang == 'en' else
+                  "Aapka ghar kaisa hai? Beghar ke liye 1, kaccha ghar ke liye 2, kiraye ke ghar ke liye 3, "
+                  "pakka ghar ke liye 4 dabayen.")
+        return twiml_gather_digits(prompt, '/voice-collect?step=housing', num_digits=1, lang_voice=voice), 200, {'Content-Type': 'text/xml'}
+
+    if step == 'housing':
+        upsert_ivr_session(call_sid, housing=IVR_HOUSING_MAP.get(digit, 'pucca'))
+        prompt = ("Are you a widow or widower? Press 1 for yes, 2 for no."
+                  if lang == 'en' else
+                  "Kya aap vidhwa ya vidhur hain? Haan ke liye 1, nahin ke liye 2 dabayen.")
+        return twiml_gather_digits(prompt, '/voice-collect?step=widow', num_digits=1, lang_voice=voice), 200, {'Content-Type': 'text/xml'}
+
+    if step == 'widow':
+        upsert_ivr_session(call_sid, widow_status='yes' if digit == '1' else 'no')
+        prompt = ("Do you have a medical emergency right now? Press 1 for yes, 2 for no."
+                  if lang == 'en' else
+                  "Kya abhi koi medical emergency hai? Haan ke liye 1, nahin ke liye 2 dabayen.")
+        return twiml_gather_digits(prompt, '/voice-collect?step=medical', num_digits=1, lang_voice=voice), 200, {'Content-Type': 'text/xml'}
+
+    if step == 'medical':
+        session_data = get_ivr_session(call_sid) or {}
+        medical = 'emergency' if digit == '1' else 'none'
+        upsert_ivr_session(call_sid, medical=medical)
+        session_data = get_ivr_session(call_sid)
+
+        # Run through the SAME real scoring engine as the web form.
+        data = dict(INTAKE_DEFAULTS)
+        data['age_group'] = session_data.get('age_group') or 'adult'
+        data['income'] = session_data.get('income') or '10000'
+        data['housing'] = session_data.get('housing') or 'pucca'
+        data['widow_status'] = session_data.get('widow_status') or 'no'
+        data['medical'] = medical
+        score = calculate_score(data)
+        schemes = get_schemes(score, data, lang)
+        top = schemes[:3]
+
+        if lang == 'en':
+            if top:
+                names = ". ".join(sc[2] for sc in top)
+                text = f"Based on your answers, you may be eligible for: {names}. Please visit your nearest Gram Panchayat office, or check the web app for full details. Thank you."
+            else:
+                text = "Based on your answers, please visit your nearest Gram Panchayat office for basic community support. Thank you."
+        else:
+            if top:
+                names = ". ".join(sc[2] for sc in top)
+                text = f"Aapke jawabon ke anusar, aap in yojanaon ke patra ho sakte hain: {names}. Apne nazdeeki Gram Panchayat karyalay mein sampark karein. Dhanyavad."
+            else:
+                text = "Apne nazdeeki Gram Panchayat karyalay mein sampark karein. Dhanyavad."
+
+        log_activity('IVR', 'CALL_COMPLETED', get_client_ip(), f'CallSid {call_sid}, score={score}, schemes={len(schemes)}')
+        return twiml_say_hangup(text, lang_voice=voice), 200, {'Content-Type': 'text/xml'}
+
+    # Unknown step — end gracefully rather than looping
+    return twiml_say_hangup("Thank you for calling. Goodbye.", lang_voice=voice), 200, {'Content-Type': 'text/xml'}
 
 @app.route('/')
 def root():
@@ -1174,6 +1856,19 @@ def index():
         # keys above, this is NOT popped after one display — it stays in the
         # session so the chatbot can use it on any page, any time later,
         # until the person fills the form again.
+        application_id = generate_application_id()
+
+        # Fraud/duplicate detection: compare against this phone's own
+        # submission history. Flags for admin review only — the citizen's
+        # results below are completely unaffected either way.
+        anomalies = check_submission_anomaly(
+            phone, ip, request.form.get('age_group', ''), gender, widow,
+            request.form.get('income', ''), request.form.get('family_size', '')
+        )
+        if anomalies:
+            log_activity('PUBLIC', 'SUBMISSION_ANOMALY', ip,
+                          f"Phone {phone}: " + "; ".join(anomalies), suspicious=1)
+
         session['profile'] = {
             'name': person_name,
             'gender': gender,
@@ -1193,8 +1888,14 @@ def index():
             'priority': result,
             'schemes': [{'key': sc[0], 'urgency': sc[1], 'name': sc[2], 'amount': sc[3]} for sc in schemes],
             'lang': lang,
+            'application_id': application_id,
             'updated_at': datetime.now().strftime("%d %b %Y, %I:%M %p"),
         }
+        # Every new form submission is a fresh person/situation as far as the
+        # chatbot is concerned — wipe any leftover conversation memory from
+        # whoever used this browser/session before, so the AI never greets
+        # someone new using the previous person's name or context.
+        session.pop('chat_history', None)
 
         try:
             conn = get_db_connection()
@@ -1202,6 +1903,20 @@ def index():
                 'INSERT INTO form_submissions (phone, ip_address, submitted_at, lang, schemes_count, state) VALUES (?, ?, ?, ?, ?, ?)',
                 (phone, ip, datetime.now().strftime("%d %b %Y, %I:%M %p"), lang, len(schemes), detect_state(address))
             )
+            now_str = datetime.now().strftime("%d %b %Y, %I:%M %p")
+            conn.execute(
+                '''INSERT INTO applications
+                   (application_id, person_name, phone, state, score, priority, schemes_count, lang, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                (application_id, person_name, phone, detect_state(address), score, result, len(schemes), lang, now_str)
+            )
+            for sc in schemes:
+                conn.execute(
+                    '''INSERT INTO application_outcomes
+                       (application_id, phone, person_name, scheme_key, scheme_name, status, created_at, updated_at, lang)
+                       VALUES (?, ?, ?, ?, ?, 'not_applied', ?, ?, ?)''',
+                    (application_id, phone, person_name, sc[0], sc[2], now_str, now_str, lang)
+                )
             conn.commit()
             conn.close()
         except Exception:
@@ -1251,6 +1966,7 @@ def scheme_detail(scheme_key):
 @app.route('/corruption', methods=['GET', 'POST'])
 def corruption():
     tracking_id = None
+    duplicate_notice = False
     lang = request.args.get('lang', session.get('lang', 'en'))
     schemes = session.get('schemes', [])
     report = None
@@ -1259,35 +1975,51 @@ def corruption():
         action = request.form.get('action')
         lang = request.form.get('lang', 'en')
         if action == 'submit_report':
-            tracking_id = generate_tracking_id()
-            assigned_officer = random.choice(OFFICERS.get(lang, OFFICERS['en']))
-            authority = random.choice(AUTHORITIES.get(lang, AUTHORITIES['en']))
-            filed_date = datetime.now().strftime("%d %b %Y, %I:%M %p")
-            expected = (datetime.now() + timedelta(days=30)).strftime("%d %b %Y")
-            conn = get_db_connection()
-            conn.execute('''INSERT INTO reports
-                (tracking_id, person_name, phone, address, scheme,
-                entitled_amount, received_amount, official_name, description,
-                incident_date, location, status, assigned_officer, authority,
-                filed_date, expected_resolution, lang)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                (tracking_id,
-                session.get('person_name', ''),
-                session.get('phone', ''),
-                session.get('address', ''),
-                request.form.get('scheme'),
-                request.form.get('entitled_amount'),
-                request.form.get('received_amount'),
-                request.form.get('official_name'),
-                request.form.get('description'),
-                request.form.get('incident_date'),
-                request.form.get('location'),
-                'Filed', assigned_officer, authority,
-                filed_date, expected, lang))
-            conn.commit()
-            conn.close()
-            log_activity('PUBLIC', 'COMPLAINT_FILED', ip,
-                f'Tracking ID: {tracking_id}')
+            existing_id = find_recent_similar_complaint(
+                session.get('phone', ''), request.form.get('scheme'),
+                request.form.get('official_name'), request.form.get('description')
+            )
+            if existing_id:
+                # Likely the same incident being filed twice — reuse the
+                # existing tracking ID instead of creating a confusing
+                # duplicate entry. The citizen still gets a tracking ID
+                # back either way, just the one they already have.
+                tracking_id = existing_id
+                duplicate_notice = True
+                log_activity('PUBLIC', 'DUPLICATE_COMPLAINT_MERGED', ip,
+                              f'Reused existing tracking ID: {existing_id}')
+            else:
+                duplicate_notice = False
+                tracking_id = generate_tracking_id()
+                assigned_officer = random.choice(OFFICERS.get(lang, OFFICERS['en']))
+                authority = random.choice(AUTHORITIES.get(lang, AUTHORITIES['en']))
+                filed_date = datetime.now().strftime("%d %b %Y, %I:%M %p")
+                expected = (datetime.now() + timedelta(days=30)).strftime("%d %b %Y")
+                conn = get_db_connection()
+                conn.execute('''INSERT INTO reports
+                    (tracking_id, person_name, phone, address, scheme,
+                    entitled_amount, received_amount, official_name, description,
+                    incident_date, location, status, assigned_officer, authority,
+                    filed_date, expected_resolution, lang)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                    (tracking_id,
+                    session.get('person_name', ''),
+                    session.get('phone', ''),
+                    session.get('address', ''),
+                    request.form.get('scheme'),
+                    request.form.get('entitled_amount'),
+                    request.form.get('received_amount'),
+                    request.form.get('official_name'),
+                    request.form.get('description'),
+                    request.form.get('incident_date'),
+                    request.form.get('location'),
+                    'Filed', assigned_officer, authority,
+                    filed_date, expected, lang))
+                conn.commit()
+                conn.close()
+                add_ledger_entry(tracking_id, 'Filed')
+                log_activity('PUBLIC', 'COMPLAINT_FILED', ip,
+                    f'Tracking ID: {tracking_id}')
         elif action == 'track_report':
             track_id = request.form.get('tracking_id_input')
             conn = get_db_connection()
@@ -1303,7 +2035,7 @@ def corruption():
                     'received_date': row['received_date'], 'action_date': row['action_date'],
                     'resolved_date': row['resolved_date'], 'expected_resolution': row['expected_resolution']
                 }
-    return render_template('corruption.html', tracking_id=tracking_id, lang=lang, schemes=schemes, report=report)
+    return render_template('corruption.html', tracking_id=tracking_id, lang=lang, schemes=schemes, report=report, duplicate_notice=duplicate_notice)
 
 @app.route('/track', methods=['GET', 'POST'])
 def track():
@@ -1330,6 +2062,149 @@ def track():
             not_found = True
     return render_template('track.html', report=report, not_found=not_found, lang=lang,scheme=report['scheme'] if report else '')
 
+@app.route('/track-outcome', methods=['GET', 'POST'])
+def track_outcome():
+    lang = request.args.get('lang', session.get('lang', 'en'))
+    application_id = None
+    outcomes = []
+    not_found = False
+
+    # If the person already has a profile in session, prefill their own
+    # application ID so they don't have to type it in.
+    profile = session.get('profile')
+    prefill_id = profile.get('application_id') if profile else ''
+
+    if request.method == 'POST':
+        application_id = (request.form.get('application_id_input') or '').strip()
+        lang = request.form.get('lang', 'en')
+        outcomes = get_outcome_rows(application_id)
+        if not outcomes:
+            not_found = True
+    elif request.args.get('id'):
+        application_id = request.args.get('id').strip()
+        outcomes = get_outcome_rows(application_id)
+        if not outcomes:
+            not_found = True
+
+    person_name = outcomes[0]['person_name'] if outcomes else ''
+    return render_template(
+        'track_outcome.html',
+        lang=lang, application_id=application_id, outcomes=outcomes,
+        not_found=not_found, person_name=person_name, prefill_id=prefill_id
+    )
+
+@app.route('/volunteer/register', methods=['GET', 'POST'])
+def volunteer_register():
+    """Self-signup for NGO workers / panchayat volunteers. Note for a real
+    deployment: this is currently open self-registration, which is fine for
+    a prototype but should likely gain an admin-approval step before wide
+    public rollout, since anyone can create a volunteer account this way."""
+    error = None
+    if request.method == 'POST':
+        username = sanitize(request.form.get('username', '')).strip()
+        password = request.form.get('password', '')
+        full_name = sanitize(request.form.get('full_name', '')).strip()
+        if not username or not password or not full_name:
+            error = "Please fill in all fields."
+        elif len(password) < 6:
+            error = "Password must be at least 6 characters."
+        else:
+            conn = get_db_connection()
+            existing = conn.execute('SELECT id FROM admin_users WHERE username=?', (username,)).fetchone()
+            if existing:
+                conn.close()
+                error = "That username is already taken."
+            else:
+                conn.execute(
+                    'INSERT INTO admin_users (username, password, role, full_name) VALUES (?, ?, ?, ?)',
+                    (username, hash_password(password), 'volunteer', full_name)
+                )
+                conn.commit()
+                conn.close()
+                log_activity(username, 'VOLUNTEER_REGISTERED', get_client_ip(), f'{full_name} registered as volunteer')
+                session['admin_logged_in'] = True
+                session['admin_username'] = username
+                session['admin_role'] = 'volunteer'
+                session['admin_name'] = full_name
+                return redirect(url_for('volunteer_dashboard'))
+    return render_template('volunteer_register.html', error=error)
+
+@app.route('/volunteer/dashboard')
+@role_required('volunteer', 'admin', 'superadmin')
+def volunteer_dashboard():
+    conn = get_db_connection()
+    applications = conn.execute(
+        'SELECT * FROM applications WHERE filed_by_volunteer = ? ORDER BY id DESC',
+        (session.get('admin_username'),)
+    ).fetchall()
+    conn.close()
+    return render_template('volunteer_dashboard.html',
+        applications=applications, volunteer_name=session.get('admin_name'))
+
+@app.route('/volunteer/new-application', methods=['GET', 'POST'])
+@role_required('volunteer', 'admin', 'superadmin')
+def volunteer_new_application():
+    lang = request.args.get('lang', session.get('lang', 'en'))
+    if request.method == 'POST':
+        lang = request.form.get('lang', 'en')
+        person_name = sanitize(request.form.get('person_name', ''))
+        phone = sanitize(request.form.get('phone', ''))
+        address = sanitize(request.form.get('address', ''))
+        ip = get_client_ip()
+
+        if phone and not re.match(r'^[0-9]{10}$', phone):
+            return render_template('volunteer_new_application.html', lang=lang,
+                error="Invalid phone number. Enter 10 digits.", result=None)
+
+        # SAME scoring engine as the citizen-facing form — a volunteer's
+        # assisted filing is scored identically, never differently.
+        score = calculate_score(request.form)
+        schemes = get_schemes(score, request.form, lang)
+        result = get_priority(score, request.form)
+        application_id = generate_application_id()
+        now_str = datetime.now().strftime("%d %b %Y, %I:%M %p")
+
+        anomalies = check_submission_anomaly(
+            phone, ip, request.form.get('age_group', ''),
+            sanitize(request.form.get('gender', '')), sanitize(request.form.get('widow_status', '')),
+            request.form.get('income', ''), request.form.get('family_size', '')
+        )
+        if anomalies:
+            log_activity('VOLUNTEER', 'SUBMISSION_ANOMALY', ip,
+                          f"Phone {phone} (filed by volunteer {session.get('admin_username')}): " + "; ".join(anomalies),
+                          suspicious=1)
+
+        try:
+            conn = get_db_connection()
+            conn.execute(
+                '''INSERT INTO applications
+                   (application_id, person_name, phone, state, score, priority, schemes_count, lang,
+                    filed_by_volunteer, filed_by_volunteer_name, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                (application_id, person_name, phone, detect_state(address), score, result, len(schemes), lang,
+                 session.get('admin_username'), session.get('admin_name'), now_str)
+            )
+            for sc in schemes:
+                conn.execute(
+                    '''INSERT INTO application_outcomes
+                       (application_id, phone, person_name, scheme_key, scheme_name, status, created_at, updated_at, lang)
+                       VALUES (?, ?, ?, ?, ?, 'not_applied', ?, ?, ?)''',
+                    (application_id, phone, person_name, sc[0], sc[2], now_str, now_str, lang)
+                )
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            print(f"Volunteer application save error: {e}")
+
+        log_activity(session.get('admin_username', 'VOLUNTEER'), 'VOLUNTEER_FILED_APPLICATION', ip,
+                     f'On behalf of {person_name} ({phone}) -> {application_id}')
+
+        return render_template('volunteer_new_application.html', lang=lang, result=result,
+            score=score, schemes=schemes, application_id=application_id, person_name=person_name,
+            volunteer_name=session.get('admin_name'), error=None)
+
+    return render_template('volunteer_new_application.html', lang=lang, result=None, error=None)
+
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     error = None
@@ -1352,6 +2227,8 @@ def admin_login():
             session['admin_role'] = user['role']
             session['admin_name'] = user['full_name']
             log_activity(username, 'LOGIN_SUCCESS', ip, f'{user["full_name"]} logged in')
+            if user['role'] == 'volunteer':
+                return redirect(url_for('volunteer_dashboard'))
             return redirect(url_for('admin'))
         else:
             conn.close()
@@ -1371,7 +2248,7 @@ def admin_logout():
     return redirect(url_for('admin_login'))
 
 @app.route('/admin', methods=['GET', 'POST'])
-@login_required
+@role_required('admin', 'superadmin')
 def admin():
     ip = get_client_ip()
     conn = get_db_connection()
@@ -1388,6 +2265,7 @@ def admin():
         elif new_status == 'Resolved':
             conn.execute('UPDATE reports SET status=?, resolved_date=? WHERE tracking_id=?', (new_status, now, tracking_id))
         conn.commit()
+        add_ledger_entry(tracking_id, new_status)
         log_activity(session.get('admin_username'), 'STATUS_UPDATE', ip,
             f'Updated {tracking_id} to {new_status}')
     filter_status = request.args.get('filter', 'All')
@@ -1403,6 +2281,38 @@ def admin():
         reports = conn.execute('SELECT * FROM reports WHERE status=? ORDER BY id DESC', (filter_status,)).fetchall()
     recent_logs = conn.execute('SELECT * FROM activity_logs ORDER BY id DESC LIMIT 20').fetchall()
     suspicious_logs = conn.execute('SELECT * FROM activity_logs WHERE suspicious=1 ORDER BY id DESC LIMIT 10').fetchall()
+
+    # Ledger verification
+    ledger_valid, error_block, ledger_message = verify_ledger()
+    ledger_blocks = conn.execute('SELECT * FROM audit_ledger ORDER BY id DESC').fetchall()
+
+    # Suspicious submissions / Fraud
+    suspicious_inputs = conn.execute('''
+        SELECT phone, COUNT(DISTINCT age_group) as age_diffs, COUNT(DISTINCT income) as income_diffs, COUNT(*) as cnt
+        FROM submission_fingerprints
+        GROUP BY phone
+        HAVING age_diffs > 1 OR income_diffs > 1
+    ''').fetchall()
+
+    suspicious_phones = [row['phone'] for row in suspicious_inputs]
+    suspicious_fingerprints = []
+    if suspicious_phones:
+        placeholders = ','.join('?' for _ in suspicious_phones)
+        suspicious_fingerprints = conn.execute(f'''
+            SELECT * FROM submission_fingerprints
+            WHERE phone IN ({placeholders})
+            ORDER BY phone, submitted_at DESC
+        ''', suspicious_phones).fetchall()
+
+    # Scheme Stats
+    scheme_counts_raw = conn.execute('''
+        SELECT scheme, COUNT(*) as count 
+        FROM reports 
+        WHERE scheme IS NOT NULL AND scheme != ""
+        GROUP BY scheme
+    ''').fetchall()
+    scheme_stats = {row['scheme']: row['count'] for row in scheme_counts_raw}
+
     conn.close()
     return render_template('admin.html',
         reports=reports, total=total, filed=filed, received=received,
@@ -1412,7 +2322,12 @@ def admin():
         admin_role=session.get('admin_role'),
         recent_logs=recent_logs,
         suspicious_logs=suspicious_logs,
-        suspicious_count=suspicious_count)
+        suspicious_count=suspicious_count,
+        ledger_valid=ledger_valid,
+        ledger_message=ledger_message,
+        ledger_blocks=ledger_blocks,
+        suspicious_fingerprints=suspicious_fingerprints,
+        scheme_stats=scheme_stats)
 
 @app.route('/manifest.json')
 def manifest():
@@ -1891,6 +2806,16 @@ def chatbot_reply():
             'document', 'documents', 'papers', 'paper', 'missing document',
             'दस्तावेज़', 'कागदपत्र', 'कागद'
         ])
+        outcome_question = any(k in q for k in [
+            'got approved', 'approved for', 'approved my', 'was rejected', 'got rejected', 'rejected my',
+            'i applied for', 'i applied to', 'application status', 'track my application', 'update my status',
+            'update my application', 'still waiting', 'i received the', 'i got the money', 'application was',
+            'application is', 'my application', 'under review', 'is reviewing', 'still processing',
+            'no update', 'not yet approved', 'pending', 'was approved', 'was accepted', 'got accepted',
+            'is my', 'status of my', 'applied last', 'applied a', 'applied this',
+            'मंजूर हो गया', 'अस्वीकार', 'आवेदन की स्थिति', 'मंजूर झाले', 'नाकारले', 'मेरा आवेदन',
+            'समीक्षा में', 'प्रतीक्षा', 'माझा अर्ज', 'पुनरावलोकनात', 'प्रतीक्षेत',
+        ])
 
         if profile and score_question:
             explanation = explain_need_score(profile, lang)
@@ -1915,10 +2840,8 @@ def chatbot_reply():
             push_chat_history(user_message, fallback_reply)
             return jsonify({'reply': fallback_reply})
 
-        # Configure Gemini
-        import google.generativeai as genai
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-3.5-flash')
+        # Configure Gemini (new google-genai SDK — old google.generativeai is deprecated)
+        client = genai.Client(api_key=api_key)
 
         # CASE-WORKER MODE: if this person hasn't filled the eligibility form
         # yet, see if their message is actually a self-description ("I'm a
@@ -1926,7 +2849,7 @@ def chatbot_reply():
         # FAQ. One Gemini call either extracts structured facts (which we
         # then run through the real scoring engine) or just answers the FAQ.
         if not profile:
-            intake = extract_case_intake(model, user_message, lang)
+            intake = extract_case_intake(client, user_message, lang)
             if intake and intake.get('is_case_intake'):
                 extracted = intake.get('extracted') or {}
                 signal_count = sum(1 for f in INTAKE_SIGNAL_FIELDS if extracted.get(f) not in (None, ''))
@@ -1943,6 +2866,49 @@ def chatbot_reply():
                 log_activity('CHATBOT', 'QUERY', get_client_ip(), f'Lang: {lang} | Q: {user_message[:50]}')
                 return jsonify({'reply': intake['reply']})
             # If extraction failed entirely, fall through to the normal flow below.
+
+        # OUTCOME TRACKING (the feedback loop): if this person already has a
+        # profile with an application_id, and their message sounds like a
+        # status report ("I got approved for widow pension"), match it to
+        # their actual scheme and record it in application_outcomes — so the
+        # app learns whether recommendations turned into real help, not just
+        # suggestions that go nowhere.
+        if profile and profile.get('application_id') and outcome_question:
+            outcome = extract_outcome_update(client, user_message, profile, lang)
+            if outcome and outcome.get('is_outcome_update'):
+                scheme_key = outcome.get('scheme_key')
+                status = outcome.get('status')
+                matched_scheme = next((sc for sc in profile['schemes'] if sc['key'] == scheme_key), None)
+
+                if matched_scheme and status in OUTCOME_STATUSES:
+                    update_outcome_status(profile['application_id'], scheme_key, status, notes=user_message[:200])
+                    status_labels = {
+                        'en': {'applied': 'applied', 'under_review': 'under review', 'approved': 'approved ✅', 'rejected': 'rejected', 'not_applied': 'not yet applied'},
+                        'hi': {'applied': 'आवेदन किया गया', 'under_review': 'समीक्षा में', 'approved': 'मंजूर ✅', 'rejected': 'अस्वीकृत', 'not_applied': 'अभी आवेदन नहीं किया'},
+                        'mr': {'applied': 'अर्ज केला', 'under_review': 'पुनरावलोकनात', 'approved': 'मंजूर ✅', 'rejected': 'नाकारले', 'not_applied': 'अजून अर्ज केलेला नाही'},
+                    }
+                    label = status_labels.get(lang, status_labels['en']).get(status, status)
+                    confirms = {
+                        'en': f"Got it — marked {matched_scheme['name']} as {label}. Thanks for letting me know, this helps us understand what's actually working. Anything else I can help with?",
+                        'hi': f"समझ गया — {matched_scheme['name']} को {label} के रूप में दर्ज किया। बताने के लिए धन्यवाद, इससे हमें यह समझने में मदद मिलती है कि वास्तव में क्या काम कर रहा है। कुछ और मदद चाहिए?",
+                        'mr': f"समजले — {matched_scheme['name']} {label} म्हणून नोंदवले. सांगितल्याबद्दल धन्यवाद, यामुळे आम्हाला काय खरोखर काम करत आहे हे समजण्यास मदत होते. आणखी काही मदत हवी आहे का?",
+                    }
+                    reply = confirms.get(lang, confirms['en'])
+                    push_chat_history(user_message, reply)
+                    log_activity('CHATBOT', 'OUTCOME_UPDATE', get_client_ip(), f'{scheme_key} -> {status}')
+                    return jsonify({'reply': reply})
+                elif not matched_scheme:
+                    # Couldn't tell which scheme — ask, don't guess.
+                    scheme_names = ", ".join(sc['name'] for sc in profile['schemes'])
+                    clarify = {
+                        'en': f"Which scheme are you talking about? Your recommended ones are: {scheme_names}.",
+                        'hi': f"आप किस योजना की बात कर रहे हैं? आपकी सुझाई गई योजनाएं हैं: {scheme_names}.",
+                        'mr': f"तुम्ही कोणत्या योजनेबद्दल बोलत आहात? तुमच्या शिफारस केलेल्या योजना आहेत: {scheme_names}.",
+                    }
+                    reply = clarify.get(lang, clarify['en'])
+                    push_chat_history(user_message, reply)
+                    return jsonify({'reply': reply})
+            # If it wasn't actually an outcome update after all, fall through to normal flow.
 
         # System prompt based on language
         system_prompts = {
@@ -2009,13 +2975,16 @@ Rules:
         # Real multi-turn memory: rebuild a chat session from the last few
         # exchanges stored in session['chat_history'], so follow-up doubts
         # ("tell me more about the second one") actually have context.
-        chat_model = genai.GenerativeModel('gemini-3.5-flash', system_instruction=system_instruction)
         gemini_history = [
-            {'role': h['role'], 'parts': [h['text']]}
+            genai_types.Content(role=h['role'], parts=[genai_types.Part(text=h['text'])])
             for h in session.get('chat_history', [])
         ]
-        chat = chat_model.start_chat(history=gemini_history)
-        response = chat.send_message(user_message)
+        chat = client.chats.create(
+            model=GEMINI_MODEL,
+            config=genai_types.GenerateContentConfig(system_instruction=system_instruction),
+            history=gemini_history,
+        )
+        response = chat.send_message(message=user_message)
         reply = response.text.strip()
 
         push_chat_history(user_message, reply)

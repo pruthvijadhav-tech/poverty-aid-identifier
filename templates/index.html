@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Poverty Aid Identifier</title>
     <link rel="manifest" href="/static/manifest.json">
+    <script src="/static/offline-scoring.js" defer></script>
     <meta name="theme-color" content="#000080">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -138,6 +139,25 @@
             .lang-card { width: 290px; }
             .install-banner { flex-direction: column; text-align: center; }
         }
+
+        .ocr-card { background: #fff8f0; border: 2px dashed #FF9933; border-radius: 14px; padding: 16px; margin-bottom: 22px; }
+        .ocr-toggle { width: 100%; display: flex; align-items: center; gap: 8px; background: transparent; border: 1px solid #e0e0e0; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; color: #666; cursor: pointer; margin-bottom: 14px; text-align: left; }
+        .ocr-toggle:hover { border-color: #FF9933; color: #000080; }
+        .ocr-chevron { margin-left: auto; font-size: 11px; }
+        .ocr-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .ocr-icon { font-size: 26px; }
+        .ocr-title { font-weight: 700; font-size: 14px; color: #000080; }
+        .ocr-sub { font-size: 12px; color: #777; margin-top: 2px; }
+        .ocr-upload-btn { width: 100%; padding: 12px; background: #000080; color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .ocr-upload-btn:hover { background: #1a1a9e; }
+        .ocr-upload-btn:disabled { background: #aaa; cursor: not-allowed; }
+        #docPreview { width: 100%; max-height: 180px; object-fit: contain; border-radius: 10px; margin-top: 12px; border: 1px solid #eee; }
+        .ocr-status { margin-top: 10px; padding: 10px 12px; border-radius: 8px; font-size: 12.5px; line-height: 1.5; }
+        .ocr-status.loading { background: #fff3cd; color: #856404; }
+        .ocr-status.success { background: #e8f5e9; color: #1b5e20; }
+        .ocr-status.error { background: #ffebee; color: #c62828; }
+        .ocr-note { font-size: 10.5px; color: #999; margin-top: 10px; text-align: center; }
+        .autofilled { background: #e8f5e9 !important; border-color: #138808 !important; transition: background 0.6s ease; }
     </style>
 </head>
 <body>
@@ -203,6 +223,26 @@
 
                 <div class="form-section-title" id="section_personal">Personal Details</div>
                 <div class="privacy-note" id="privacyNote">Your personal details are confidential and will only be shared with authorized government officers if you file a corruption complaint.</div>
+
+                <button type="button" class="ocr-toggle" id="ocrToggle" onclick="toggleOcrCard()">
+                    <span class="ocr-icon">📷</span>
+                    <span id="ocrToggleText">Have a document? Tap to auto-fill (optional)</span>
+                    <span class="ocr-chevron" id="ocrChevron">▾</span>
+                </button>
+                <div class="ocr-card" id="ocrCard" style="display:none">
+                    <div class="ocr-header">
+                        <span class="ocr-icon">📷</span>
+                        <div>
+                            <div class="ocr-title" id="ocrTitle">Have your Aadhaar or Ration Card?</div>
+                            <div class="ocr-sub" id="ocrSub">Upload a photo and we'll fill in your details automatically</div>
+                        </div>
+                    </div>
+                    <input type="file" id="docFileInput" accept="image/*" capture="environment" style="display:none" />
+                    <button type="button" class="ocr-upload-btn" id="ocrUploadBtn" onclick="document.getElementById('docFileInput').click()">Upload Document Photo</button>
+                    <img id="docPreview" style="display:none" />
+                    <div class="ocr-status" id="ocrStatus" style="display:none"></div>
+                    <div class="ocr-note" id="ocrNote">Optional shortcut — you can skip this and fill the form manually. No documents are required to check eligibility.</div>
+                </div>
 
                 <div class="form-group">
                     <label id="lbl_name">Full Name</label>
@@ -450,6 +490,20 @@ const translations = {
         opt_med_emergency: "Medical Emergency", opt_med_chronic: "Chronic Illness", opt_med_disability: "Disability", opt_med_none: "No Medical Issues",
         lbl_accident: "Any Recent Accident?", opt_acc_yes: "Yes", opt_acc_no: "No",
         lbl_earning: "Has Earning Member of Family Died?", opt_earn_yes: "Yes", opt_earn_no: "No",
+        lbl_gender: "Gender", opt_female: "Female", opt_male: "Male", opt_other: "Other",
+        lbl_widow: "Widow / Widower Status", opt_widow_yes: "Yes — Widow/Widower", opt_widow_no: "No",
+        ocrToggleText: "Have a document? Tap to auto-fill (optional)",
+        ocrTitle: "Have your Aadhaar or Ration Card?",
+        ocrSub: "Optional — upload a photo and we'll fill in your details",
+        ocrUploadBtn: "Upload Document Photo",
+        ocrUploadBtnBusy: "Reading document...",
+        ocrNote: "Optional shortcut — you can skip this and fill the form manually. No documents are required to check eligibility.",
+        ocr_loading: "🔍 Reading your document — this takes a few seconds...",
+        ocr_filled_prefix: "✅ Filled in: ",
+        ocr_filled_suffix: ". Please check these are correct, then continue filling the rest of the form below.",
+        ocr_error_unclear: "⚠️ Couldn't clearly read any details from this photo. Please fill the form manually.",
+        ocr_error_upload: "⚠️ Upload failed. Please check your connection and try again, or fill the form manually.",
+        ocr_error_timeout: "⚠️ This is taking too long — please try again with better network, or fill the form manually.",
         submitBtn: "Check Aid Eligibility",
         loading: "Checking Eligibility...", loadingSub: "Please wait a moment",
         err_name: "Please enter your full name",
@@ -482,6 +536,20 @@ const translations = {
         opt_med_emergency: "चिकित्सा आपात स्थिति", opt_med_chronic: "दीर्घकालिक बीमारी", opt_med_disability: "विकलांगता", opt_med_none: "कोई चिकित्सा समस्या नहीं",
         lbl_accident: "कोई हालिया दुर्घटना?", opt_acc_yes: "हाँ", opt_acc_no: "नहीं",
         lbl_earning: "क्या परिवार के कमाने वाले सदस्य का निधन हुआ है?", opt_earn_yes: "हाँ", opt_earn_no: "नहीं",
+        lbl_gender: "लिंग", opt_female: "महिला", opt_male: "पुरुष", opt_other: "अन्य",
+        lbl_widow: "विधवा / विधुर स्थिति", opt_widow_yes: "हां — विधवा/विधुर", opt_widow_no: "नहीं",
+        ocrToggleText: "दस्तावेज़ है? ऑटो-फिल के लिए टैप करें (वैकल्पिक)",
+        ocrTitle: "आपके पास आधार या राशन कार्ड है?",
+        ocrSub: "वैकल्पिक — फोटो अपलोड करें और हम आपका विवरण भर देंगे",
+        ocrUploadBtn: "दस्तावेज़ फोटो अपलोड करें",
+        ocrUploadBtnBusy: "दस्तावेज़ पढ़ा जा रहा है...",
+        ocrNote: "वैकल्पिक शॉर्टकट — आप इसे छोड़ सकते हैं और फॉर्म खुद भर सकते हैं। पात्रता जांचने के लिए किसी दस्तावेज़ की आवश्यकता नहीं है।",
+        ocr_loading: "🔍 आपका दस्तावेज़ पढ़ा जा रहा है — इसमें कुछ सेकंड लगेंगे...",
+        ocr_filled_prefix: "✅ भरा गया: ",
+        ocr_filled_suffix: "। कृपया जांच लें कि ये सही हैं, फिर नीचे फॉर्म भरना जारी रखें।",
+        ocr_error_unclear: "⚠️ इस फोटो से कोई विवरण स्पष्ट रूप से नहीं पढ़ा जा सका। कृपया फॉर्म खुद भरें।",
+        ocr_error_upload: "⚠️ अपलोड विफल रहा। कृपया अपना कनेक्शन जांचें और फिर कोशिश करें, या फॉर्म खुद भरें।",
+        ocr_error_timeout: "⚠️ इसमें बहुत समय लग रहा है — कृपया बेहतर नेटवर्क के साथ फिर कोशिश करें, या फॉर्म खुद भरें।",
         submitBtn: "सहायता पात्रता जांचें",
         loading: "पात्रता जांच रही है...", loadingSub: "कृपया प्रतीक्षा करें",
         err_name: "कृपया अपना पूरा नाम दर्ज करें",
@@ -514,6 +582,20 @@ const translations = {
         opt_med_emergency: "वैद्यकीय आणीबाणी", opt_med_chronic: "दीर्घकालीन आजार", opt_med_disability: "अपंगत्व", opt_med_none: "कोणतीही वैद्यकीय समस्या नाही",
         lbl_accident: "कोणताही अलीकडील अपघात?", opt_acc_yes: "हो", opt_acc_no: "नाही",
         lbl_earning: "कुटुंबातील कमावत्या सदस्याचे निधन झाले आहे का?", opt_earn_yes: "हो", opt_earn_no: "नाही",
+        lbl_gender: "लिंग", opt_female: "स्त्री", opt_male: "पुरुष", opt_other: "इतर",
+        lbl_widow: "विधवा / विधुर स्थिती", opt_widow_yes: "हो — विधवा/विधुर", opt_widow_no: "नाही",
+        ocrToggleText: "कागदपत्र आहे? ऑटो-फिलसाठी टॅप करा (ऐच्छिक)",
+        ocrTitle: "तुमच्याकडे आधार किंवा रेशन कार्ड आहे का?",
+        ocrSub: "ऐच्छिक — फोटो अपलोड करा आणि आम्ही तुमचा तपशील भरू",
+        ocrUploadBtn: "कागदपत्राचा फोटो अपलोड करा",
+        ocrUploadBtnBusy: "कागदपत्र वाचले जात आहे...",
+        ocrNote: "ऐच्छिक शॉर्टकट — तुम्ही हे वगळू शकता आणि फॉर्म स्वतः भरू शकता. पात्रता तपासण्यासाठी कोणत्याही कागदपत्राची गरज नाही.",
+        ocr_loading: "🔍 तुमचे कागदपत्र वाचले जात आहे — यास काही सेकंद लागतील...",
+        ocr_filled_prefix: "✅ भरले गेले: ",
+        ocr_filled_suffix: ". कृपया हे बरोबर आहेत का ते तपासा, नंतर खाली फॉर्म भरणे सुरू ठेवा.",
+        ocr_error_unclear: "⚠️ या फोटोमधून कोणताही तपशील स्पष्टपणे वाचता आला नाही. कृपया फॉर्म स्वतः भरा.",
+        ocr_error_upload: "⚠️ अपलोड अयशस्वी झाले. कृपया तुमचे कनेक्शन तपासा आणि पुन्हा प्रयत्न करा, किंवा फॉर्म स्वतः भरा.",
+        ocr_error_timeout: "⚠️ यास खूप वेळ लागत आहे — कृपया चांगल्या नेटवर्कसह पुन्हा प्रयत्न करा, किंवा फॉर्म स्वतः भरा.",
         submitBtn: "मदत पात्रता तपासा",
         loading: "पात्रता तपासत आहोत...", loadingSub: "कृपया थांबा",
         err_name: "कृपया तुमचे पूर्ण नाव टाका",
@@ -526,6 +608,14 @@ const translations = {
 };
 
 let currentLang = 'en';
+
+function toggleOcrCard() {
+    const card = document.getElementById('ocrCard');
+    const chevron = document.getElementById('ocrChevron');
+    const expanded = card.style.display !== 'none';
+    card.style.display = expanded ? 'none' : 'block';
+    chevron.textContent = expanded ? '▾' : '▴';
+}
 
 function selectLang(lang) {
     currentLang = lang;
@@ -563,6 +653,12 @@ function applyTranslations(lang) {
     set('opt_med_emergency', t.opt_med_emergency); set('opt_med_chronic', t.opt_med_chronic); set('opt_med_disability', t.opt_med_disability); set('opt_med_none', t.opt_med_none);
     set('lbl_accident', t.lbl_accident); set('opt_acc_yes', t.opt_acc_yes); set('opt_acc_no', t.opt_acc_no);
     set('lbl_earning', t.lbl_earning); set('opt_earn_yes', t.opt_earn_yes); set('opt_earn_no', t.opt_earn_no);
+    set('lbl_gender', t.lbl_gender); set('opt_female', t.opt_female); set('opt_male', t.opt_male); set('opt_other', t.opt_other);
+    set('lbl_widow', t.lbl_widow); set('opt_widow_yes', t.opt_widow_yes); set('opt_widow_no', t.opt_widow_no);
+    set('ocrToggleText', t.ocrToggleText);
+    set('ocrTitle', t.ocrTitle); set('ocrSub', t.ocrSub); set('ocrNote', t.ocrNote);
+    const uploadBtnEl = document.getElementById('ocrUploadBtn');
+    if (uploadBtnEl && !uploadBtnEl.disabled) uploadBtnEl.innerText = t.ocrUploadBtn;
     set('submitBtn', t.submitBtn);
     set('err_name', t.err_name); set('err_phone', t.err_phone);
     set('err_address', t.err_address); set('err_age', t.err_age);
@@ -631,6 +727,9 @@ function validateAndSubmit() {
     }
 
     if (valid) {
+        if (tryOfflineSubmit()) {
+            return false; // handled entirely on-device, don't submit to the server
+        }
         const overlay = document.getElementById('loadingOverlay');
         const loadingText = document.getElementById('loadingText');
         const loadingSub = document.getElementById('loadingSub');
@@ -823,5 +922,221 @@ window.addEventListener('appinstalled', () => {
     100% { box-shadow: 0 4px 20px rgba(0,0,80,0.4); }
 }
 </style>
+
+<script>
+(function(){
+    var fileInput = document.getElementById('docFileInput');
+    var uploadBtn = document.getElementById('ocrUploadBtn');
+    var preview = document.getElementById('docPreview');
+    var statusEl = document.getElementById('ocrStatus');
+    if (!fileInput) return; // OCR widget not on this page state (e.g. results view)
+
+    function t() {
+        return (typeof translations !== 'undefined' && typeof currentLang !== 'undefined' && translations[currentLang])
+            ? translations[currentLang] : translations.en;
+    }
+
+    function showStatus(kind, text) {
+        statusEl.style.display = 'block';
+        statusEl.className = 'ocr-status ' + kind;
+        statusEl.textContent = text;
+    }
+
+    function flashAutofilled(el) {
+        if (!el) return;
+        el.classList.add('autofilled');
+        setTimeout(function(){ el.classList.remove('autofilled'); }, 2500);
+    }
+
+    function compressImage(file, maxDim, quality) {
+        return new Promise(function(resolve, reject){
+            var img = new Image();
+            var url = URL.createObjectURL(file);
+            img.onload = function(){
+                URL.revokeObjectURL(url);
+                var w = img.width, h = img.height;
+                if (w > h && w > maxDim) { h = Math.round(h * (maxDim / w)); w = maxDim; }
+                else if (h > maxDim) { w = Math.round(w * (maxDim / h)); h = maxDim; }
+                var canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                canvas.toBlob(function(blob){
+                    if (!blob) { reject(new Error('compression failed')); return; }
+                    resolve(new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' }));
+                }, 'image/jpeg', quality);
+            };
+            img.onerror = function(){ URL.revokeObjectURL(url); reject(new Error('image load failed')); };
+            img.src = url;
+        });
+    }
+
+    fileInput.addEventListener('change', function(){
+        var file = fileInput.files[0];
+        if (!file) return;
+        var T = t();
+
+        // Local preview immediately (from the original file, before compression)
+        var reader = new FileReader();
+        reader.onload = function(e){
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = T.ocrUploadBtnBusy;
+        showStatus('loading', T.ocr_loading);
+
+        // Shrink large phone photos before upload — this is usually the
+        // biggest reason scanning feels slow. A 4000x3000px multi-MB photo
+        // becomes ~1280px and a few hundred KB, with no visible quality
+        // loss for reading text.
+        compressImage(file, 1280, 0.75)
+            .catch(function(){ return file; }) // if compression fails for any reason, fall back to the original file rather than blocking the upload
+            .then(function(uploadFile){
+                var formData = new FormData();
+                formData.append('document', uploadFile);
+
+                // Hard timeout: if the server hasn't responded in 30s, stop
+                // waiting and show a clear message instead of hanging forever.
+                var controller = new AbortController();
+                var timedOut = false;
+                var timeoutId = setTimeout(function(){
+                    timedOut = true;
+                    controller.abort();
+                }, 30000);
+
+                return fetch('/ocr-extract', { method: 'POST', body: formData, signal: controller.signal })
+                    .then(function(r){
+                        clearTimeout(timeoutId);
+                        if (!r.ok) throw new Error('server error ' + r.status);
+                        return r.json();
+                    })
+                    .catch(function(err){
+                        clearTimeout(timeoutId);
+                        if (timedOut) throw new Error('timeout');
+                        throw err;
+                    });
+            })
+            .then(function(data){
+                var T = t();
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = T.ocrUploadBtn;
+
+                if (!data.success) {
+                    showStatus('error', '⚠️ ' + (data.error || T.ocr_error_unclear));
+                    return;
+                }
+
+                var ex = data.extracted;
+                var filledFields = [];
+
+                if (ex.name) {
+                    var nameEl = document.getElementById('person_name');
+                    nameEl.value = ex.name;
+                    flashAutofilled(nameEl);
+                    filledFields.push(T.lbl_name);
+                }
+                if (ex.address) {
+                    var addrEl = document.getElementById('address');
+                    addrEl.value = ex.address;
+                    flashAutofilled(addrEl);
+                    filledFields.push(T.lbl_address);
+                }
+                if (ex.gender) {
+                    var genderEl = document.querySelector('select[name="gender"]');
+                    if (genderEl) {
+                        genderEl.value = ex.gender;
+                        flashAutofilled(genderEl);
+                        filledFields.push(T.lbl_gender);
+                    }
+                }
+                if (ex.age_group) {
+                    var ageEl = document.querySelector('select[name="age_group"]');
+                    if (ageEl) {
+                        ageEl.value = ex.age_group;
+                        flashAutofilled(ageEl);
+                        filledFields.push(T.lbl_age);
+                    }
+                }
+
+                if (filledFields.length > 0) {
+                    showStatus('success', T.ocr_filled_prefix + filledFields.join(', ') + T.ocr_filled_suffix);
+                } else {
+                    showStatus('error', T.ocr_error_unclear);
+                }
+            })
+            .catch(function(err){
+                var T = t();
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = T.ocrUploadBtn;
+                if (err && err.message === 'timeout') {
+                    showStatus('error', T.ocr_error_timeout);
+                } else {
+                    showStatus('error', T.ocr_error_upload);
+                }
+            });
+    });
+})();
+</script>
+
+<div id="offlineResultOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:2000; align-items:center; justify-content:center; padding:16px;">
+    <div style="background:white; border-radius:16px; max-width:420px; width:100%; max-height:85vh; overflow-y:auto; padding:20px;">
+        <div style="background:#fff3e0; color:#e65c00; border-radius:10px; padding:10px 14px; font-size:12px; font-weight:bold; margin-bottom:14px;">
+            📡 You're offline — this is an estimate computed on your device. Connect to the internet and submit again to save it and get an Application ID.
+        </div>
+        <div style="text-align:center; margin-bottom:14px;">
+            <div style="font-size:32px; font-weight:800; color:#000080;" id="offlineScoreNum"></div>
+            <div style="font-size:12px; color:#666;">Need Score</div>
+            <div style="margin-top:8px; font-size:13px; font-weight:bold; color:#c62828;" id="offlinePriorityText"></div>
+        </div>
+        <div style="font-size:12px; font-weight:bold; color:#000080; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Schemes You May Be Eligible For</div>
+        <div id="offlineSchemesList" style="display:flex; flex-direction:column; gap:8px;"></div>
+        <button onclick="document.getElementById('offlineResultOverlay').style.display='none';" style="width:100%; padding:12px; background:#000080; color:white; border:none; border-radius:10px; font-size:14px; font-weight:bold; margin-top:16px; cursor:pointer;">Close</button>
+    </div>
+</div>
+
+<script>
+// Offline fallback: if the browser has no connection when the form is
+// submitted, compute the result entirely on-device using offline-scoring.js
+// (a verified, faithful copy of the server's real scoring engine) instead
+// of letting the submission silently fail.
+function tryOfflineSubmit() {
+    if (navigator.onLine) return false; // let the normal server submission proceed
+    if (typeof checkEligibilityOffline !== 'function') return false; // script didn't load, fall through
+
+    const getVal = (name) => {
+        const el = document.querySelector(`[name="${name}"]`);
+        return el ? el.value : '';
+    };
+    const data = {
+        age_group: getVal('age_group'),
+        income: getVal('income'),
+        family_size: getVal('family_size'),
+        housing: getVal('housing'),
+        electricity: getVal('electricity'),
+        ration: getVal('ration'),
+        medical: getVal('medical'),
+        accident: getVal('accident'),
+        earning_member_died: getVal('earning_member_died'),
+        widow_status: getVal('widow_status'),
+        address: getVal('address'),
+    };
+
+    const result = checkEligibilityOffline(data);
+    document.getElementById('offlineScoreNum').innerText = result.score + ' / 175';
+    document.getElementById('offlinePriorityText').innerText = result.priority;
+    const list = document.getElementById('offlineSchemesList');
+    list.innerHTML = '';
+    result.schemes.forEach((sc) => {
+        const row = document.createElement('div');
+        row.style.cssText = 'background:#fafafa; border-radius:8px; padding:10px 12px; font-size:12.5px;';
+        row.innerHTML = `<strong>${sc[2]}</strong><br><span style="color:#666;">${sc[3]}</span>`;
+        list.appendChild(row);
+    });
+    document.getElementById('offlineResultOverlay').style.display = 'flex';
+    return true; // handled offline, don't let the native form submission happen
+}
+</script>
 </body>
 </html>

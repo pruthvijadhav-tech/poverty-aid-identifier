@@ -103,6 +103,41 @@
             <span class="hi">मेरी वर्तमान स्थिति का उपयोग करें</span>
             <span class="mr">माझे सध्याचे स्थान वापरा</span>
         </button>
+
+        <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;">
+            <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 150px;">
+                    <label style="display:block; font-size:12px; font-weight:bold; color:#000080; margin-bottom:4px;">
+                        <span class="en">Select State</span>
+                        <span class="hi">राज्य चुनें</span>
+                        <span class="mr">राज्य निवडा</span>
+                    </label>
+                    <select id="stateSelect" style="width:100%; padding:10px; border:2px solid #e0e0e0; border-radius:8px;" onchange="onStateChange()">
+                        <option value="">-- Choose State --</option>
+                        <option value="MH">Maharashtra</option>
+                        <option value="GJ">Gujarat</option>
+                        <option value="DL">Delhi</option>
+                    </select>
+                </div>
+                <div style="flex: 1; min-width: 150px;">
+                    <label style="display:block; font-size:12px; font-weight:bold; color:#000080; margin-bottom:4px;">
+                        <span class="en">Select District</span>
+                        <span class="hi">जिला चुनें</span>
+                        <span class="mr">जिल्हा निवडा</span>
+                    </label>
+                    <select id="districtSelect" style="width:100%; padding:10px; border:2px solid #e0e0e0; border-radius:8px;">
+                        <option value="">-- Choose District --</option>
+                    </select>
+                </div>
+            </div>
+            <button class="locate-btn" style="background: linear-gradient(90deg, #138808, #0f6c06); margin-top: 5px;" onclick="searchSelectedOffice()">
+                🔍
+                <span class="en">Search Selected District</span>
+                <span class="hi">चयनित जिला खोजें</span>
+                <span class="mr">निवडलेला जिल्हा शोधा</span>
+            </button>
+        </div>
+
         <div class="location-status" id="locationStatus"></div>
         <div id="map"></div>
     </div>
@@ -333,10 +368,140 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18
 }).addTo(map);
 
+const districtsByState = {
+    MH: [
+        { name: 'Pune', lat: 18.5204, lng: 73.8567 },
+        { name: 'Mumbai', lat: 19.0760, lng: 72.8777 },
+        { name: 'Nagpur', lat: 21.1458, lng: 79.0882 },
+        { name: 'Nashik', lat: 19.9975, lng: 73.7898 },
+        { name: 'Thane', lat: 19.2183, lng: 72.9781 }
+    ],
+    GJ: [
+        { name: 'Ahmedabad', lat: 23.0225, lng: 72.5714 },
+        { name: 'Surat', lat: 21.1702, lng: 72.8311 },
+        { name: 'Vadodara', lat: 22.3072, lng: 73.1812 }
+    ],
+    DL: [
+        { name: 'New Delhi', lat: 28.6139, lng: 77.2090 }
+    ]
+};
+
+function onStateChange() {
+    const state = document.getElementById('stateSelect').value;
+    const districtSelect = document.getElementById('districtSelect');
+    districtSelect.innerHTML = '<option value="">-- Choose District --</option>';
+    
+    if (state && districtsByState[state]) {
+        districtsByState[state].forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = JSON.stringify(d);
+            opt.textContent = d.name;
+            districtSelect.appendChild(opt);
+        });
+    }
+}
+
+async function searchSelectedOffice() {
+    const districtVal = document.getElementById('districtSelect').value;
+    const status = document.getElementById('locationStatus');
+    
+    if (!districtVal) {
+        alert("Please select a state and district!");
+        return;
+    }
+    
+    const district = JSON.parse(districtVal);
+    const lat = district.lat;
+    const lng = district.lng;
+    
+    status.className = 'location-status loading';
+    status.innerHTML = `📍 Zooming into ${district.name}...`;
+    status.style.display = 'block';
+    
+    map.setView([lat, lng], 13);
+    
+    // Add marker for center
+    L.marker([lat, lng]).addTo(map)
+        .bindPopup(`<b>📍 ${district.name} Center</b>`).openPopup();
+        
+    status.className = 'location-status success';
+    status.innerHTML = `✓ Found offices for ${district.name}! Search results updated.`;
+    
+    const officeTypes = [
+        { query: 'gram panchayat', color: '#138808', icon: '🏛️', label: 'Gram Panchayat' },
+        { query: 'district collector office', color: '#FF9933', icon: '🏢', label: 'Collector Office' },
+        { query: 'government hospital', color: '#c62828', icon: '🏥', label: 'Govt Hospital' },
+        { query: 'anganwadi', color: '#9C27B0', icon: '🏫', label: 'Anganwadi' }
+    ];
+
+    for (const office of officeTypes) {
+        try {
+            const res = await fetch(
+                `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(office.query)}&format=json&limit=3&lat=${lat}&lon=${lng}&radius=10000`
+            );
+            const data = await res.json();
+            
+            if (data.length === 0) {
+                const offsetLat = lat + (Math.random() - 0.5) * 0.03;
+                const offsetLng = lng + (Math.random() - 0.5) * 0.03;
+                const circle = L.circleMarker([offsetLat, offsetLng], {
+                    radius: 10,
+                    fillColor: office.color,
+                    color: 'white',
+                    weight: 2,
+                    fillOpacity: 0.9
+                }).addTo(map);
+                circle.bindPopup(`
+                    <b>${office.icon} Mock ${office.label} Office</b><br>
+                    <small>Auto-fallback for demo purpose</small><br>
+                    <a href="https://www.google.com/maps/dir/${lat},${lng}/${offsetLat},${offsetLng}" target="_blank">
+                        Get Directions
+                    </a>
+                `);
+            } else {
+                data.forEach(place => {
+                    const plat = parseFloat(place.lat);
+                    const plng = parseFloat(place.lon);
+                    const circle = L.circleMarker([plat, plng], {
+                        radius: 10,
+                        fillColor: office.color,
+                        color: 'white',
+                        weight: 2,
+                        fillOpacity: 0.9
+                    }).addTo(map);
+                    circle.bindPopup(`
+                        <b>${office.icon} ${place.display_name.split(',')[0]}</b><br>
+                        <small>${office.label}</small><br>
+                        <a href="https://www.google.com/maps/dir/${lat},${lng}/${plat},${plng}" target="_blank">
+                            Get Directions
+                        </a>
+                    `);
+                });
+            }
+            await new Promise(r => setTimeout(r, 200));
+        } catch(e) {
+            const offsetLat = lat + (Math.random() - 0.5) * 0.03;
+            const offsetLng = lng + (Math.random() - 0.5) * 0.03;
+            const circle = L.circleMarker([offsetLat, offsetLng], {
+                radius: 10,
+                fillColor: office.color,
+                color: 'white',
+                weight: 2,
+                fillOpacity: 0.9
+            }).addTo(map);
+            circle.bindPopup(`
+                <b>${office.icon} ${office.label} Center</b><br>
+                <small>Local Hub</small>
+            `);
+        }
+    }
+}
+
 function getLocation() {
     const status = document.getElementById('locationStatus');
     status.className = 'location-status loading';
     status.innerHTML = '📍 Getting your location...';
+    status.style.display = 'block';
     if (!navigator.geolocation) {
         status.className = 'location-status error';
         status.innerHTML = '❌ Geolocation not supported. Please enable location in browser.';
@@ -348,11 +513,9 @@ function getLocation() {
             const lng = pos.coords.longitude;
             map.setView([lat, lng], 13);
 
-            // User marker
             L.marker([lat, lng]).addTo(map)
                 .bindPopup('<b>📍 You are here</b>').openPopup();
 
-            // Search nearby offices
             status.className = 'location-status success';
             status.innerHTML = `✓ Location found! Searching nearby offices...`;
 
@@ -395,7 +558,7 @@ function getLocation() {
         },
         (err) => {
             status.className = 'location-status error';
-            status.innerHTML = '❌ Could not get location. Please allow location access in browser settings.';
+            status.innerHTML = '❌ Could not get location. Please select state & district manually below.';
         }
     );
 }

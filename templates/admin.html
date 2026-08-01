@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Poverty Aid Identifier</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="manifest" href="/static/manifest.json">
     <meta name="theme-color" content="#000080">
     <meta name="mobile-web-app-capable" content="yes">
@@ -145,6 +146,9 @@
 
 <div class="nav-tabs">
     <div class="nav-tab active" onclick="showTab('complaints', this)">📋 Complaints ({{ total }})</div>
+    <div class="nav-tab" onclick="showTab('analytics', this)">📊 Analytics</div>
+    <div class="nav-tab" onclick="showTab('fraud', this)">🔍 Fraud Detection</div>
+    <div class="nav-tab" onclick="showTab('ledger', this)" style="{% if not ledger_valid %}color:#FF9933;{% endif %}">🔒 Ledger Integrity {% if not ledger_valid %}⚠️{% endif %}</div>
     <div class="nav-tab" onclick="showTab('activity', this)">📝 Activity Log</div>
     <div class="nav-tab" onclick="showTab('alerts', this)" style="{% if suspicious_count > 0 %}color:#FF9933;{% endif %}">
         🚨 Security Alerts {% if suspicious_count > 0 %}({{ suspicious_count }}){% endif %}
@@ -257,6 +261,125 @@
             </div>
             {% else %}
             <div class="no-data">No complaints found for this filter.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Tab: Analytics Charts -->
+    <div class="tab-content" id="tab-analytics">
+        <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr); margin-top: 20px;">
+            <div class="stat-card" style="padding: 20px;">
+                <h3 style="color:#000080; margin-bottom:15px;">📊 Complaint Status Breakdown</h3>
+                <div style="max-height: 300px; position: relative;">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+            <div class="stat-card" style="padding: 20px;">
+                <h3 style="color:#000080; margin-bottom:15px;">🍰 Scheme Demand Distribution</h3>
+                <div style="max-height: 300px; position: relative; display: flex; justify-content: center;">
+                    <canvas id="schemeChart" style="max-width:300px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab: Fraud Detection -->
+    <div class="tab-content" id="tab-fraud">
+        <div class="table-card" style="margin-top: 20px;">
+            <div class="table-header" style="background:#c62828;">
+                <h3>🔍 AI Fraud & Anomaly Detection</h3>
+                <p>Profiles flagged with conflicting details (e.g. changing income/age entries)</p>
+            </div>
+            <div class="confidential-notice" style="color:#c62828; border-left-color:#c62828; background:#ffebee;">
+                ⚠️ ALERT — The following phone numbers have submitted eligibility forms multiple times with conflicting demographic attributes. This may indicate false claims.
+            </div>
+            {% if suspicious_fingerprints %}
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Phone Number</th>
+                            <th>IP Address</th>
+                            <th>Age Group</th>
+                            <th>Gender</th>
+                            <th>Widow Status</th>
+                            <th>Income (₹)</th>
+                            <th>Family Size</th>
+                            <th>Submitted At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fp in suspicious_fingerprints %}
+                        <tr class="fake-row">
+                            <td><strong>{{ fp['phone'] }}</strong></td>
+                            <td>{{ fp['ip_address'] }}</td>
+                            <td>{{ fp['age_group'] }}</td>
+                            <td>{{ fp['gender'] }}</td>
+                            <td>{{ fp['widow_status'] }}</td>
+                            <td><strong>₹{{ fp['income'] }}</strong></td>
+                            <td>{{ fp['family_size'] }}</td>
+                            <td><div class="date-cell">{{ fp['submitted_at'] }}</div></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="no-data" style="color:#138808; font-weight:bold; padding:40px;">
+                ✓ No suspicious eligibility submissions or demographic conflicts detected. All profiles consistent!
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Tab: Ledger Integrity -->
+    <div class="tab-content" id="tab-ledger">
+        <div class="alert-banner" style="{% if ledger_valid %}background:#e8f5e9; border-color:#138808;{% else %}background:#ffebee; border-color:#c62828;{% endif %} margin-top: 20px;">
+            <div style="font-size:28px;">{% if ledger_valid %}🛡️{% else %}🚨{% endif %}</div>
+            <div class="alert-banner-text">
+                <h4 style="{% if ledger_valid %}color:#138808;{% else %}color:#c62828;{% endif %}">{{ ledger_message }}</h4>
+                <p>The Audit Ledger verifies the cryptographic chain of corruption complaints. If any record is modified directly in the database without authorization, the chain breaks.</p>
+            </div>
+        </div>
+
+        <div class="table-card">
+            <div class="table-header" style="background:#00006a;">
+                <h3>🔒 Cryptographic Grievance Audit Trail</h3>
+                <p>Chained grievance blocks using SHA-256 (Genesis-linked)</p>
+            </div>
+            {% if ledger_blocks %}
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Block ID</th>
+                            <th>Tracking ID</th>
+                            <th>New Status</th>
+                            <th>Timestamp</th>
+                            <th>Previous Block Hash</th>
+                            <th>Block Hash</th>
+                            <th>Verification</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for block in ledger_blocks %}
+                        <tr>
+                            <td><strong>#{{ block['id'] }}</strong></td>
+                            <td><span class="tracking-id">{{ block['tracking_id'] }}</span></td>
+                            <td><span class="status-badge status-{{ block['status'].replace(' ', '') }}">{{ block['status'] }}</span></td>
+                            <td><div class="date-cell">{{ block['timestamp'] }}</div></td>
+                            <td style="font-family:monospace; font-size:10px; color:#888;">{{ block['prev_hash'][:16] }}...</td>
+                            <td style="font-family:monospace; font-size:10px; font-weight:bold; color:#000080;">{{ block['block_hash'][:16] }}...</td>
+                            <td>
+                                <span class="status-badge status-Resolved" style="background:#e8f5e9; color:#1b5e20;">✓ Verified</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="no-data">No ledger entries generated yet. File a complaint to start the cryptographic audit ledger.</div>
             {% endif %}
         </div>
     </div>
@@ -383,6 +506,79 @@ function showTab(name, el) {
     document.getElementById('tab-' + name).classList.add('active');
     el.classList.add('active');
 }
+
+// Chart.js initialization
+document.addEventListener("DOMContentLoaded", function() {
+    // 1. Status Chart
+    const ctxStatus = document.getElementById('statusChart').getContext('2d');
+    new Chart(ctxStatus, {
+        type: 'bar',
+        data: {
+            labels: ['Filed', 'Received', 'Action Taken', 'Resolved'],
+            datasets: [{
+                label: 'Complaints',
+                data: [{{ filed }}, {{ received }}, {{ action }}, {{ resolved }}],
+                backgroundColor: [
+                    '#FF9933', // Saffron
+                    '#2196F3', // Blue
+                    '#9C27B0', // Purple
+                    '#138808'  // Green
+                ],
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 }
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+
+    // 2. Scheme Demand Chart
+    const ctxScheme = document.getElementById('schemeChart').getContext('2d');
+    const schemeLabels = [];
+    const schemeData = [];
+    {% for scheme, count in scheme_stats.items() %}
+        schemeLabels.push('{{ scheme.replace("_", " ").title() }}');
+        schemeData.push({{ count }});
+    {% endfor %}
+
+    if (schemeData.length === 0) {
+        schemeLabels.push('No complaints yet');
+        schemeData.push(1);
+    }
+
+    new Chart(ctxScheme, {
+        type: 'doughnut',
+        data: {
+            labels: schemeLabels,
+            datasets: [{
+                data: schemeData,
+                backgroundColor: [
+                    '#FF9933', '#138808', '#000080', '#9C27B0', '#00BCD4', '#E91E63', '#FFEB3B', '#4CAF50'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { boxWidth: 12, font: { size: 10 } }
+                }
+            }
+        }
+    });
+});
 </script>
 </body>
 </html>
