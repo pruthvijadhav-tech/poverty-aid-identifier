@@ -150,7 +150,7 @@
     <div class="nav-tab" onclick="showTab('fraud', this)">🔍 Fraud Detection</div>
     <div class="nav-tab" onclick="showTab('ledger', this)" style="{% if not ledger_valid %}color:#FF9933;{% endif %}">🔒 Ledger Integrity {% if not ledger_valid %}⚠️{% endif %}</div>
     <div class="nav-tab" onclick="showTab('activity', this)">📝 Activity Log</div>
-    <div class="nav-tab" onclick="showTab('alerts', this)" style="{% if suspicious_count > 0 %}color:#FF9933;{% endif %}">
+    <div class="nav-tab" onclick="showTab('alerts', this)" style="{% if suspicious_count > 0 %}color:#FF9933;{% endif %}" >
         🚨 Security Alerts {% if suspicious_count > 0 %}({{ suspicious_count }}){% endif %}
     </div>
 </div>
