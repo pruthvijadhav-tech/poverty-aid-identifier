@@ -466,7 +466,7 @@
                     <tbody>
                         {% for fp in suspicious_fingerprints %}
                         <tr class="fake-row">
-                            <td><span style="font-family:monospace;color:#FB923C;">0742{{ loop.index|string.zfill(4) }}</span></td>
+                            <td><span style="font-family:monospace;color:#FB923C;">FLAG-{{ "%04d" | format(loop.index) }}</span></td>
                             <td><strong>{{ fp['phone'] }}</strong></td>
                             <td>{{ fp['ip_address'] }}</td>
                             <td>{{ fp['age_group'] }}</td>

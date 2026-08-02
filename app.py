@@ -2274,6 +2274,7 @@ def admin():
     received = conn.execute("SELECT COUNT(*) FROM reports WHERE status='Received'").fetchone()[0]
     action = conn.execute("SELECT COUNT(*) FROM reports WHERE status='Action Taken'").fetchone()[0]
     resolved = conn.execute("SELECT COUNT(*) FROM reports WHERE status='Resolved'").fetchone()[0]
+    fake_count = conn.execute("SELECT COUNT(*) FROM reports WHERE fake_flag=1").fetchone()[0]
     suspicious_count = conn.execute("SELECT COUNT(*) FROM activity_logs WHERE suspicious=1").fetchone()[0]
     if filter_status == 'All':
         reports = conn.execute('SELECT * FROM reports ORDER BY id DESC').fetchall()
@@ -2317,6 +2318,7 @@ def admin():
     return render_template('admin.html',
         reports=reports, total=total, filed=filed, received=received,
         action=action, resolved=resolved, filter_status=filter_status,
+        fake_count=fake_count,
         now=datetime.now().strftime("%d %b %Y, %I:%M %p"),
         admin_name=session.get('admin_name'),
         admin_role=session.get('admin_role'),
