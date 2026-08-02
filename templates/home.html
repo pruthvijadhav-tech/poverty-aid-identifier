@@ -90,11 +90,11 @@ body {
 }
 
 /* ── SEARCH BAR ── */
-.search-container { margin-bottom: 40px; }
+.search-container { margin-bottom: 40px; position: relative; max-width: 500px; }
 .search-box {
     display: flex; align-items: center; gap: 12px;
     background: rgba(0,0,0,0.3); border: 1px solid rgba(255,153,51,0.5);
-    border-radius: 30px; padding: 12px 24px; width: 100%; max-width: 500px;
+    border-radius: 30px; padding: 12px 24px; width: 100%;
     box-shadow: 0 0 20px rgba(255,153,51,0.15); transition: box-shadow 0.3s;
 }
 .search-box:focus-within { box-shadow: 0 0 30px rgba(255,153,51,0.3); border-color: var(--saffron); }
@@ -103,6 +103,25 @@ body {
     background: transparent; border: none; color: white; font-size: 15px; width: 100%; outline: none; font-family: 'Inter', sans-serif;
 }
 .search-box input::placeholder { color: rgba(255,255,255,0.4); }
+
+.search-results {
+    position: absolute; top: 100%; left: 0; right: 0; margin-top: 10px;
+    background: rgba(15, 17, 26, 0.95); backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 100;
+    max-height: 250px; overflow-y: auto; display: none;
+}
+.search-results.active { display: block; }
+.search-item {
+    padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.05);
+    cursor: pointer; display: flex; align-items: center; gap: 12px; transition: background 0.2s;
+    text-decoration: none; color: white;
+}
+.search-item:last-child { border-bottom: none; }
+.search-item:hover { background: rgba(255,153,51,0.1); }
+.search-item-icon { width: 32px; height: 32px; background: rgba(255,255,255,0.05); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.search-item-text h4 { font-size: 14px; margin-bottom: 2px; }
+.search-item-text p { font-size: 11px; color: var(--text-muted); }
 
 /* ── HERO CONTENT ── */
 .hero h2 {
@@ -231,8 +250,9 @@ body.lang-mr .mr-i { display: inline; }
     <div class="search-container">
         <div class="search-box">
             <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-            <input type="text" placeholder="Search for welfare schemes... / योजनाओं के लिए खोजें... / योजना शोधा...">
+            <input type="text" id="scheme-search" placeholder="Search for welfare schemes... / योजनाओं के लिए खोजें... / योजना शोधा..." autocomplete="off">
         </div>
+        <div class="search-results" id="search-dropdown"></div>
     </div>
 
     <div class="hero">
@@ -319,6 +339,60 @@ function setLang(lang){
     setLang(saved);
 })();
 if('serviceWorker' in navigator){navigator.serviceWorker.register('/static/service-worker.js').catch(()=>{});}
+
+// Search Functionality
+const schemesData = [
+    { key: "pm_kisan", name: "PM Kisan Samman Nidhi", hi: "पीएम किसान", amt: "₹6,000/yr" },
+    { key: "ayushman", name: "Ayushman Bharat", hi: "आयुष्मान भारत", amt: "₹5 Lakh Cover" },
+    { key: "pmay", name: "PM Awas Yojana (PMAY)", hi: "पीएम आवास योजना", amt: "Housing Subsidy" },
+    { key: "widow", name: "Widow Pension Scheme", hi: "विधवा पेंशन", amt: "Monthly Pension" },
+    { key: "nrega", name: "MNREGA", hi: "मनरेगा", amt: "100 Days Work" },
+    { key: "ladki_bahin", name: "Ladki Bahin Yojana (MH)", hi: "लड़की बहन योजना", amt: "₹1,500/month" }
+];
+
+const searchInput = document.getElementById('scheme-search');
+const searchDropdown = document.getElementById('search-dropdown');
+
+searchInput.addEventListener('input', function() {
+    const query = this.value.toLowerCase();
+    searchDropdown.innerHTML = '';
+    
+    if (query.length < 2) {
+        searchDropdown.classList.remove('active');
+        return;
+    }
+
+    const filtered = schemesData.filter(s => 
+        s.name.toLowerCase().includes(query) || s.hi.toLowerCase().includes(query)
+    );
+
+    if (filtered.length > 0) {
+        filtered.forEach(s => {
+            const a = document.createElement('a');
+            a.href = `/scheme/${s.key}`;
+            a.className = 'search-item';
+            a.innerHTML = `
+                <div class="search-item-icon">📄</div>
+                <div class="search-item-text">
+                    <h4>${s.name}</h4>
+                    <p>${s.amt}</p>
+                </div>
+            `;
+            searchDropdown.appendChild(a);
+        });
+        searchDropdown.classList.add('active');
+    } else {
+        searchDropdown.innerHTML = `<div class="search-item"><div class="search-item-text"><p>No schemes found. Try applying through AI.</p></div></div>`;
+        searchDropdown.classList.add('active');
+    }
+});
+
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-container')) {
+        searchDropdown.classList.remove('active');
+    }
+});
+
 </script>
 </body>
 </html>
