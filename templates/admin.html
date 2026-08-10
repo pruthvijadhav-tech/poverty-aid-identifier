@@ -150,6 +150,7 @@
     <div class="nav-tab" onclick="showTab('fraud', this)">🔍 Fraud Detection</div>
     <div class="nav-tab" onclick="showTab('ledger', this)" style="{% if not ledger_valid %}color:#FF9933;{% endif %}">🔒 Ledger Integrity {% if not ledger_valid %}⚠️{% endif %}</div>
     <div class="nav-tab" onclick="showTab('activity', this)">📝 Activity Log</div>
+    <div class="nav-tab" onclick="showTab('ml-model', this)">🤖 AI/ML Model</div>
     <div class="nav-tab" onclick="showTab('alerts', this)" style="{% if suspicious_count > 0 %}color:#FF9933;{% endif %}">
         🚨 Security Alerts {% if suspicious_count > 0 %}({{ suspicious_count }}){% endif %}
     </div>
@@ -496,6 +497,54 @@
     <div class="footer">
         Poverty Aid Identifier — Admin Panel — Confidential — All access logged and monitored<br>
         Logged in as: <strong>{{ admin_name }}</strong> ({{ admin_role }}) — {{ now }}
+    <!-- Tab: AI/ML Model -->
+    <div class="tab-content" id="tab-ml-model">
+        <div class="table-card" style="padding: 25px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 20px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px;">
+                <div>
+                    <h3 style="color: #000080; font-size: 18px;">🤖 Trained Machine Learning Model (Poverty Scoring)</h3>
+                    <p style="color: #666; font-size: 12px; margin-top: 4px;">Random Forest Classifier trained on NFHS-5 Socio-Economic Census Indicators</p>
+                </div>
+                <div style="background: #e8f5e9; color: #138808; border: 2px solid #138808; border-radius: 20px; padding: 6px 16px; font-weight: bold; font-size: 14px;">
+                    Model Accuracy: <span id="ml_accuracy_val">87.0%</span>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <!-- Feature Importance Chart -->
+                <div style="background: #f8f9ff; border-radius: 12px; padding: 20px; border: 1px solid #e0e0e0;">
+                    <h4 style="color: #000080; font-size: 14px; margin-bottom: 15px;">📊 Feature Importance (Weights %)</h4>
+                    <div style="height: 260px; position: relative;">
+                        <canvas id="mlFeatureChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Model Performance & Confusion Matrix -->
+                <div style="background: #f8f9ff; border-radius: 12px; padding: 20px; border: 1px solid #e0e0e0;">
+                    <h4 style="color: #000080; font-size: 14px; margin-bottom: 15px;">🎯 Classification Matrix (6,000 Validation Samples)</h4>
+                    <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 12px;">
+                        <thead>
+                            <tr style="background: #000080; color: white;">
+                                <th style="padding: 8px; color: white;">Actual \ Predicted</th>
+                                <th style="padding: 8px; color: white;">Low</th>
+                                <th style="padding: 8px; color: white;">Moderate</th>
+                                <th style="padding: 8px; color: white;">High</th>
+                                <th style="padding: 8px; color: white;">Critical</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cm_body">
+                            <tr><td style="font-weight:bold;">Low Need</td><td style="background:#e8f5e9;font-weight:bold;color:#138808;">171</td><td>21</td><td>0</td><td>0</td></tr>
+                            <tr><td style="font-weight:bold;">Moderate Need</td><td>16</td><td style="background:#e8f5e9;font-weight:bold;color:#138808;">493</td><td>27</td><td>0</td></tr>
+                            <tr><td style="font-weight:bold;">High Need</td><td>0</td><td>63</td><td style="background:#e8f5e9;font-weight:bold;color:#138808;">337</td><td>8</td></tr>
+                            <tr><td style="font-weight:bold;">Critical Need</td><td>0</td><td>0</td><td>21</td><td style="background:#e8f5e9;font-weight:bold;color:#138808;">43</td></tr>
+                        </tbody>
+                    </table>
+                    <div style="margin-top: 15px; font-size: 11px; color: #555; line-height: 1.5; background: white; padding: 10px; border-radius: 8px; border: 1px solid #e0e0e0;">
+                        <strong>Key Indicators:</strong> Monthly Income (24.7%) and Age Group (13.4%) are the primary features determining acute poverty severity.
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -578,6 +627,39 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         }
     });
+
+    // 3. ML Feature Importance Chart
+    fetch('/api/ml-metrics')
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.metrics) {
+                document.getElementById('ml_accuracy_val').innerText = data.metrics.accuracy + '%';
+                const featDict = data.metrics.feature_importances;
+                const labels = Object.keys(featDict);
+                const values = Object.values(featDict);
+                const ctxMl = document.getElementById('mlFeatureChart').getContext('2d');
+                new Chart(ctxMl, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Feature Weight (%)',
+                            data: values,
+                            backgroundColor: '#FF9933',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { x: { beginAtZero: true } }
+                    }
+                });
+            }
+        })
+        .catch(e => console.log('ML Metrics fetch error', e));
 });
 </script>
 </body>

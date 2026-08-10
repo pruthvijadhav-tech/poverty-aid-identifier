@@ -263,7 +263,7 @@
                 <span class="mr">भ्रष्टाचार / मदत कपातीची तक्रार</span>
             </div>
             <div class="report-body">
-                <form method="POST">
+                <form method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="lang" value="{{ lang }}"/>
                     <input type="hidden" name="action" value="submit_report"/>
 
@@ -359,6 +359,60 @@
                         </label>
                         <input type="text" name="location" placeholder="e.g. Pune, Maharashtra" required/>
                     </div>
+
+                    <!-- Proof File Attachment -->
+                    <div class="form-group">
+                        <label>
+                            <span class="en">📎 Attach Bribe Evidence / Document Proof (Optional)</span>
+                            <span class="hi">📎 साक्ष्य / दस्तावेज प्रमाण संलग्न करें (वैकल्पिक)</span>
+                            <span class="mr">📎 पुरावा दस्तऐवज जोडा (पर्यायी)</span>
+                        </label>
+                        <input type="file" name="proof_file" accept="image/*,.pdf,.doc,.docx" style="padding: 10px; background: white; border: 2px dashed #000080; border-radius: 8px;" />
+                        <small style="color: #666; font-size: 11px; display: block; margin-top: 4px;">Upload photo of bribe demand slip, bank passbook, or screenshot (Max 5MB)</small>
+                    </div>
+
+                    <!-- GPS Geotag Verification -->
+                    <div class="form-group">
+                        <label>
+                            <span class="en">📍 GPS Geotag Verification (Anti-Fraud)</span>
+                            <span class="hi">📍 जीपीएस जियोटैग सत्यापन (धोखाधड़ी रोधी)</span>
+                            <span class="mr">📍 GPS जिओटॅग पडताळणी</span>
+                        </label>
+                        <input type="hidden" name="latitude" id="geo_lat" />
+                        <input type="hidden" name="longitude" id="geo_lng" />
+                        <button type="button" id="geotag_btn" onclick="captureGPSLocation()" style="width: 100%; padding: 12px; background: #e8f5e9; color: #138808; border: 2px dashed #138808; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            📍 <span id="geotag_label">Detect & Lock My Current GPS Location</span>
+                        </button>
+                        <div id="geotag_status" style="font-size: 12px; margin-top: 6px; font-weight: bold; color: #138808; text-align: center;"></div>
+                    </div>
+
+                    <script>
+                    function captureGPSLocation() {
+                        const statusDiv = document.getElementById('geotag_status');
+                        const labelSpan = document.getElementById('geotag_label');
+                        if (!navigator.geolocation) {
+                            statusDiv.style.color = '#c62828';
+                            statusDiv.innerText = 'Geolocation is not supported by your browser.';
+                            return;
+                        }
+                        labelSpan.innerText = 'Acquiring GPS Signal...';
+                        navigator.geolocation.getCurrentPosition(
+                            function(position) {
+                                document.getElementById('geo_lat').value = position.coords.latitude;
+                                document.getElementById('geo_lng').value = position.coords.longitude;
+                                labelSpan.innerText = 'GPS Geotag Locked';
+                                statusDiv.style.color = '#138808';
+                                statusDiv.innerText = `✓ Verified GPS Location: ${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)} (Accuracy ±${Math.round(position.coords.accuracy)}m)`;
+                            },
+                            function(error) {
+                                statusDiv.style.color = '#e65c00';
+                                statusDiv.innerText = 'Location access denied or unavailable. Manual location recorded.';
+                                labelSpan.innerText = 'Detect & Lock My Current GPS Location';
+                            },
+                            { enableHighAccuracy: true, timeout: 10000 }
+                        );
+                    }
+                    </script>
 
                     <button type="submit" class="next-btn">
                         <span class="en">Submit Report to Higher Authority</span>

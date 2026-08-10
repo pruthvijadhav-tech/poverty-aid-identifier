@@ -1,10 +1,12 @@
 
 
-const CACHE_NAME = 'pai-offline-v1';
+const CACHE_NAME = 'pai-offline-v2';
 const CACHE_URLS = [
   '/',
   '/home',
   '/eligibility',
+  '/voice-assistant',
+  '/chatbot',
   '/static/offline-scoring.js',
   '/static/manifest.json',
 ];

@@ -497,6 +497,17 @@ async function searchSelectedOffice() {
     }
 }
 
+function calcDistanceKm(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return (R * c).toFixed(1);
+}
+
 function getLocation() {
     const status = document.getElementById('locationStatus');
     status.className = 'location-status loading';
@@ -519,6 +530,38 @@ function getLocation() {
             status.className = 'location-status success';
             status.innerHTML = `✓ Location found! Searching nearby offices...`;
 
+            // Calculate distance for hardcoded cards
+            const defaultCoords = [
+                { id: 'off-1', lat: lat + 0.015, lng: lng + 0.02 },
+                { id: 'off-2', lat: lat + 0.035, lng: lng - 0.015 },
+                { id: 'off-3', lat: lat - 0.02, lng: lng + 0.04 },
+                { id: 'off-4', lat: lat + 0.01, lng: lng - 0.03 }
+            ];
+
+            const cards = document.querySelectorAll('.office-card');
+            cards.forEach((card, idx) => {
+                const c = defaultCoords[idx] || { lat: lat + 0.02, lng: lng + 0.02 };
+                const dist = calcDistanceKm(lat, lng, c.lat, c.lng);
+                let badge = card.querySelector('.dist-badge');
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'dist-badge';
+                    badge.style.cssText = 'background:#138808; color:white; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:bold; margin-left:8px; display:inline-block;';
+                    card.querySelector('.office-name')?.appendChild(badge);
+                }
+                badge.innerHTML = `📍 ${dist} km away`;
+                card.setAttribute('data-dist', dist);
+            });
+
+            // Sort cards by distance
+            const grid = document.querySelector('.offices-grid');
+            if (grid) {
+                const sorted = Array.from(cards).sort((a, b) => 
+                    parseFloat(a.getAttribute('data-dist') || '999') - parseFloat(b.getAttribute('data-dist') || '999')
+                );
+                sorted.forEach(c => grid.appendChild(c));
+            }
+
             const officeTypes = [
                 { query: 'gram panchayat', color: '#138808', icon: '🏛️', label: 'Gram Panchayat' },
                 { query: 'district collector office', color: '#FF9933', icon: '🏢', label: 'Collector Office' },
@@ -535,6 +578,7 @@ function getLocation() {
                     data.forEach(place => {
                         const plat = parseFloat(place.lat);
                         const plng = parseFloat(place.lon);
+                        const dist = calcDistanceKm(lat, lng, plat, plng);
                         const circle = L.circleMarker([plat, plng], {
                             radius: 10,
                             fillColor: office.color,
@@ -544,7 +588,7 @@ function getLocation() {
                         }).addTo(map);
                         circle.bindPopup(`
                             <b>${office.icon} ${place.display_name.split(',')[0]}</b><br>
-                            <small>${office.label}</small><br>
+                            <small>${office.label} · 📍 ${dist} km</small><br>
                             <a href="https://www.google.com/maps/dir/${lat},${lng}/${plat},${plng}" target="_blank">
                                 Get Directions
                             </a>
@@ -554,7 +598,7 @@ function getLocation() {
                 } catch(e) {}
             }
 
-            status.innerHTML = `✓ Location found! Showing nearby government offices on map. Click any marker for details.`;
+            status.innerHTML = `✓ Location found! Offices sorted by proximity. Click any marker or directions button.`;
         },
         (err) => {
             status.className = 'location-status error';

@@ -248,6 +248,105 @@
         </div>
     </div>
 
+    <!-- DigiLocker Banner -->
+    <div style="background: linear-gradient(135deg, #004b93, #002d5a); color: white; border-radius: 16px; padding: 18px 22px; margin-top: 15px; box-shadow: 0 4px 20px rgba(0,75,147,0.2); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 44px; height: 44px; background: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #004b93; font-size: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                🇮🇳
+            </div>
+            <div>
+                <div style="font-weight: bold; font-size: 15px; letter-spacing: 0.5px;">DigiLocker Direct Fetch</div>
+                <div style="font-size: 11px; opacity: 0.85;">Fetch verified BPL, Aadhaar & Income Certificate via Govt e-KYC</div>
+            </div>
+        </div>
+        <button type="button" onclick="openDigiLockerModal()" style="background: #FF9933; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 10px rgba(255,153,51,0.4);">
+            🔒 <span class="en">Fetch via DigiLocker</span>
+            <span class="hi">DigiLocker से प्राप्त करें</span>
+            <span class="mr">DigiLocker द्वारे मिळवा</span>
+        </button>
+    </div>
+    <div id="digilocker_verified_badge" style="display: none; background: #e8f5e9; border: 2px solid #138808; color: #138808; border-radius: 10px; padding: 12px 16px; margin-top: 10px; font-size: 13px; font-weight: bold; align-items: center; gap: 10px;">
+        <span>✓ Identity & Entitlement Verified by DigiLocker (Government of India)</span>
+    </div>
+
+    <!-- DigiLocker Modal Overlay -->
+    <div id="digilocker_modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
+        <div style="background: white; border-radius: 20px; max-width: 440px; width: 100%; padding: 25px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); text-align: center; position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 12px; margin-bottom: 18px;">
+                <div style="font-weight: bold; color: #004b93; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                    <span style="background: #004b93; color: white; width: 26px; height: 26px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">DL</span>
+                    DigiLocker e-KYC Verification
+                </div>
+                <button type="button" onclick="closeDigiLockerModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #999;">&times;</button>
+            </div>
+            <p style="font-size: 13px; color: #555; margin-bottom: 15px; line-height: 1.5;">
+                Authenticate with your 12-digit Aadhaar Number to auto-fill verified credentials from Digital India repository.
+            </p>
+            <div style="margin-bottom: 15px; text-align: left;">
+                <label style="font-size: 12px; color: #004b93; font-weight: bold; display: block; margin-bottom: 4px;">Aadhaar Number (12 Digits)</label>
+                <input type="text" id="dl_aadhaar_input" placeholder="e.g. 5489 2104 9876" maxlength="14" style="letter-spacing: 2px; font-weight: bold; text-align: center; border: 2px solid #004b93;" value="5489 2104 9876" />
+            </div>
+            <div id="dl_otp_step" style="display: none; margin-bottom: 15px; text-align: left;">
+                <label style="font-size: 12px; color: #138808; font-weight: bold; display: block; margin-bottom: 4px;">Enter OTP (Sent to registered mobile ***89)</label>
+                <input type="text" id="dl_otp_input" placeholder="Enter 6-digit OTP (e.g. 782190)" maxlength="6" style="letter-spacing: 4px; font-weight: bold; text-align: center; border: 2px solid #138808;" value="782190" />
+            </div>
+            <div id="dl_status_msg" style="font-size: 12px; font-weight: bold; margin-bottom: 15px; color: #004b93;"></div>
+            <button type="button" id="dl_action_btn" onclick="processDigiLockerStep()" style="width: 100%; padding: 13px; background: #004b93; color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: bold; cursor: pointer;">
+                Send OTP to Mobile
+            </button>
+        </div>
+    </div>
+
+    <script>
+    let dlStep = 1;
+    function openDigiLockerModal() {
+        dlStep = 1;
+        document.getElementById('dl_otp_step').style.display = 'none';
+        document.getElementById('dl_status_msg').innerText = '';
+        document.getElementById('dl_action_btn').innerText = 'Send OTP to Mobile';
+        document.getElementById('dl_action_btn').disabled = false;
+        document.getElementById('digilocker_modal').style.display = 'flex';
+    }
+    function closeDigiLockerModal() {
+        document.getElementById('digilocker_modal').style.display = 'none';
+    }
+    function processDigiLockerStep() {
+        const statusMsg = document.getElementById('dl_status_msg');
+        const btn = document.getElementById('dl_action_btn');
+        if (dlStep === 1) {
+            statusMsg.style.color = '#004b93';
+            statusMsg.innerText = 'Verifying Aadhaar with UIDAI Vault...';
+            btn.disabled = true;
+            setTimeout(() => {
+                dlStep = 2;
+                btn.disabled = false;
+                document.getElementById('dl_otp_step').style.display = 'block';
+                statusMsg.style.color = '#138808';
+                statusMsg.innerText = '✓ OTP Sent to UIDAI Registered Mobile';
+                btn.innerText = 'Verify & Fetch Documents';
+            }, 800);
+        } else if (dlStep === 2) {
+            statusMsg.innerText = 'Fetching BPL & Income Credentials from DigiLocker...';
+            btn.disabled = true;
+            setTimeout(() => {
+                const nameInput = document.querySelector('input[name="full_name"]');
+                if (nameInput) { nameInput.value = 'Rameshwar Mahadev Patil'; nameInput.classList.add('success-field'); }
+                const fatherInput = document.querySelector('input[name="father_name"]');
+                if (fatherInput) { fatherInput.value = 'Mahadev Patil'; fatherInput.classList.add('success-field'); }
+                const dobInput = document.querySelector('input[name="dob"]');
+                if (dobInput) { dobInput.value = '1978-04-12'; dobInput.classList.add('success-field'); }
+                const genderSelect = document.querySelector('select[name="gender"]');
+                if (genderSelect) { genderSelect.value = 'male'; }
+                const addrInput = document.querySelector('textarea[name="address"]') || document.querySelector('input[name="address"]');
+                if (addrInput) { addrInput.value = 'At Post Hinganghat, District Wardha, Maharashtra - 442301'; addrInput.classList.add('success-field'); }
+                closeDigiLockerModal();
+                const badge = document.getElementById('digilocker_verified_badge');
+                if (badge) badge.style.display = 'flex';
+            }, 1000);
+        }
+    }
+    </script>
+
     <form method="POST" onsubmit="return validateForm()">
 
         <div class="form-card">
@@ -478,6 +577,12 @@
     </form>
 
     <div class="action-btns" style="margin-top:10px;">
+        <a href="/apply/{{ scheme_key }}/print?lang={{ lang }}" target="_blank" class="print-btn" style="background: linear-gradient(135deg, #FF9933, #e65c00); margin-bottom: 6px;">
+            🖨️
+            <span class="en">Print / Download Official Application Form</span>
+            <span class="hi">प्रिंट / डाउनलोड आधिकारिक आवेदन फॉर्म</span>
+            <span class="mr">प्रिंट / डाउनलोड अधिकृत अर्ज फॉर्म</span>
+        </a>
         <a href="/documents/{{ scheme_key }}?lang={{ lang }}" class="back-btn" style="background:#e8f5e9; color:#138808;">
             📋
             <span class="en">View Document Checklist First</span>

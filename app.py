@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, session, redirect, url_for, jsonify
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from google import genai
 from google.genai import types as genai_types
 import random
@@ -13,11 +14,27 @@ import os
 import re
 import json
 import difflib
+import pickle
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
 from collections import defaultdict
 from flask_session import Session
+
+# Load ML Poverty Model if trained
+ML_MODEL = None
+_model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'poverty_model.pkl')
+if os.path.exists(_model_path):
+    try:
+        with open(_model_path, 'rb') as f:
+            ML_MODEL = pickle.load(f)
+        print(f"[OK] Loaded ML Poverty Scoring Model from {_model_path}")
+    except Exception as _e:
+        print(f"[WARNING] Could not load ML Poverty model: {_e}")
+
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads', 'corruption_proofs')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
 
 # Load a local .env file automatically (if present) so GEMINI_API_KEY,
 # SECRET_KEY etc. don't need to be manually exported in every terminal
@@ -137,13 +154,19 @@ def init_db():
         lang TEXT DEFAULT 'en'
     )
     ''')
-    # Migration for existing databases created before duplicate_flag existed
-    # — CREATE TABLE IF NOT EXISTS above is a no-op on an already-existing
-    # table, so this ALTER is needed to add the column to real deployments.
-    try:
-        c.execute('ALTER TABLE reports ADD COLUMN duplicate_flag INTEGER DEFAULT 0')
-    except sqlite3.OperationalError:
-        pass  # column already exists
+    # Migration for existing databases
+    for col_def in [
+        "duplicate_flag INTEGER DEFAULT 0",
+        "proof_file TEXT",
+        "latitude REAL",
+        "longitude REAL",
+        "geotag_verified INTEGER DEFAULT 0"
+    ]:
+        try:
+            c.execute(f'ALTER TABLE reports ADD COLUMN {col_def}')
+        except sqlite3.OperationalError:
+            pass  # column already exists
+
 
     # Admin Users Table
     c.execute('''
@@ -847,9 +870,47 @@ MH_SCHEMES = {
         'sanjay_gandhi':  ('normal', 'संजय गांधी निराधार योजना (MH)', 'रु. 600/महिना'),
         'rajmata_jijau':  ('normal', 'राजमाता जिजाऊ माता-बाल आरोग्य (MH)', 'मोफत माता आरोग्य'),
         'mh_ration':      ('normal', 'महाराष्ट्र पिवळे रेशन कार्ड (MH)', 'अनुदानित रेशन'),
-        'vayoshri_mh':    ('normal', 'वयोश्री योजना महाराष्ट्र (MH)', 'वृद्धांसाठी मदत'),
     }
 }
+
+def get_ml_prediction(data):
+    """
+    Performs real-time machine learning inference using the trained Random Forest model
+    on live citizen form inputs.
+    """
+    if ML_MODEL is None:
+        return None
+    try:
+        age_map = {'adult': 0, 'child': 1, 'elderly': 2}
+        housing_map = {'pucca': 0, 'rented': 1, 'kutcha': 2, 'homeless': 3}
+        elec_map = {'yes': 0, 'sometimes': 1, 'no': 2}
+        ration_map = {'yes': 0, 'no': 1}
+        med_map = {'none': 0, 'chronic_illness': 1, 'disability': 2, 'emergency': 3}
+
+        ag = age_map.get(data.get('age_group', 'adult'), 0)
+        inc = int(data.get('income', 0))
+        fs = int(data.get('family_size', 1))
+        hsg = housing_map.get(data.get('housing', 'pucca'), 0)
+        ele = elec_map.get(data.get('electricity', 'yes'), 0)
+        rat = ration_map.get(data.get('ration', 'yes'), 0)
+        med = med_map.get(data.get('medical', 'none'), 0)
+        acc = 1 if data.get('accident') == 'yes' else 0
+        emd = 1 if data.get('earning_member_died') == 'yes' else 0
+        wid = 1 if data.get('widow_status') == 'yes' else 0
+
+        features = [[ag, inc, fs, hsg, ele, rat, med, acc, emd, wid]]
+        proba = ML_MODEL.predict_proba(features)[0]
+        categories = ["Low Need", "Moderate Need", "High Need", "Critical Need"]
+        predicted_idx = int(ML_MODEL.predict(features)[0])
+        confidence = float(proba[predicted_idx]) * 100
+
+        return {
+            'predicted_category': categories[predicted_idx],
+            'confidence_percent': round(confidence, 1),
+            'probabilities': {cat: round(float(p) * 100, 1) for cat, p in zip(categories, proba)}
+        }
+    except Exception as e:
+        return None
 
 def calculate_score(data):
     score = 0
@@ -1144,6 +1205,7 @@ def extract_case_intake(client, user_message, lang):
     """One Gemini call that either (a) extracts structured facts if the
     message describes the sender's own situation, or (b) just answers
     normally if it's a generic question. Returns a dict or None on failure."""
+    target_lang_name = {'hi': 'Hindi (हिंदी) written in Devanagari script', 'mr': 'Marathi (मराठी) written in Devanagari script'}.get(lang, 'English')
     extraction_prompt = f"""You are a JSON extraction engine for an Indian welfare-scheme app. Read the citizen's message below.
 
 If the message describes THIS PERSON'S OWN life situation (age, income, housing, family, health, widow status, location, etc. — like a case-worker intake), set "is_case_intake" to true and fill "extracted" with whatever facts are mentioned (use null for anything not mentioned). Otherwise (it's a generic question like "what is Ayushman Bharat" or "how do I apply"), set "is_case_intake" to false, leave "extracted" as null, and instead put a short helpful answer (max 5 lines, simple language) in "reply". If the message is VAGUE — like "I have a doubt", "I have a question", "need help" — with no actual topic mentioned, do NOT guess a topic. Instead set "is_case_intake" to false and put a short, friendly clarifying question in "reply" asking what the doubt/question is about (e.g. eligibility, documents, how to apply, Need Score, corruption reporting).
@@ -1169,7 +1231,7 @@ Respond with ONLY raw JSON, no markdown fences, no commentary, matching exactly 
   "reply": string or null
 }}
 
-Reply language for "reply" field should be: {lang}
+Reply language for "reply" field MUST strictly be: {target_lang_name}
 
 Citizen's message: "{user_message}\""""
 
@@ -1995,13 +2057,29 @@ def corruption():
                 authority = random.choice(AUTHORITIES.get(lang, AUTHORITIES['en']))
                 filed_date = datetime.now().strftime("%d %b %Y, %I:%M %p")
                 expected = (datetime.now() + timedelta(days=30)).strftime("%d %b %Y")
+
+                # Handle Proof File Upload
+                proof_filename = None
+                proof_file = request.files.get('proof_file')
+                if proof_file and proof_file.filename != '':
+                    sec_filename = secure_filename(proof_file.filename)
+                    proof_filename = f"{int(time.time())}_{sec_filename}"
+                    proof_file.save(os.path.join(UPLOAD_FOLDER, proof_filename))
+
+                # Handle GPS Geotag
+                lat_str = request.form.get('latitude')
+                lng_str = request.form.get('longitude')
+                latitude = float(lat_str) if lat_str else None
+                longitude = float(lng_str) if lng_str else None
+                geotag_verified = 1 if (latitude is not None and longitude is not None) else 0
+
                 conn = get_db_connection()
                 conn.execute('''INSERT INTO reports
                     (tracking_id, person_name, phone, address, scheme,
                     entitled_amount, received_amount, official_name, description,
                     incident_date, location, status, assigned_officer, authority,
-                    filed_date, expected_resolution, lang)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                    filed_date, expected_resolution, lang, proof_file, latitude, longitude, geotag_verified)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                     (tracking_id,
                     session.get('person_name', ''),
                     session.get('phone', ''),
@@ -2014,12 +2092,13 @@ def corruption():
                     request.form.get('incident_date'),
                     request.form.get('location'),
                     'Filed', assigned_officer, authority,
-                    filed_date, expected, lang))
+                    filed_date, expected, lang,
+                    proof_filename, latitude, longitude, geotag_verified))
                 conn.commit()
                 conn.close()
                 add_ledger_entry(tracking_id, 'Filed')
                 log_activity('PUBLIC', 'COMPLAINT_FILED', ip,
-                    f'Tracking ID: {tracking_id}')
+                    f'Tracking ID: {tracking_id} (Geotag Verified: {geotag_verified})')
         elif action == 'track_report':
             track_id = request.form.get('tracking_id_input')
             conn = get_db_connection()
@@ -2427,6 +2506,26 @@ def apply_scheme(scheme_key):
         success=success,
         application_id=application_id)
 
+@app.route('/apply/<scheme_key>/print')
+def apply_scheme_print(scheme_key):
+    lang = request.args.get('lang', session.get('lang', 'en'))
+    detail = SCHEME_DETAILS.get(scheme_key)
+    if not detail:
+        return render_template('404.html'), 404
+    scheme_info = detail.get(lang, detail.get('en'))
+    profile = session.get('profile') or {}
+    
+    # Generate dummy application ID if not present
+    app_id = profile.get('application_id') or ('PAI-2026-' + ''.join(random.choices(string.digits, k=6)))
+    
+    return render_template('application_form_print.html',
+        scheme=scheme_info,
+        scheme_key=scheme_key,
+        lang=lang,
+        profile=profile,
+        app_id=app_id)
+
+
 @app.route('/documents/<scheme_key>')
 def documents(scheme_key):
     lang = request.args.get('lang', session.get('lang', 'en'))
@@ -2767,11 +2866,18 @@ def reject_story(story_id):
     conn.close()
     return redirect('/admin/stories')
 
+@app.route('/voice-assistant')
+def voice_assistant_page():
+    lang = request.args.get('lang', session.get('lang', 'en'))
+    profile = session.get('profile')
+    return render_template('voice_assistant.html', lang=lang, profile=profile)
+
+
 @app.route('/chatbot')
 def chatbot_page():
     lang = request.args.get('lang', session.get('lang', 'en'))
     profile = session.get('profile')
-    return render_template('chatbot.html', lang=lang, profile=profile)
+    return render_template('voice_assistant.html' if request.args.get('mode') == 'voice' else 'chatbot.html', lang=lang, profile=profile)
 
 
 @app.route('/chatbot', methods=['POST'])
@@ -2932,7 +3038,9 @@ Rules:
 - If the person's message is vague — like "I have a doubt", "I have a question", "need help" — with no actual topic mentioned, do NOT guess or dump a generic list. Ask a short, friendly clarifying question first, e.g. "Sure, what's your doubt about — eligibility, documents, or how to apply?"
 - If a "User Profile" is given below, this person has ALREADY filled the eligibility form. Act like a personal welfare officer: use their exact details (name, income, housing, schemes, etc.) instead of asking for them again. Personalize eligibility answers, next-step advice, and document lists to THIS person's profile and recommended schemes specifically.""",
 
-            'hi': """आप Poverty Aid Identifier के लिए AI Welfare Assistant हैं — एक मुफ्त civic tech ऐप जो भारत के गरीब नागरिकों को सरकारी योजनाएं खोजने में मदद करता है।
+            'hi': """अत्यंत महत्त्वपूर्ण निर्देश: आपका पूरा उत्तर केवल और केवल हिंदी भाषा (देवनागरी लिपि) में ही होना चाहिए। अंग्रेजी भाषा का प्रयोग बिल्कुल न करें।
+
+आप Poverty Aid Identifier के लिए AI Welfare Assistant हैं — एक मुफ्त civic tech ऐप जो भारत के गरीब नागरिकों को सरकारी योजनाएं खोजने में मदद करता है।
 
 आप इनके बारे में मदद करते हैं:
 1. 16 सरकारी योजनाओं की जानकारी
@@ -2941,6 +3049,7 @@ Rules:
 4. भ्रष्टाचार की शिकायत कैसे करें
 
 नियम:
+- आपका पूरा जवाब केवल हिंदी (देवनागरी) में होना चाहिए
 - जवाब छोटे और सरल रखें — 4-5 लाइन से ज्यादा नहीं
 - आसान हिंदी में बोलें — उपयोगकर्ता पढ़ा-लिखा नहीं हो सकता
 - हमेशा दयालु और मददगार रहें
@@ -2949,7 +3058,9 @@ Rules:
 - अगर व्यक्ति का संदेश अस्पष्ट है — जैसे "मुझे एक शक है", "मुझे सवाल है", "मदद चाहिए" — और कोई असली विषय नहीं बताया गया है, तो अंदाजा मत लगाइए या सामान्य सूची मत भेजिए। पहले एक छोटा, दोस्ताना स्पष्टीकरण वाला सवाल पूछें, जैसे "जरूर, आपका सवाल किस बारे में है — पात्रता, दस्तावेज़, या आवेदन कैसे करें?"
 - अगर नीचे "User Profile" दिया गया है, तो इस व्यक्ति ने पहले ही फॉर्म भर दिया है। दोबारा जानकारी मत मांगिए — इनकी असल जानकारी (नाम, आय, आवास, योजनाएं) के आधार पर व्यक्तिगत जवाब दें।""",
 
-            'mr': """तुम्ही Poverty Aid Identifier साठी AI Welfare Assistant आहात — एक मोफत civic tech अॅप जे भारतातील गरीब नागरिकांना सरकारी योजना शोधण्यास मदत करते.
+            'mr': """अत्यंत महत्त्वाचे निर्देश: तुमचे संपूर्ण उत्तर केवळ आणि केवळ मराठी भाषा (देवनागरी लिपी) मध्येच असले पाहिजे. इंग्रजी भाषेचा वापर अजिबात करू नका.
+
+तुम्ही Poverty Aid Identifier साठी AI Welfare Assistant आहात — एक मोफत civic tech अॅप जे भारतातील गरीब नागरिकांना सरकारी योजना शोधण्यास मदत करते.
 
 तुम्ही यासाठी मदत करता:
 1. 16 सरकारी योजनांची माहिती
@@ -2958,6 +3069,7 @@ Rules:
 4. भ्रष्टाचाराची तक्रार कशी करावी
 
 नियम:
+- तुमचे उत्तर फक्त आणि फक्त शुद्ध मराठीत असले पाहिजे
 - उत्तरे छोटी आणि स्पष्ट ठेवा — 4-5 ओळींपेक्षा जास्त नाही
 - सोप्या मराठीत बोला
 - नेहमी दयाळू आणि मदत करणारे राहा
@@ -3134,7 +3246,17 @@ def get_fallback_answer(question, lang='en', profile=None):
             return headers.get(lang, headers['en'])
         return f['default']
 
+@app.route('/api/ml-metrics')
+def ml_metrics_api():
+    metrics_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'model_metrics.json')
+    if os.path.exists(metrics_path):
+        with open(metrics_path, 'r') as f:
+            data = json.load(f)
+        return jsonify({'success': True, 'metrics': data})
+    return jsonify({'success': False, 'message': 'Model metrics not found. Run ml_scoring.py.'})
+
 if __name__ == '__main__':
+
     
     debug_mode = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
     app.run(debug=debug_mode, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), threaded=True)

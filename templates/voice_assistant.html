@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rural Vernacular Voice AI Assistant — Poverty Aid</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#0b132b">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0b132b;
+            --bg-card: #111c38;
+            --bg-inner: #162447;
+            --accent-cyan: #00d2ff;
+            --accent-blue: #0066ff;
+            --accent-glow: rgba(0, 210, 255, 0.4);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+
+        body {
+            background: radial-gradient(circle at 50% 0%, #1e2942 0%, #0b132b 70%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px 16px 40px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 820px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Top Badge Pill */
+        .top-badge {
+            background: rgba(0, 210, 255, 0.1);
+            border: 1px solid rgba(0, 210, 255, 0.3);
+            color: var(--accent-cyan);
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+            box-shadow: 0 0 15px rgba(0, 210, 255, 0.15);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Header Section */
+        .header-section {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .main-title {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .sub-title {
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.6;
+            max-width: 680px;
+            margin: 0 auto 16px;
+        }
+
+        .back-link {
+            color: var(--accent-cyan);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .back-link:hover {
+            opacity: 0.8;
+            transform: translateX(-3px);
+        }
+
+        /* Main Card Container */
+        .voice-card {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 28px 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+        }
+
+        .card-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .card-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .audio-feedback-btn {
+            background: rgba(0, 102, 255, 0.2);
+            border: 1px solid rgba(0, 102, 255, 0.4);
+            color: var(--accent-cyan);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .audio-feedback-btn.disabled {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+        }
+
+        /* Language Selector Bar */
+        .lang-select-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 28px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px 18px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .lang-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .lang-select {
+            background: #1a2744;
+            color: #fff;
+            border: 1px solid rgba(0, 210, 255, 0.3);
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-size: 14px;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+            transition: border-color 0.2s ease;
+        }
+
+        .lang-select:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0, 210, 255, 0.2);
+        }
+
+        /* Center Mic Container */
+        .mic-box {
+            background: var(--bg-inner);
+            border: 1px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 32px 20px 24px;
+            text-align: center;
+            margin-bottom: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mic-button-wrapper {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .mic-btn {
+            width: 84px;
+            height: 84px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00d2ff 0%, #0066ff 100%);
+            border: none;
+            color: white;
+            font-size: 32px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 30px var(--accent-glow);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+            z-index: 2;
+        }
+
+        .mic-btn:hover {
+            transform: scale(1.06);
+            box-shadow: 0 0 40px rgba(0, 210, 255, 0.6);
+        }
+
+        .mic-btn.listening {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            animation: pulse-red 1.5s infinite;
+        }
+
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 25px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        .mic-waves {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            border: 2px solid rgba(0, 210, 255, 0.4);
+            animation: wave-expand 2s infinite ease-out;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .mic-btn.listening + .mic-waves {
+            opacity: 1;
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+
+        @keyframes wave-expand {
+            0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.8; }
+            100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+        }
+
+        .mic-status-text {
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        .mic-status-text.active {
+            color: var(--accent-cyan);
+            font-weight: 600;
+        }
+
+        /* Real-time Query Box */
+        .query-box {
+            width: 100%;
+            background: #0d172e;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            padding: 16px;
+            color: #e2e8f0;
+            font-size: 14px;
+            line-height: 1.5;
+            min-height: 72px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-style: italic;
+            margin-bottom: 16px;
+            word-break: break-word;
+        }
+
+        .query-box.has-text {
+            font-style: normal;
+            color: #fff;
+            font-weight: 500;
+            text-align: left;
+        }
+
+        /* AI Response Box */
+        .response-box {
+            width: 100%;
+            background: linear-gradient(135deg, rgba(16, 37, 77, 0.9) 0%, rgba(11, 25, 54, 0.9) 100%);
+            border: 1px solid rgba(0, 210, 255, 0.3);
+            border-radius: 16px;
+            padding: 18px 20px;
+            position: relative;
+        }
+
+        .response-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .response-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .audio-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .audio-ctrl-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            border-radius: 8px;
+            padding: 4px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: background 0.2s ease;
+        }
+
+        .audio-ctrl-btn:hover {
+            background: rgba(0, 210, 255, 0.2);
+            border-color: var(--accent-cyan);
+        }
+
+        .response-text {
+            color: #f8fafc;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* Sound Equalizer Waves */
+        .sound-wave {
+            display: inline-flex;
+            align-items: flex-end;
+            gap: 3px;
+            height: 16px;
+            margin-left: 8px;
+            display: none;
+        }
+
+        .sound-wave.active {
+            display: inline-flex;
+        }
+
+        .sound-bar {
+            width: 3px;
+            background: var(--accent-cyan);
+            border-radius: 2px;
+            animation: bar-bounce 1s infinite ease-in-out;
+        }
+
+        .sound-bar:nth-child(1) { height: 60%; animation-delay: 0.1s; }
+        .sound-bar:nth-child(2) { height: 100%; animation-delay: 0.3s; }
+        .sound-bar:nth-child(3) { height: 40%; animation-delay: 0.2s; }
+        .sound-bar:nth-child(4) { height: 80%; animation-delay: 0.4s; }
+
+        @keyframes bar-bounce {
+            0%, 100% { transform: scaleY(0.4); }
+            50% { transform: scaleY(1); }
+        }
+
+        /* Quick Sample Voice Queries Section */
+        .sample-section {
+            margin-top: 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 20px;
+        }
+
+        .sample-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #cbd5e1;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sample-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .sample-pill {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #e2e8f0;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sample-pill:hover {
+            background: rgba(0, 210, 255, 0.15);
+            border-color: var(--accent-cyan);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        /* Browser Notice */
+        .browser-notice {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-top: 16px;
+            display: none;
+            text-align: center;
+        }
+
+        @media (max-width: 600px) {
+            .main-title { font-size: 24px; }
+            .voice-card { padding: 20px 16px; }
+            .mic-btn { width: 72px; height: 72px; font-size: 28px; }
+            .sample-pills { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Top Pill Badge -->
+    <div class="top-badge">
+        <span>🎙️</span> VERNACULAR VOICE AI ASSISTANT (SPEECH-TO-TEXT & TTS)
+    </div>
+
+    <!-- Header Section -->
+    <div class="header-section">
+        <h1 class="main-title">Rural Vernacular Voice AI Assistant</h1>
+        <p class="sub-title">
+            Solves low digital literacy in rural India. Citizens can speak questions in English, Hindi, or Marathi using speech recognition and receive audible spoken voice responses.
+        </p>
+        <a href="/" class="back-link">← Back to Main Application</a>
+    </div>
+
+    <!-- Main Card -->
+    <div class="voice-card">
+        <div class="card-top-bar">
+            <div class="card-title">
+                <span>🎧</span> Interactive Vernacular Voice Assistant
+            </div>
+            <button class="audio-feedback-btn" id="audioToggle" onclick="toggleAudioFeedback()">
+                <span id="audioIcon">🔊</span> <span id="audioText">Auto Audio Feedback</span>
+            </button>
+        </div>
+
+        <!-- Language Selector -->
+        <div class="lang-select-container">
+            <span class="lang-label">🌐 Speaking Language:</span>
+            <select class="lang-select" id="langSelect" onchange="handleLangChange()">
+                <option value="en-IN">English (India)</option>
+                <option value="hi-IN">Hindi (हिंदी)</option>
+                <option value="mr-IN">Marathi (मराठी)</option>
+            </select>
+        </div>
+
+        <!-- Central Mic Box -->
+        <div class="mic-box">
+            <div class="mic-button-wrapper">
+                <button class="mic-btn" id="micBtn" onclick="toggleSpeechRecognition()">
+                    🎤
+                </button>
+                <div class="mic-waves"></div>
+            </div>
+
+            <div class="mic-status-text" id="micStatus">
+                Tap microphone to speak your query
+            </div>
+
+            <!-- Real-time Spoken Query Box -->
+            <div class="query-box" id="queryBox">
+                "Your spoken query will appear here in real-time..."
+            </div>
+
+            <!-- Voice AI Response Box -->
+            <div class="response-box">
+                <div class="response-header">
+                    <div class="response-title">
+                        <span>🤖</span> Voice AI Response
+                        <div class="sound-wave" id="soundWave">
+                            <div class="sound-bar"></div>
+                            <div class="sound-bar"></div>
+                            <div class="sound-bar"></div>
+                            <div class="sound-bar"></div>
+                        </div>
+                    </div>
+                    <div class="audio-controls" id="audioControls" style="display: none;">
+                        <button class="audio-ctrl-btn" onclick="replayAudio()">🔊 Replay</button>
+                        <button class="audio-ctrl-btn" onclick="stopAudio()">⏹️ Stop</button>
+                    </div>
+                </div>
+                <div class="response-text" id="responseText">
+                    Spoken audio answer will play automatically...
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Sample Voice Queries Section -->
+        <div class="sample-section">
+            <div class="sample-title">
+                <span>💡</span> Quick Sample Voice Queries:
+            </div>
+            <div class="sample-pills" id="samplePills">
+                <!-- Dynamically populated based on selected language -->
+            </div>
+        </div>
+
+        <div class="browser-notice" id="browserNotice">
+            ⚠️ Voice recognition isn't supported in this browser. You can still tap sample queries or type to get audible responses!
+        </div>
+    </div>
+</div>
+
+<script>
+    // State management
+    var isListening = false;
+    var autoAudioEnabled = true;
+    var recognition = null;
+    var currentResponseText = "";
+    var currentLang = "en-IN";
+    var speechUnlocked = false; // becomes true once we've spoken inside a real user gesture
+
+    // ---------------------------------------------------------------
+    // MOBILE / BROWSER TTS RELIABILITY FIX
+    // ---------------------------------------------------------------
+    // Root cause of "AI answers correctly but never speaks": speakText()
+    // used to run only *after* an `await fetch(...)` inside sendQueryToAI.
+    // By the time it called speechSynthesis.speak(), the call was no longer
+    // directly inside the user's tap/click, and many mobile browsers
+    // (Android Chrome, iOS Safari/WebView) silently drop speech requests
+    // that aren't tied to a fresh user gesture — no error, no onstart, the
+    // status text just gets stuck on "Processing...". Calling speak() once,
+    // synchronously, inside the actual click handler "unlocks" audio for
+    // the rest of the page session, so later async speak() calls succeed too.
+    function unlockSpeechSynthesis() {
+        if (speechUnlocked || !('speechSynthesis' in window)) return;
+        try {
+            var primer = new SpeechSynthesisUtterance(' ');
+            primer.volume = 0; // inaudible, just claims the user-gesture grant
+            window.speechSynthesis.speak(primer);
+            speechUnlocked = true;
+        } catch (err) {
+            console.warn("Speech unlock failed:", err);
+        }
+    }
+
+    // getVoices() is frequently empty on first call — the voice list loads
+    // asynchronously. Wait for it (with a timeout) before picking a voice,
+    // instead of silently proceeding with an empty list every time.
+    function ensureVoicesLoaded(timeoutMs) {
+        return new Promise(function(resolve) {
+            if (!('speechSynthesis' in window)) return resolve([]);
+            var existing = window.speechSynthesis.getVoices();
+            if (existing && existing.length > 0) return resolve(existing);
+
+            var settled = false;
+            var onVoices = function() {
+                if (settled) return;
+                var v = window.speechSynthesis.getVoices();
+                if (v && v.length > 0) {
+                    settled = true;
+                    window.speechSynthesis.removeEventListener('voiceschanged', onVoices);
+                    resolve(v);
+                }
+            };
+            window.speechSynthesis.addEventListener('voiceschanged', onVoices);
+
+            setTimeout(function() {
+                if (settled) return;
+                settled = true;
+                window.speechSynthesis.removeEventListener('voiceschanged', onVoices);
+                resolve(window.speechSynthesis.getVoices() || []);
+            }, timeoutMs || 1200);
+        });
+    }
+
+    // Dynamic Sample Queries based on selected language
+    var sampleQueries = {
+        "en-IN": [
+            "🏡 PM Awas Yojana Eligibility?",
+            "📜 Ayushman Bharat Scheme?",
+            "⚖️ Corruption Complaint Status?",
+            "👴 Senior Citizen Pension Details?",
+            "🌾 PM Kisan Samman Nidhi?"
+        ],
+        "hi-IN": [
+            "🏡 पीएम आवास योजना पात्रता?",
+            "📜 आयुष्मान भारत योजना?",
+            "⚖️ भ्रष्टाचार शिकायत स्थिति?",
+            "👴 बुजुर्गों के लिए पेंशन योजना?",
+            "🌾 पीएम किसान सम्मान निधि?"
+        ],
+        "mr-IN": [
+            "🏡 पीएम आवास योजना पात्रता?",
+            "📜 आयुष्मान भारत योजना?",
+            "⚖️ भ्रष्टाचाराची तक्रार स्थिती?",
+            "👴 जेष्ठ नागरिक पेन्शन माहिती?",
+            "🌾 पीएम किसान सन्मान निधी?"
+        ]
+    };
+
+    var translations = {
+        "en-IN": {
+            micDefault: "Tap microphone to speak your query",
+            listening: "🔴 Listening... Speak now in English",
+            processing: "⚡ Processing query with Gemini Voice AI...",
+            speaking: "🔊 Speaking answer...",
+            placeholderQuery: '"Your spoken query will appear here in real-time..."',
+            placeholderResponse: "Spoken audio answer will play automatically..."
+        },
+        "hi-IN": {
+            micDefault: "अपनी बात कहने के लिए माइक पर टैप करें",
+            listening: "🔴 सुन रहा हूं... हिंदी में बोलें",
+            processing: "⚡ उत्तर तैयार किया जा रहा है...",
+            speaking: "🔊 उत्तर सुनाया जा रहा है...",
+            placeholderQuery: '"आपका बोला हुआ सवाल यहां रीयल-टाइम में दिखेगा..."',
+            placeholderResponse: "बोला गया ऑडियो जवाब अपने आप प्ले होगा..."
+        },
+        "mr-IN": {
+            micDefault: "तुमचा प्रश्न विचारण्यासाठी मायक्रोफोनवर टॅप करा",
+            listening: "🔴 ऐकत आहे... मराठीत बोला",
+            processing: "⚡ उत्तर तयार केले जात आहे...",
+            speaking: "🔊 उत्तर वाचून दाखवले जात आहे...",
+            placeholderQuery: '"तुमचा बोललेला प्रश्न येथे रीअल-टाईममध्ये दिसेल..."',
+            placeholderResponse: "बोललेला ऑडिओ प्रतिसाद आपोआप प्ले होईल..."
+        }
+    };
+
+    // Initialize Web Speech Recognition
+    function initSpeechRecognition() {
+        var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            document.getElementById("browserNotice").style.display = "block";
+            return;
+        }
+
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = currentLang;
+
+        recognition.onstart = function() {
+            isListening = true;
+            updateMicUI();
+        };
+
+        recognition.onresult = function(event) {
+            var transcript = "";
+            for (var i = event.resultIndex; i < event.results.length; i++) {
+                transcript += event.results[i][0].transcript;
+            }
+            var queryBox = document.getElementById("queryBox");
+            queryBox.textContent = '"' + transcript + '"';
+            queryBox.classList.add("has-text");
+        };
+
+        recognition.onerror = function(event) {
+            console.error("Speech recognition error:", event.error);
+            stopListening();
+            document.getElementById("micStatus").textContent = "⚠️ Could not hear audio clearly. Try again.";
+        };
+
+        recognition.onend = function() {
+            stopListening();
+            var queryText = document.getElementById("queryBox").textContent.replace(/^"|"$/g, '').trim();
+            if (queryText && queryText !== translations[currentLang].placeholderQuery.replace(/^"|"$/g, '')) {
+                sendQueryToAI(queryText);
+            }
+        };
+    }
+
+    function handleLangChange() {
+        currentLang = document.getElementById("langSelect").value;
+        if (recognition) {
+            recognition.lang = currentLang;
+        }
+        
+        // Reset UI text for selected language
+        var t = translations[currentLang] || translations["en-IN"];
+        document.getElementById("micStatus").textContent = t.micDefault;
+        
+        var queryBox = document.getElementById("queryBox");
+        if (!queryBox.classList.contains("has-text")) {
+            queryBox.textContent = t.placeholderQuery;
+        }
+        
+        var respText = document.getElementById("responseText");
+        if (!currentResponseText) {
+            respText.textContent = t.placeholderResponse;
+        }
+
+        renderSampleQueries();
+    }
+
+    function renderSampleQueries() {
+        var container = document.getElementById("samplePills");
+        container.innerHTML = "";
+        var queries = sampleQueries[currentLang] || sampleQueries["en-IN"];
+        
+        queries.forEach(function(q) {
+            var btn = document.createElement("button");
+            btn.className = "sample-pill";
+            btn.textContent = q;
+            btn.onclick = function() {
+                // Grab the speech-synthesis "user gesture" grant immediately,
+                // synchronously, before any awaited network call — otherwise
+                // some mobile browsers silently refuse to speak later.
+                unlockSpeechSynthesis();
+                // Strip emoji prefix for clean text query
+                var cleanQuery = q.replace(/^[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\s]+/u, '').trim();
+                var queryBox = document.getElementById("queryBox");
+                queryBox.textContent = '"' + cleanQuery + '"';
+                queryBox.classList.add("has-text");
+                sendQueryToAI(cleanQuery);
+            };
+            container.appendChild(btn);
+        });
+    }
+
+    function toggleSpeechRecognition() {
+        // Grab the speech-synthesis "user gesture" grant immediately, right
+        // on tap — the actual reply audio plays much later (after speech
+        // recognition finishes AND the network reply comes back), well
+        // outside this click's own gesture window otherwise.
+        unlockSpeechSynthesis();
+
+        if (!recognition) {
+            initSpeechRecognition();
+            if (!recognition) return;
+        }
+
+        if (isListening) {
+            recognition.stop();
+            stopListening();
+        } else {
+            // Clear prior speech synthesis
+            stopAudio();
+            document.getElementById("queryBox").textContent = translations[currentLang].placeholderQuery;
+            document.getElementById("queryBox").classList.remove("has-text");
+            try {
+                recognition.start();
+            } catch (err) {
+                console.warn("Recognition already active", err);
+            }
+        }
+    }
+
+    function updateMicUI() {
+        var btn = document.getElementById("micBtn");
+        var status = document.getElementById("micStatus");
+        var t = translations[currentLang] || translations["en-IN"];
+
+        if (isListening) {
+            btn.classList.add("listening");
+            status.textContent = t.listening;
+            status.classList.add("active");
+        } else {
+            btn.classList.remove("listening");
+            status.textContent = t.micDefault;
+            status.classList.remove("active");
+        }
+    }
+
+    function stopListening() {
+        isListening = false;
+        updateMicUI();
+    }
+
+    var offlineVoiceAnswers = {
+        "en-IN": {
+            "awas": "PM Awas Yojana gives Rs.1,20,000 for house construction. Documents needed: Aadhaar Card, BPL Certificate, and Bank details.",
+            "ayushman": "Ayushman Bharat provides free health coverage up to Rs. 5 Lakh per year. Show your Aadhaar card at any listed hospital.",
+            "pension": "Old Age Pension gives monthly financial aid to citizens aged 60+. Apply at your local Gram Panchayat.",
+            "corruption": "To report corruption, note down officer name and amount demanded, and file a report when connected.",
+            "default": "Offline Mode Active: Poverty Aid Assistant can check scheme eligibility, document lists, PM Awas, Ayushman Bharat, and Pensions."
+        },
+        "hi-IN": {
+            "awas": "पीएम आवास योजना BPL परिवारों को घर बनाने के लिए ₹1,20,000 देती है। जरूरी दस्तावेज़: आधार कार्ड, BPL प्रमाण पत्र और बैंक विवरण।",
+            "ayushman": "आयुष्मान भारत में हर साल ₹5 लाख तक का मुफ्त इलाज मिलता है। अस्पताल में आधार कार्ड दिखाएं।",
+            "pension": "वृद्धावस्था पेंशन 60+ उम्र के नागरिकों को मासिक वित्तीय सहायता देती है। ग्राम पंचायत में आवेदन करें।",
+            "corruption": "भ्रष्टाचार की शिकायत के लिए अधिकारी का नाम और मांगी गई राशि नोट करें, इंटरनेट आने पर रिपोर्ट दर्ज करें।",
+            "default": "ऑफलाइन मोड सक्रिय: ऐप आवास योजना, आयुष्मान भारत, पेंशन और दस्तावेज़ों की जानकारी दे सकता है।"
+        },
+        "mr-IN": {
+            "awas": "पीएम आवास योजना BPL कुटुंबांना घर बांधण्यासाठी ₹1,20,000 देते. आवश्यक कागदपत्रे: आधार कार्ड, BPL प्रमाणपत्र आणि बँक तपशील.",
+            "ayushman": "आयुष्मान भारतमध्ये दरवर्षी ₹5 लाखापर्यंत मोफत उपचार मिळतो. रुग्णालयात आधार कार्ड दाखवा.",
+            "pension": "वृद्धापकाळ पेन्शन 60+ वयाच्या नागरिकांना मासिक मदत देते. ग्रामपंचायतीत अर्ज करा.",
+            "corruption": "भ्रष्टाचाराच्या तक्रारीसाठी अधिकाऱ्याचे नाव आणि मागितलेली रक्कम लिहून ठेवा, इंटरनेट सुरू झाल्यावर नोंदवा.",
+            "default": "ऑफलाइन मोड सुरू: अॅप आवास योजना, आयुष्मान भारत, पेन्शन आणि कागदपत्रांची माहिती देऊ शकतो."
+        }
+    };
+
+    async function sendQueryToAI(queryText) {
+        var status = document.getElementById("micStatus");
+        var t = translations[currentLang] || translations["en-IN"];
+        status.textContent = t.processing;
+
+        var shortLang = currentLang.split('-')[0]; // 'en', 'hi', 'mr'
+
+        try {
+            var response = await fetch('/chatbot', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: queryText, lang: shortLang })
+            });
+
+            if (!response.ok) throw new Error("Server returned " + response.status);
+
+            var data = await response.json();
+            var reply = data.reply || "Sorry, I could not process your voice request.";
+
+            currentResponseText = reply;
+            document.getElementById("responseText").innerHTML = reply.replace(/\n/g, '<br>');
+            document.getElementById("audioControls").style.display = "flex";
+            status.textContent = t.micDefault;
+
+            if (autoAudioEnabled) {
+                speakText(reply);
+            }
+        } catch (error) {
+            console.warn("Network offline, using client-side fallback voice engine:", error);
+            var offlineSet = offlineVoiceAnswers[currentLang] || offlineVoiceAnswers["en-IN"];
+            var q = queryText.toLowerCase();
+            var reply = offlineSet.default;
+
+            if (q.includes("awas") || q.includes("housing") || q.includes("घर") || q.includes("आवास")) reply = offlineSet.awas;
+            else if (q.includes("ayushman") || q.includes("health") || q.includes("आयुष्मान") || q.includes("इलाज") || q.includes("उपचार")) reply = offlineSet.ayushman;
+            else if (q.includes("pension") || q.includes("पेन्शन") || q.includes("पेंशन") || q.includes("वृद्ध")) reply = offlineSet.pension;
+            else if (q.includes("corruption") || q.includes("bribe") || q.includes("भ्रष्टाचार")) reply = offlineSet.corruption;
+
+            currentResponseText = reply;
+            document.getElementById("responseText").innerHTML = reply.replace(/\n/g, '<br>') + "<br><small style='color:var(--accent-cyan); font-weight:600;'>⚡ [Offline Mode Active]</small>";
+            document.getElementById("audioControls").style.display = "flex";
+            status.textContent = t.micDefault;
+
+            if (autoAudioEnabled) {
+                speakText(reply);
+            }
+        }
+    }
+
+    function getBestVoice(langCode) {
+        if (!('speechSynthesis' in window)) return null;
+        var voices = window.speechSynthesis.getVoices();
+        if (!voices || voices.length === 0) return null;
+
+        var targetLang = langCode ? langCode.toLowerCase().replace('_', '-') : 'en-in';
+        var shortLang = targetLang.split('-')[0]; // 'mr', 'hi', 'en'
+
+        // 1. Direct exact locale match (e.g. 'mr-in', 'hi-in')
+        var exact = voices.find(function(v) {
+            return v.lang.toLowerCase().replace('_', '-') === targetLang;
+        });
+        if (exact) return exact;
+
+        // 2. Language prefix match (e.g. starts with 'mr' or 'hi')
+        var prefix = voices.find(function(v) {
+            return v.lang.toLowerCase().startsWith(shortLang);
+        });
+        if (prefix) return prefix;
+
+        // 3. Name match for 'marathi' or 'hindi'
+        var nameMatch = voices.find(function(v) {
+            var name = (v.name || '').toLowerCase();
+            if (shortLang === 'mr' && (name.includes('marathi') || name.includes('मराठी'))) return true;
+            if (shortLang === 'hi' && (name.includes('hindi') || name.includes('हिंदी'))) return true;
+            return false;
+        });
+        if (nameMatch) return nameMatch;
+
+        // 4. Devanagari fallback: If Marathi (mr) has no native TTS voice in the OS,
+        // use Hindi (hi-IN) TTS voice because Hindi voice reads Devanagari script fluently!
+        if (shortLang === 'mr') {
+            var hiVoice = voices.find(function(v) {
+                var l = v.lang.toLowerCase();
+                var n = (v.name || '').toLowerCase();
+                return l.startsWith('hi') || n.includes('hindi') || n.includes('हिंदी');
+            });
+            if (hiVoice) return hiVoice;
+        }
+
+        // 5. Any Indian locale voice ('en-in', 'hi-in', etc.)
+        var inVoice = voices.find(function(v) {
+            return v.lang.toLowerCase().includes('in');
+        });
+        if (inVoice) return inVoice;
+
+        // 6. Last resort: some devices have zero Hindi/Marathi voice data
+        // installed. Rather than leaving utterance.voice unset (which on
+        // some Android/Chrome builds causes speak() to silently do nothing
+        // for an unsupported lang), fall back to whatever voice IS
+        // available so the user at least hears an answer, in some voice,
+        // instead of total silence.
+        var defaultVoice = voices.find(function(v) { return v.default; });
+        return defaultVoice || voices[0] || null;
+    }
+
+    async function speakText(text) {
+        if (!('speechSynthesis' in window)) return;
+
+        window.speechSynthesis.cancel(); // Stop any currently playing audio
+
+        // Clean HTML tags and formatting characters for TTS
+        var cleanText = text.replace(/<[^>]*>?/gm, '').replace(/[\*\_~`#]/g, '').trim();
+        if (!cleanText) return;
+
+        var speakLang = currentLang;
+
+        // Make sure the voice list has actually loaded before choosing one —
+        // otherwise we always fall through to "no voice found" on the very
+        // first query of the session.
+        await ensureVoicesLoaded();
+
+        var utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.rate = 0.95; // Clear speed for rural users
+
+        var bestVoice = getBestVoice(currentLang);
+        if (bestVoice) {
+            utterance.voice = bestVoice;
+            // Keep the utterance's lang in sync with the voice we actually
+            // picked. If we had to fall back to a Hindi or generic voice
+            // because no Marathi voice is installed, forcing lang="mr-IN"
+            // on a voice that reports lang="hi-IN" causes some engines
+            // (Android Chrome in particular) to reject the utterance and
+            // stay silent. Matching them avoids that.
+            speakLang = bestVoice.lang || currentLang;
+        } else if (currentLang.startsWith('mr')) {
+            speakLang = 'hi-IN'; // Fallback locale for Devanagari text reading
+        }
+        utterance.lang = speakLang;
+
+        var settledEvent = false;
+        var t = translations[currentLang] || translations["en-IN"];
+
+        utterance.onstart = function() {
+            settledEvent = true;
+            document.getElementById("soundWave").classList.add("active");
+            document.getElementById("micStatus").textContent = t.speaking;
+        };
+
+        utterance.onend = utterance.onerror = function() {
+            settledEvent = true;
+            document.getElementById("soundWave").classList.remove("active");
+            document.getElementById("micStatus").textContent = t.micDefault;
+        };
+
+        window.speechSynthesis.speak(utterance);
+
+        // Safety net: if the browser silently swallows the speak() call
+        // (no onstart, no onerror — the exact "stuck on Processing..."
+        // symptom), don't leave the UI hanging forever. Reset it and let
+        // the person know audio didn't play, without touching the text
+        // reply they already received.
+        setTimeout(function() {
+            if (settledEvent) return;
+            var stillSpeaking = window.speechSynthesis.speaking || window.speechSynthesis.pending;
+            if (stillSpeaking) return;
+            document.getElementById("soundWave").classList.remove("active");
+            document.getElementById("micStatus").textContent = t.micDefault;
+            console.warn("Speech synthesis did not start — no compatible voice/engine responded.");
+        }, 2500);
+    }
+
+    function toggleAudioFeedback() {
+        autoAudioEnabled = !autoAudioEnabled;
+        var btn = document.getElementById("audioToggle");
+        var icon = document.getElementById("audioIcon");
+        if (autoAudioEnabled) {
+            btn.classList.remove("disabled");
+            icon.textContent = "🔊";
+        } else {
+            btn.classList.add("disabled");
+            icon.textContent = "🔇";
+            stopAudio();
+        }
+    }
+
+    function replayAudio() {
+        if (currentResponseText) {
+            speakText(currentResponseText);
+        }
+    }
+
+    function stopAudio() {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+        }
+        document.getElementById("soundWave").classList.remove("active");
+        var t = translations[currentLang] || translations["en-IN"];
+        document.getElementById("micStatus").textContent = t.micDefault;
+    }
+
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', function() {
+        // Set initial language from URL or session if present
+        var params = new URLSearchParams(window.location.search);
+        var urlLang = params.get('lang');
+        if (urlLang === 'mr') currentLang = 'mr-IN';
+        else if (urlLang === 'hi') currentLang = 'hi-IN';
+
+        document.getElementById("langSelect").value = currentLang;
+        
+        // Pre-load Web Speech Synthesis voices
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = function() {
+                window.speechSynthesis.getVoices();
+            };
+            window.speechSynthesis.getVoices();
+        }
+
+        handleLangChange();
+        initSpeechRecognition();
+    });
+</script>
+
+</body>
+</html>

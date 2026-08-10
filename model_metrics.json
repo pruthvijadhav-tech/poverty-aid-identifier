@@ -1,0 +1,49 @@
+{
+  "model_name": "RandomForestClassifier (NFHS-5 Trained)",
+  "accuracy": 87.0,
+  "dataset_samples": 6000,
+  "confusion_matrix": [
+    [
+      171,
+      21,
+      0,
+      0
+    ],
+    [
+      16,
+      493,
+      27,
+      0
+    ],
+    [
+      0,
+      63,
+      337,
+      8
+    ],
+    [
+      0,
+      0,
+      21,
+      43
+    ]
+  ],
+  "classes": [
+    "Low Need",
+    "Moderate Need",
+    "High Need",
+    "Critical Need"
+  ],
+  "feature_importances": {
+    "Age Group": 13.44,
+    "Monthly Income": 24.73,
+    "Family Size": 13.08,
+    "Housing Type": 10.24,
+    "Electricity Access": 3.69,
+    "Ration Card": 3.97,
+    "Medical Condition": 13.36,
+    "Recent Accident": 7.02,
+    "Earning Member Deceased": 6.26,
+    "Widow Status": 4.22
+  }
+}

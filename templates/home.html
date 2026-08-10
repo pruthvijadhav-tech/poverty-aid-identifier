@@ -41,11 +41,11 @@ body.lang-mr .mr-i{display:inline;}
 .hero-sub{color:rgba(255,255,255,0.7);font-size:13px;line-height:1.6;margin-bottom:24px;max-width:400px;margin-left:auto;margin-right:auto;}
 .phone-wrap{display:flex;justify-content:center;margin:0 0 28px;position:relative;}
 .phone-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:220px;height:400px;border-radius:40px;background:transparent;box-shadow:0 0 60px rgba(0,0,128,0.5),0 0 120px rgba(255,153,51,0.15);pointer-events:none;}
-.float-badge{position:absolute;background:white;border-radius:12px;padding:6px 10px;font-size:10px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,0.3);white-space:nowrap;z-index:10;}
-.float-badge.f1{top:40px;left:0;color:#138808;animation:float1 3s ease-in-out infinite;}
-.float-badge.f2{top:120px;right:0;color:#000080;animation:float2 3s ease-in-out infinite 0.5s;}
-.float-badge.f3{bottom:120px;left:0;color:#c62828;animation:float1 3s ease-in-out infinite 1s;}
-.float-badge.f4{bottom:50px;right:0;color:#FF9933;animation:float2 3s ease-in-out infinite 1.5s;}
+.float-badge{position:absolute;border-radius:14px;padding:7px 13px;font-size:10px;font-weight:700;white-space:nowrap;z-index:10;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.2);}
+.float-badge.f1{top:40px;left:0;background:linear-gradient(135deg,rgba(19,136,8,0.9),rgba(74,222,128,0.9));color:white;box-shadow:0 8px 24px rgba(19,136,8,0.4),0 0 12px rgba(74,222,128,0.3);animation:float1 3s ease-in-out infinite;}
+.float-badge.f2{top:120px;right:0;background:linear-gradient(135deg,rgba(0,0,128,0.9),rgba(99,102,241,0.9));color:white;box-shadow:0 8px 24px rgba(0,0,128,0.4),0 0 12px rgba(99,102,241,0.3);animation:float2 3s ease-in-out infinite 0.5s;}
+.float-badge.f3{bottom:120px;left:0;background:linear-gradient(135deg,rgba(198,40,40,0.9),rgba(248,113,113,0.9));color:white;box-shadow:0 8px 24px rgba(198,40,40,0.4),0 0 12px rgba(248,113,113,0.3);animation:float1 3s ease-in-out infinite 1s;}
+.float-badge.f4{bottom:50px;right:0;background:linear-gradient(135deg,rgba(255,153,51,0.9),rgba(251,191,36,0.9));color:white;box-shadow:0 8px 24px rgba(255,153,51,0.4),0 0 12px rgba(251,191,36,0.3);animation:float2 3s ease-in-out infinite 1.5s;}
 @keyframes float1{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 @keyframes float2{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 .phone-outer{width:190px;height:370px;background:linear-gradient(145deg,#2a2a2a,#1a1a1a);border-radius:34px;padding:10px;box-shadow:0 30px 80px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.08);position:relative;z-index:5;}
@@ -84,10 +84,14 @@ body.lang-mr .mr-i{display:inline;}
 .ps-impact-card:nth-child(4){border-top:2px solid #f472b6;}
 .ps-impact-num{font-size:10px;font-weight:800;color:white;}
 .ps-impact-lbl{font-size:5px;color:rgba(255,255,255,0.5);}
-.hero-pills{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-bottom:20px;}
-.hpill{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.85);font-size:10px;padding:4px 10px;border-radius:20px;}
-.hpill.gr{border-color:rgba(19,136,8,0.5);color:#4ade80;background:rgba(19,136,8,0.1);}
-.hpill.or{border-color:rgba(255,153,51,0.5);color:#FF9933;background:rgba(255,153,51,0.1);}
+.hero-pills{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:20px;}
+.hpill{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);color:rgba(255,255,255,0.9);font-size:11px;padding:6px 14px;border-radius:24px;font-weight:600;transition:all 0.3s ease;position:relative;overflow:hidden;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+.hpill:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(255,255,255,0.1);}
+.hpill.gr{border-color:rgba(74,222,128,0.6);color:#4ade80;background:linear-gradient(135deg,rgba(19,136,8,0.15),rgba(74,222,128,0.1));box-shadow:0 0 8px rgba(74,222,128,0.15);}
+.hpill.or{border-color:rgba(255,153,51,0.6);color:#FF9933;background:linear-gradient(135deg,rgba(255,153,51,0.15),rgba(251,191,36,0.1));box-shadow:0 0 8px rgba(255,153,51,0.15);}
+.hpill.free{border-color:rgba(244,114,182,0.6);color:#f9a8d4;background:linear-gradient(135deg,rgba(236,72,153,0.2),rgba(244,114,182,0.1));box-shadow:0 0 12px rgba(236,72,153,0.2);animation:glow-free 2s ease-in-out infinite;}
+.hpill.ai{border-color:rgba(139,92,246,0.6);color:#c4b5fd;background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(167,139,250,0.1));box-shadow:0 0 8px rgba(139,92,246,0.15);}
+@keyframes glow-free{0%,100%{box-shadow:0 0 8px rgba(236,72,153,0.2);}50%{box-shadow:0 0 18px rgba(236,72,153,0.4),0 0 30px rgba(236,72,153,0.15);}}
 .lang-section{padding:16px;background:white;border-bottom:2px solid #FF9933;}
 .lang-title{text-align:center;font-size:11px;color:var(--gray);margin-bottom:10px;font-weight:600;letter-spacing:.5px;}
 .lang-buttons{display:flex;gap:8px;justify-content:center;}
@@ -159,11 +163,7 @@ body.lang-mr .mr-i{display:inline;}
 .fb-quote{color:rgba(255,255,255,0.85);font-size:13px;line-height:1.7;font-style:italic;border-left:3px solid var(--saffron);padding-left:12px;margin-bottom:14px;}
 .fb-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px;}
 .fb-tag{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);font-size:9px;padding:3px 8px;border-radius:20px;}
-.fb-improvements{background:rgba(255,255,255,0.05);border-radius:10px;padding:12px;}
-.fb-imp-title{font-size:10px;color:rgba(255,255,255,0.5);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
-.fb-imp-item{display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(255,255,255,0.7);margin-bottom:5px;}
-.fb-imp-done{color:#4ade80;}
-.fb-imp-pending{color:rgba(255,255,255,0.4);}
+
 .footer-nav{background:white;border-top:1px solid var(--border);padding:14px 16px;}
 .footer-links{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:460px;margin:0 auto;}
 .footer-link{display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 6px;border-radius:8px;text-decoration:none;border:1px solid var(--border);background:var(--light);}
@@ -207,7 +207,7 @@ body.lang-mr .mr-i{display:inline;}
 </div>
 <div class="hero">
     <div class="hero-content">
-        <div class="hero-badge">🇮🇳 <span class="en-i">FREE · NO AADHAAR · WORKS OFFLINE</span><span class="hi-i">मुफ्त · आधार नहीं · ऑफलाइन</span><span class="mr-i">मोफत · आधार नाही · ऑफलाइन</span></div>
+        <div class="hero-badge">🇮🇳 <span class="en-i">FREE · NO AADHAAR REQUIRED · WORKS OFFLINE</span><span class="hi-i">मुफ्त · आधार की आवश्यकता नहीं है · ऑफलाइन</span><span class="mr-i">मोफत · आधार आवश्यक नाही · ऑफलाइन</span></div>
         <h1>
             <span class="en">Find Your <span>Government Schemes</span> in 1 Second</span>
             <span class="hi">1 सेकंड में पाएं अपनी <span>सरकारी योजनाएं</span></span>
@@ -220,7 +220,7 @@ body.lang-mr .mr-i{display:inline;}
         </p>
         <div class="phone-wrap">
             <div class="phone-glow"></div>
-            <div class="float-badge f1">✅ <span class="en-i">No Aadhaar</span><span class="hi-i">आधार नहीं</span><span class="mr-i">आधार नाही</span></div>
+            <div class="float-badge f1">✅ <span class="en-i">No Aadhaar REQUIRED</span><span class="hi-i">आधार की आवश्यकता नहीं है </span><span class="mr-i">आधार आवश्यक नाही</span></div>
             <div class="float-badge f2">🤖 Gemini AI</div>
             <div class="float-badge f3">🚨 <span class="en-i">Report Bribe</span><span class="hi-i">रिश्वत रिपोर्ट</span><span class="mr-i">लाच तक्रार</span></div>
             <div class="float-badge f4">📱 <span class="en-i">Works Offline</span><span class="hi-i">ऑफलाइन</span><span class="mr-i">ऑफलाइन</span></div>
@@ -230,14 +230,14 @@ body.lang-mr .mr-i{display:inline;}
                     <div class="ps-topbar"></div>
                     <div class="ps-header"><div class="ps-logo">Poverty Aid Identifier</div><div class="ps-sub">Every rupee belongs to the people</div></div>
                     <div class="ps-hero">
-                        <div class="ps-badge">FREE · NO AADHAAR</div>
+                        <div class="ps-badge">FREE · NO AADHAAR REQUIRED</div>
                         <div class="ps-title">Find Your <span>Govt Schemes</span> in 1 Second</div>
                         <div class="ps-stats">
                             <div><div class="ps-stat-num or">16+</div><div class="ps-stat-label">Schemes</div></div>
                             <div><div class="ps-stat-num">3</div><div class="ps-stat-label">Languages</div></div>
                             <div><div class="ps-stat-num gr">&lt;1s</div><div class="ps-stat-label">Result</div></div>
                         </div>
-                        <div class="ps-pills"><div class="ps-pill gr">✓ No Aadhaar</div><div class="ps-pill gr">✓ Offline</div><div class="ps-pill">✓ Free</div></div>
+                        <div class="ps-pills"><div class="ps-pill gr">✓ No Aadhaar REQUIRED</div><div class="ps-pill gr">✓ Offline</div><div class="ps-pill">✓ Free</div></div>
                     </div>
                     <div class="ps-lang">
                         <div class="ps-lang-title">SELECT LANGUAGE</div>
@@ -256,11 +256,11 @@ body.lang-mr .mr-i{display:inline;}
             </div>
         </div>
         <div class="hero-pills">
-            <div class="hpill gr">✓ <span class="en-i">No Aadhaar</span><span class="hi-i">आधार नहीं</span><span class="mr-i">आधार नाही</span></div>
-            <div class="hpill gr">✓ <span class="en-i">Works Offline</span><span class="hi-i">ऑफलाइन</span><span class="mr-i">ऑफलाइन</span></div>
-            <div class="hpill or">✓ Hindi + Marathi</div>
-            <div class="hpill">✓ <span class="en-i">Free Forever</span><span class="hi-i">हमेशा मुफ्त</span><span class="mr-i">नेहमी मोफत</span></div>
-            <div class="hpill or">🤖 Gemini AI</div>
+            <div class="hpill free">💖 <span class="en-i">Free Forever</span><span class="hi-i">हमेशा मुफ्त</span><span class="mr-i">नेहमी मोफत</span></div>
+            <div class="hpill gr">✅ <span class="en-i">No Aadhaar REQUIRED</span><span class="hi-i">आधार की आवश्यकता नहीं है</span><span class="mr-i">आधार आवश्यक नाही</span></div>
+            <div class="hpill gr">📱 <span class="en-i">Works Offline</span><span class="hi-i">ऑफलाइन</span><span class="mr-i">ऑफलाइन</span></div>
+            <div class="hpill or">🗣️ Hindi + Marathi</div>
+            <div class="hpill ai">🤖 Gemini AI</div>
         </div>
     </div>
 </div>
@@ -302,7 +302,7 @@ body.lang-mr .mr-i{display:inline;}
 <div class="compare-sec">
     <div class="sec-head">
         <div class="sec-eye"><span class="en-i">WHY THIS APP</span><span class="hi-i">यह ऐप क्यों</span><span class="mr-i">हे अॅप का</span></div>
-        <div class="sec-title"><span class="en-i">Us vs Government Portal</span><span class="hi-i">हम बनाम सरकारी पोर्टल</span><span class="mr-i">आमचे अॅप vs सरकारी पोर्टल</span></div>
+        <div class="sec-title"><span class="en-i">poverty aid identifier vs Government Portal</span><span class="hi-i">हम बनाम सरकारी पोर्टल</span><span class="mr-i">आमचे अॅप vs सरकारी पोर्टल</span></div>
     </div>
     <div class="compare-table">
         <div class="c-head">
@@ -365,16 +365,7 @@ body.lang-mr .mr-i{display:inline;}
             <div class="fb-tag">Rural Testing</div>
             <div class="fb-tag">OPD Patients</div>
         </div>
-        <div class="fb-improvements">
-            <div class="fb-imp-title"><span class="en-i">Their suggestions → Our action</span><span class="hi-i">उनके सुझाव → हमारी कार्रवाई</span><span class="mr-i">त्यांचे सुझाव → आमची कृती</span></div>
-            <div class="fb-imp-item"><span class="fb-imp-done">✅</span> <span class="en-i">Better UI/UX — Done</span><span class="hi-i">बेहतर UI — हो गया</span><span class="mr-i">बेहतर UI — झाले</span></div>
-            <div class="fb-imp-item"><span class="fb-imp-done">✅</span> <span class="en-i">Show statistics — Done</span><span class="hi-i">आंकड़े दिखाएं — हो गया</span><span class="mr-i">आकडे दाखवा — झाले</span></div>
-            <div class="fb-imp-item"><span class="fb-imp-done">✅</span> <span class="en-i">Comparison section — Done</span><span class="hi-i">तुलना अनुभाग — हो गया</span><span class="mr-i">तुलना विभाग — झाले</span></div>
-            <div class="fb-imp-item"><span class="fb-imp-done">✅</span> <span class="en-i">Success stories — Done</span><span class="hi-i">सफलता की कहानियां — हो गया</span><span class="mr-i">यशोगाथा — झाले</span></div>
-            <div class="fb-imp-item"><span class="fb-imp-done">✅</span> <span class="en-i">AI Chatbot (Gemini) — Done</span><span class="hi-i">AI चैटबॉट — हो गया</span><span class="mr-i">AI चॅटबॉट — झाले</span></div>
-            <div class="fb-imp-item"><span class="fb-imp-pending">🔄</span> <span class="en-i">Voice input — Coming soon</span><span class="hi-i">वॉयस इनपुट — जल्द आ रहा है</span><span class="mr-i">व्हॉइस इनपुट — लवकरच</span></div>
-            <div class="fb-imp-item"><span class="fb-imp-pending">🔄</span> <span class="en-i">Document scanning — Coming soon</span><span class="hi-i">दस्तावेज़ स्कैनिंग — जल्द</span><span class="mr-i">डॉक्युमेंट स्कॅनिंग — लवकरच</span></div>
-        </div>
+
     </div>
 </div>
 <div class="install-banner" id="installBanner">
@@ -397,10 +388,11 @@ body.lang-mr .mr-i{display:inline;}
 <div class="footer">
     <p>
         Poverty Aid Identifier — Open Source Civic Tech · Powered by Google Gemini AI<br>
-        <a href="https://github.com/pruthvijadhav-tech">Pruthvi Jadhav</a> & Ayush Kothiwan · PCU Pune · GSSoC 2026<br>
+        <a href="https://github.com/pruthvijadhav-tech">Pruthvi Jadhav</a> <br>
         <a href="https://github.com/pruthvijadhav-tech/poverty-aid-identifier">GitHub</a> ·
         <a href="/corruption"><span class="en-i">Report Corruption</span><span class="hi-i">भ्रष्टाचार</span><span class="mr-i">भ्रष्टाचार</span></a> ·
-        <a href="/chatbot">🤖 AI Chat</a>
+        <a href="/chatbot">🤖 AI Chat</a> ·
+        <a href="/voice-assistant">🎙️ Voice AI</a>
     </p>
 </div>
 <a href="/chatbot" style="position:fixed;bottom:24px;right:20px;width:58px;height:58px;background:linear-gradient(135deg,#000080,#3D2B8E);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;text-decoration:none;z-index:999;animation:pulse-chat 2s infinite;">🤖</a>
