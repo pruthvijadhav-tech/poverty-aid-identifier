@@ -5,10 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Poverty Aid Identifier — Find Your Government Schemes</title>
 <link rel="manifest" href="/static/manifest.json">
-<meta name="theme-color" content="#000080">
+<meta name="theme-color" content="#1a1a2e">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="description" content="Free AI app that tells you which government schemes you qualify for. No Aadhaar needed. Works in Hindi, Marathi and English.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--navy:#000080;--saffron:#FF9933;--green:#138808;--light:#F4F6FB;--dark:#1A1A2E;--gray:#6B7280;--border:#E5E7EB;}
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -184,20 +186,39 @@ body.lang-mr .mr-i{display:inline;}
 </style>
 </head>
 <body class="lang-en">
-<div class="flag-bar"></div>
-<div class="header">
-    <div class="logo">
-        <div class="logo-icon">🇮🇳</div>
-        <div>
-            <div class="logo-text">Poverty Aid Identifier</div>
-            <div class="logo-sub en-i">Every rupee belongs to the people</div>
-            <div class="logo-sub hi-i">हर रुपया जनता का है</div>
-            <div class="logo-sub mr-i">प्रत्येक रुपया जनतेचा आहे</div>
+
+<div class="bg-waves"></div>
+<div class="wave-left"></div>
+<div class="wave-right"></div>
+
+<div class="glass-container">
+    <div class="header">
+        <div class="logo-area">
+            <div class="logo-icon"></div>
+            <div class="logo-text">
+                <h1 style="font-size: 18px; margin-bottom: 4px;">POVERTY AID IDENTIFIER</h1>
+                <p>
+                    <span class="en-i">EVERY RUPEE BELONGS TO THE PEOPLE</span>
+                    <span class="hi-i">भारत सरकार - कल्याण पोर्टल</span>
+                    <span class="mr-i">भारत सरकार - कल्याण पोर्टल</span>
+                </p>
+            </div>
+        </div>
+        <div class="nav-links">
+            <a href="/" class="active"><span class="en-i">Home</span><span class="hi-i">होम</span><span class="mr-i">मुख्यपृष्ठ</span></a>
+            <a href="/heatmap"><span class="en-i">Corruption Map</span><span class="hi-i">भ्रष्टाचार मैप</span><span class="mr-i">भ्रष्टाचार नकाशा</span></a>
+            <a href="/eligibility?lang=en" id="nav-apply"><span class="en-i">Apply Now</span><span class="hi-i">आवेदन करें</span><span class="mr-i">अर्ज करा</span></a>
+            <a href="/admin/login"><span class="en-i">Officer Login</span><span class="hi-i">अधिकारी लॉगिन</span><span class="mr-i">अधिकारी लॉगिन</span></a>
+            <a href="/stories"><span class="en-i">Stories</span><span class="hi-i">कहानियां</span><span class="mr-i">कथा</span></a>
         </div>
     </div>
-    <div class="header-links">
-        <a href="/heatmap" class="header-link">🗺 <span class="en-i">Map</span><span class="hi-i">मैप</span><span class="mr-i">नकाशा</span></a>
-        <a href="/stories" class="header-link">📖 <span class="en-i">Stories</span><span class="hi-i">कहानियां</span><span class="mr-i">कथा</span></a>
+
+    <div class="search-container">
+        <div class="search-box">
+            <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+            <input type="text" id="scheme-search" placeholder="Search for welfare schemes... / योजनाओं के लिए खोजें... / योजना शोधा..." autocomplete="off">
+        </div>
+        <div class="search-results" id="search-dropdown"></div>
     </div>
 </div>
 <div class="announce-bar">
@@ -354,10 +375,12 @@ body.lang-mr .mr-i{display:inline;}
                 <div class="fb-verified">✓ <span class="en-i">Verified Review</span><span class="hi-i">सत्यापित समीक्षा</span><span class="mr-i">सत्यापित पुनरावलोकन</span></div>
             </div>
         </div>
-        <div class="fb-quote">
-            <span class="en-i">"We reviewed this app at our clinic. It finds government schemes for patients in under 1 minute — in Marathi, without Aadhaar. Very useful for rural patients who are unaware of their entitlements."</span>
-            <span class="hi-i">"हमने अपने क्लिनिक में इस ऐप की समीक्षा की। यह 1 मिनट में मरीजों के लिए सरकारी योजनाएं ढूंढता है — मराठी में, आधार के बिना। ग्रामीण मरीजों के लिए बहुत उपयोगी।"</span>
-            <span class="mr-i">"आम्ही आमच्या क्लिनिकमध्ये या अॅपचे पुनरावलोकन केले. ते 1 मिनिटात सरकारी योजना शोधते — मराठीत, आधारशिवाय. ग्रामीण रुग्णांसाठी खूप उपयुक्त."</span>
+        <div class="f-card green">
+            <div class="f-icon">🔔</div>
+            <div class="f-text">
+                <h4><span class="en-i">Notifications</span><span class="hi-i">सूचनाएं</span><span class="mr-i">सूचना</span></h4>
+                <p><span class="en-i">Real-time updates on your application status</span><span class="hi-i">आपके आवेदन की स्थिति पर रीयल-टाइम अपडेट</span><span class="mr-i">तुमच्या अर्जाच्या स्थितीवर रिअल-टाइम अपडेट</span></p>
+            </div>
         </div>
         <div class="fb-tags">
             <div class="fb-tag">Hinganghat Clinic</div>
@@ -398,37 +421,81 @@ body.lang-mr .mr-i{display:inline;}
 <a href="/chatbot" style="position:fixed;bottom:24px;right:20px;width:58px;height:58px;background:linear-gradient(135deg,#000080,#3D2B8E);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;text-decoration:none;z-index:999;animation:pulse-chat 2s infinite;">🤖</a>
 <div style="position:fixed;bottom:32px;right:86px;background:#1a1a2e;color:white;font-size:11px;font-weight:700;padding:6px 12px;border-radius:20px;z-index:998;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.2);">Ask AI ✨</div>
 <script>
-function setLang(lang,el,e){
-    if(e)e.preventDefault();
+function setLang(lang){
     document.body.className='lang-'+lang;
     document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));
-    el.classList.add('active');
-    var s=document.getElementById('start-btn');
-    if(s)s.href='/eligibility?lang='+lang;
+    document.getElementById('btn-'+lang).classList.add('active');
+    
+    // Update Apply links with language parameter
+    const applyLinks = ['nav-apply', 'hero-apply'];
+    applyLinks.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.href = '/eligibility?lang=' + lang;
+    });
+    
     try{localStorage.setItem('pai_lang',lang);}catch(err){}
 }
 (function(){
     var saved='en';
     try{saved=localStorage.getItem('pai_lang')||'en';}catch(e){}
     if(['en','hi','mr'].indexOf(saved)===-1)saved='en';
-    document.body.className='lang-'+saved;
-    var b=document.getElementById('btn-'+saved);
-    if(b){document.querySelectorAll('.lang-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');}
-    var s=document.getElementById('start-btn');
-    if(s)s.href='/eligibility?lang='+saved;
+    setLang(saved);
 })();
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt',e=>{
-    e.preventDefault();deferredPrompt=e;
-    document.getElementById('installBanner').classList.add('show');
-});
-document.getElementById('installBtn')?.addEventListener('click',async()=>{
-    if(deferredPrompt){deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;document.getElementById('installBanner').classList.remove('show');}
-});
-document.getElementById('dismissBtn')?.addEventListener('click',()=>{
-    document.getElementById('installBanner').classList.remove('show');
-});
 if('serviceWorker' in navigator){navigator.serviceWorker.register('/static/service-worker.js').catch(()=>{});}
+
+// Search Functionality
+const schemesData = [
+    { key: "pm_kisan", name: "PM Kisan Samman Nidhi", hi: "पीएम किसान", amt: "₹6,000/yr" },
+    { key: "ayushman", name: "Ayushman Bharat", hi: "आयुष्मान भारत", amt: "₹5 Lakh Cover" },
+    { key: "pmay", name: "PM Awas Yojana (PMAY)", hi: "पीएम आवास योजना", amt: "Housing Subsidy" },
+    { key: "widow", name: "Widow Pension Scheme", hi: "विधवा पेंशन", amt: "Monthly Pension" },
+    { key: "nrega", name: "MNREGA", hi: "मनरेगा", amt: "100 Days Work" },
+    { key: "ladki_bahin", name: "Ladki Bahin Yojana (MH)", hi: "लड़की बहन योजना", amt: "₹1,500/month" }
+];
+
+const searchInput = document.getElementById('scheme-search');
+const searchDropdown = document.getElementById('search-dropdown');
+
+searchInput.addEventListener('input', function() {
+    const query = this.value.toLowerCase();
+    searchDropdown.innerHTML = '';
+    
+    if (query.length < 2) {
+        searchDropdown.classList.remove('active');
+        return;
+    }
+
+    const filtered = schemesData.filter(s => 
+        s.name.toLowerCase().includes(query) || s.hi.toLowerCase().includes(query)
+    );
+
+    if (filtered.length > 0) {
+        filtered.forEach(s => {
+            const a = document.createElement('a');
+            a.href = `/scheme/${s.key}`;
+            a.className = 'search-item';
+            a.innerHTML = `
+                <div class="search-item-icon">📄</div>
+                <div class="search-item-text">
+                    <h4>${s.name}</h4>
+                    <p>${s.amt}</p>
+                </div>
+            `;
+            searchDropdown.appendChild(a);
+        });
+        searchDropdown.classList.add('active');
+    } else {
+        searchDropdown.innerHTML = `<div class="search-item"><div class="search-item-text"><p>No schemes found. Try applying through AI.</p></div></div>`;
+        searchDropdown.classList.add('active');
+    }
+});
+
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-container')) {
+        searchDropdown.classList.remove('active');
+    }
+});
+
 </script>
 </body>
 </html>
