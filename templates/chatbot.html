@@ -110,7 +110,7 @@
         <div class="welcome-card">
             {% if profile and profile.schemes %}
             <h2 id="welcome-title">Hello {{ profile.name or 'there' }}! I already know your profile.</h2>
-            <p id="welcome-text">Need Score: {{ profile.score }}/175 &middot; {{ profile.schemes|length }} scheme{{ 's' if profile.schemes|length != 1 else '' }} recommended, including {{ profile.schemes[0].name }}. Ask me "what should I do next?" and I'll guide you personally.</p>
+            <p id="welcome-text">Need Score: {{ profile.score }}/225 &middot; {{ profile.schemes|length }} scheme{{ 's' if profile.schemes|length != 1 else '' }} recommended, including {{ profile.schemes[0].name }}. Ask me "what should I do next?" and I'll guide you personally.</p>
             {% else %}
             <h2 id="welcome-title">Hello! I'm your AI Welfare Assistant</h2>
             <p id="welcome-text">I can help you with government schemes, documents needed, how to apply, and corruption reporting. Ask me anything in English, Hindi, or Marathi!</p>

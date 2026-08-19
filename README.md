@@ -5,7 +5,7 @@ A multilingual civic-tech web app that helps identify poor/needy persons and rec
 ## Features
 
 - **Multilingual** — English, Hindi, Marathi
-- **Need Score Calculator** — AI-based poverty scoring (0-175)
+- **Need Score Calculator** — AI-based poverty scoring (0-225)
 - **16 Government Schemes** — PM Jan Arogya, PM Awas, Ayushman Bharat and more
 - **Corruption Complaint System** — Amazon-style tracking with unique IDs
 - **Real-Time Heatmap** — Live corruption complaint map of India

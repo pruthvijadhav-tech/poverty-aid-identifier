@@ -96,23 +96,19 @@ def test_score_max_realistic_case():
     data = base_data(
         age_group='child', income='2000', family_size='6', housing='homeless',
         electricity='no', ration='no', medical='emergency', accident='yes',
-        earning_member_died='yes'
+        earning_member_died='yes', widow_status='yes'
     )
     score = calculate_score(data)
-    assert score == 30 + 40 + 20 + 20 + 10 + 10 + 30 + 25 + 25  # 210
-    assert score <= 175 or True  # NOTE: see test_score_can_exceed_documented_max below
+    assert score == 30 + 40 + 20 + 20 + 10 + 10 + 30 + 25 + 25 + 15  # 225
+    assert score <= 225
 
 
-def test_score_can_exceed_documented_max():
+def test_score_max_possible():
     """
-    Your UI says 'Max AI Need Score: 175' (see home.html stats section),
-    but the true ceiling of calculate_score() is 210 (see test above).
-    This test documents that mismatch so it doesn't silently resurface —
-    either fix the score-bar cap in index.html or update the '175' label.
+    Max AI Need Score is 225.
     """
-    max_possible = 30 + 40 + 20 + 20 + 10 + 10 + 30 + 25 + 25
-    assert max_possible == 210
-    assert max_possible != 175  # documents the current UI/logic mismatch
+    max_possible = 30 + 40 + 20 + 20 + 10 + 10 + 30 + 25 + 25 + 15
+    assert max_possible == 225
 
 
 # ---------- get_priority ----------

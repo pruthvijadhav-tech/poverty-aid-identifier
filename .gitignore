@@ -6,4 +6,7 @@ __pycache__/
 .flask_session/
 poverty_model.pkl
 *.pdf
-static/uploads/
+static/uploads/
+venv/
+.venv/
+.pytest_cache/

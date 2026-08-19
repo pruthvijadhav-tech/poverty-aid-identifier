@@ -401,9 +401,9 @@
                 </div>
             </div>
             <div class="result-body">
-                <div class="score-label">Need Score: {{ score }} / 175</div>
+                <div class="score-label">Need Score: {{ score }} / 225</div>
                 <div class="score-bar no-print">
-                    <div class="score-fill" style="width: {{ [((score / 175 * 100) | int), 100] | min }}%"></div>
+                    <div class="score-fill" style="width: {{ [((score / 225 * 100) | int), 100] | min }}%"></div>
                 </div>
                 <div class="schemes-title">
                     {% if lang == 'hi' %}आप जिन योजनाओं के पात्र हैं{% elif lang == 'mr' %}तुम्ही पात्र असलेल्या योजना{% else %}Schemes You Are Eligible For{% endif %}
@@ -1124,7 +1124,7 @@ function tryOfflineSubmit() {
     };
 
     const result = checkEligibilityOffline(data);
-    document.getElementById('offlineScoreNum').innerText = result.score + ' / 175';
+    document.getElementById('offlineScoreNum').innerText = result.score + ' / 225';
     document.getElementById('offlinePriorityText').innerText = result.priority;
     const list = document.getElementById('offlineSchemesList');
     list.innerHTML = '';

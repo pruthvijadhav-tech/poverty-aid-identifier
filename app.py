@@ -1025,7 +1025,7 @@ def build_profile_context(profile, lang='en'):
     if profile.get('state'):
         lines.append(f"{F['state']}: {profile['state']}")
     if profile.get('score') is not None:
-        lines.append(f"{F['score']}: {profile['score']} / 175")
+        lines.append(f"{F['score']}: {profile['score']} / 225")
     if profile.get('priority'):
         lines.append(f"{F['priority']}: {profile['priority']}")
 
@@ -1074,7 +1074,7 @@ def explain_need_score(profile, lang='en'):
             'accident': "Recent accident (+25 pts)",
             'earning_died': "Family's earning member passed away recently (+25 pts)",
             'widow': "Widow status (+15 pts) — a recognized vulnerability factor",
-            'header': "Your Need Score is {score}/175 because of:",
+            'header': "Your Need Score is {score}/225 because of:",
             'footer': "A higher score means higher priority for urgent government help.",
         },
         'hi': {
@@ -1097,7 +1097,7 @@ def explain_need_score(profile, lang='en'):
             'accident': "हाल की दुर्घटना (+25 अंक)",
             'earning_died': "परिवार के कमाने वाले सदस्य का हाल में निधन (+25 अंक)",
             'widow': "विधवा स्थिति (+15 अंक) — एक मान्यता प्राप्त संवेदनशील कारक",
-            'header': "आपका Need Score {score}/175 है क्योंकि:",
+            'header': "आपका Need Score {score}/225 है क्योंकि:",
             'footer': "अधिक स्कोर का मतलब है तत्काल सरकारी मदद के लिए उच्च प्राथमिकता।",
         },
         'mr': {
@@ -1120,7 +1120,7 @@ def explain_need_score(profile, lang='en'):
             'accident': "अलीकडील अपघात (+25 गुण)",
             'earning_died': "कुटुंबातील कमावत्या सदस्याचे नुकतेच निधन (+25 गुण)",
             'widow': "विधवा स्थिती (+15 गुण) — एक मान्यताप्राप्त असुरक्षितता घटक",
-            'header': "तुमचा Need Score {score}/175 आहे कारण:",
+            'header': "तुमचा Need Score {score}/225 आहे कारण:",
             'footer': "जास्त स्कोअर म्हणजे तातडीच्या सरकारी मदतीसाठी जास्त प्राधान्य.",
         },
     }
@@ -1933,6 +1933,7 @@ def index():
 
         session['profile'] = {
             'name': person_name,
+            'phone': phone,
             'gender': gender,
             'widow': widow,
             'age_group': request.form.get('age_group', ''),
@@ -1989,16 +1990,17 @@ def index():
         return redirect(url_for('index', lang=lang))
 
     # Pull the calculated values out of the session safely.
-    # FIX: use pop() (not get()) for every result-related key so the data
-    # is shown exactly once and then wiped — otherwise the next visit to
-    # /eligibility (fresh form) re-displays the previous person's result.
+    # FIX: use pop() (not get()) only for assessment_results_ready flag so the
+    # results block is shown exactly once, but keep the actual user details and
+    # matched schemes in the session so they are available on other pages,
+    # such as the corruption reporting form (/corruption).
     results_ready = session.pop('assessment_results_ready', False)
-    schemes = session.pop('schemes', [])
-    score = session.pop('score', 0)
-    result = session.pop('result', None)
-    person_name = session.pop('person_name', '')
-    session.pop('phone', None)
-    session.pop('address', None)
+    schemes = session.get('schemes', [])
+    score = session.get('score', 0)
+    result = session.get('result', None)
+    person_name = session.get('person_name', '')
+    phone = session.get('phone', '')
+    address = session.get('address', '')
 
     if not results_ready:
         # No fresh submission — always show a blank form, never stale data.
@@ -2030,15 +2032,21 @@ def corruption():
     tracking_id = None
     duplicate_notice = False
     lang = request.args.get('lang', session.get('lang', 'en'))
+    
+    # Retrieve schemes from session, fallback to profile if needed
     schemes = session.get('schemes', [])
+    if not schemes and 'profile' in session and 'schemes' in session['profile']:
+        schemes = [(sc.get('key'), sc.get('urgency'), sc.get('name'), sc.get('amount')) for sc in session['profile']['schemes']]
+        
     report = None
     ip = get_client_ip()
     if request.method == 'POST':
         action = request.form.get('action')
         lang = request.form.get('lang', 'en')
         if action == 'submit_report':
+            reporter_phone = session.get('phone') or session.get('profile', {}).get('phone', '')
             existing_id = find_recent_similar_complaint(
-                session.get('phone', ''), request.form.get('scheme'),
+                reporter_phone, request.form.get('scheme'),
                 request.form.get('official_name'), request.form.get('description')
             )
             if existing_id:
@@ -2073,6 +2081,8 @@ def corruption():
                 longitude = float(lng_str) if lng_str else None
                 geotag_verified = 1 if (latitude is not None and longitude is not None) else 0
 
+                reporter_name = session.get('person_name') or session.get('profile', {}).get('name', '')
+                reporter_address = session.get('address') or session.get('profile', {}).get('address', '')
                 conn = get_db_connection()
                 conn.execute('''INSERT INTO reports
                     (tracking_id, person_name, phone, address, scheme,
@@ -2081,9 +2091,9 @@ def corruption():
                     filed_date, expected_resolution, lang, proof_file, latitude, longitude, geotag_verified)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                     (tracking_id,
-                    session.get('person_name', ''),
-                    session.get('phone', ''),
-                    session.get('address', ''),
+                    reporter_name,
+                    reporter_phone,
+                    reporter_address,
                     request.form.get('scheme'),
                     request.form.get('entitled_amount'),
                     request.form.get('received_amount'),
@@ -3027,7 +3037,7 @@ You help citizens with:
 2. Documents needed for each scheme
 3. How to apply for schemes
 4. Corruption reporting — citizens can file complaints at /corruption and track with tracking ID
-5. How the AI Need Score works (0-175 points across 9 parameters)
+5. How the AI Need Score works (0-225 points across 9 parameters)
 
 Rules:
 - Keep answers short and clear — max 4-5 lines, use bullet points for lists/steps
@@ -3206,7 +3216,7 @@ def get_fallback_answer(question, lang='en', profile=None):
             'ayushman': "Ayushman Bharat gives free health insurance up to Rs.5 lakh per year.\n\nDocuments needed:\n• Aadhaar Card\n• Ration Card\n• SECC Certificate\n\nJust visit any empanelled hospital and show your Aadhaar.\nHelpline: 14555",
             'pension': "Old Age Pension (IGNOAPS) gives Rs.200-500 per month to elderly BPL citizens aged 60+.\n\nDocuments needed:\n• Aadhaar Card\n• Age proof\n• BPL Certificate\n• Bank details\n\nApply at Gram Panchayat or Block Office.\nHelpline: 1800-111-555",
             'corruption': "To report corruption:\n1. Go to our app and click 'Report Corruption'\n2. Fill officer name, scheme, amount demanded\n3. You get a tracking ID like PAI-2026-XXXX\n4. Track status: Filed → Received → Action Taken → Resolved\n\nYou can also call: 1800-11-0001",
-            'score': "The AI Need Score is calculated from 9 parameters:\n• Income (40 pts)\n• Medical condition (30 pts)\n• Accident (25 pts)\n• Earning member death (25 pts)\n• Age group (30 pts)\n• Housing (20 pts)\n• Family size (20 pts)\n• Electricity (10 pts)\n• Ration card (10 pts)\n\nMaximum score: 175 points",
+            'score': "The AI Need Score is calculated from 9 parameters:\n• Income (40 pts)\n• Medical condition (30 pts)\n• Accident (25 pts)\n• Earning member death (25 pts)\n• Age group (30 pts)\n• Housing (20 pts)\n• Family size (20 pts)\n• Electricity (10 pts)\n• Ration card (10 pts)\n\nMaximum score: 225 points",
             'ration': "Antyodaya Anna Yojana gives 35 kg free food grains per month to the poorest BPL families.\n\nDocuments: Aadhaar + Ration Card\nApply at nearest Food Department office.\nHelpline: 1800-111-001",
             'default': "I can help you with:\n• PM Awas Yojana (housing)\n• Ayushman Bharat (health)\n• Old Age / Widow Pension\n• Ration schemes\n• Corruption reporting\n• How to apply for any scheme\n\nWhat would you like to know?"
         },
@@ -3256,6 +3266,7 @@ def ml_metrics_api():
             data = json.load(f)
         return jsonify({'success': True, 'metrics': data})
     return jsonify({'success': False, 'message': 'Model metrics not found. Run ml_scoring.py.'})
+
 
 if __name__ == '__main__':
 

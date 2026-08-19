@@ -1,6 +1,6 @@
 
 
-const CACHE_NAME = 'pai-offline-v2';
+const CACHE_NAME = 'pai-offline-v4';
 const CACHE_URLS = [
   '/',
   '/home',
