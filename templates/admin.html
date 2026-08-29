@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+<<<<<<< HEAD
         :root {
             --navy-950: #f1f5f9;
             --navy-900: #ffffff;
@@ -31,15 +32,23 @@
         body { font-family: 'Inter', Arial, sans-serif; background: var(--navy-950); color: var(--text-main); min-height: 100vh; }
         a { color: inherit; }
         button, select, input { font-family: inherit; }
+=======
+        body { font-family: 'Inter', Arial, sans-serif; background: #0a0e1a; color: #e2e8f0; min-height: 100vh; }
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
 
         /* ── TOP TRICOLOR BAR ── */
         .top-bar { background: linear-gradient(90deg, #FF9933 33%, #ffffff 33%, #ffffff 66%, #138808 66%); height: 4px; }
 
         /* ── HEADER ── */
         .header {
+<<<<<<< HEAD
             background: var(--navy-900);
             border-bottom: 1px solid var(--border-soft);
             box-shadow: 0 1px 3px rgba(15,23,42,0.05);
+=======
+            background: linear-gradient(135deg, #0d1b3e 0%, #112266 100%);
+            border-bottom: 1px solid rgba(255,153,51,0.3);
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
             padding: 14px 28px;
             display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
         }
@@ -50,6 +59,7 @@
             background-size: cover;
             display: flex; align-items: center; justify-content: center;
             font-weight: 800; font-size: 16px; color: white; letter-spacing: -1px;
+<<<<<<< HEAD
             box-shadow: 0 0 0 1px var(--border-soft);
         }
         .header-left h1 { font-size: 17px; font-weight: 700; color: var(--text-main); }
@@ -79,10 +89,40 @@
             background: var(--navy-900);
             border-bottom: 1px solid var(--border-soft);
             box-shadow: 0 1px 2px rgba(15,23,42,0.03);
+=======
+        }
+        .header-left h1 { font-size: 17px; font-weight: 700; color: white; }
+        .header-left p { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+        .header-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+        .live-badge {
+            background: rgba(19,136,8,0.2); border: 1px solid #138808;
+            color: #4ade80; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
+            animation: pulse 2s infinite; display: flex; align-items: center; gap: 6px;
+        }
+        .live-badge::before { content:''; width:7px; height:7px; border-radius:50%; background:#4ade80; display:inline-block; }
+        @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.7} }
+        .admin-pill {
+            background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 24px; padding: 6px 16px; font-size: 13px; color: white; font-weight: 600;
+        }
+        .role-badge { background: #FF9933; color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; margin-left: 6px; }
+        .logout-btn {
+            padding: 8px 18px; background: linear-gradient(135deg,#c62828,#b71c1c);
+            color: white; border: none; border-radius: 8px; font-size: 13px; cursor: pointer;
+            text-decoration: none; font-weight: 700; transition: all 0.2s;
+        }
+        .logout-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(198,40,40,0.4); }
+
+        /* ── NAV TABS ── */
+        .nav-tabs {
+            background: #0d1b3e;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
             display: flex; overflow-x: auto; padding: 0 20px;
         }
         .nav-tabs::-webkit-scrollbar { height: 3px; }
         .nav-tabs::-webkit-scrollbar-track { background: transparent; }
+<<<<<<< HEAD
         .nav-tabs::-webkit-scrollbar-thumb { background: var(--blue); border-radius: 3px; }
         .nav-tab {
             padding: 14px 22px; color: var(--text-dim); cursor: pointer;
@@ -93,11 +133,22 @@
         .nav-tab.active { color: var(--blue); border-bottom: 3px solid var(--blue); background: rgba(37,99,235,0.06); }
         .nav-tab:hover, .nav-tab:focus-visible { color: var(--text-main); background: var(--navy-800); outline: none; }
         .nav-tab:focus-visible { box-shadow: inset 0 0 0 2px rgba(37,99,235,0.5); }
+=======
+        .nav-tabs::-webkit-scrollbar-thumb { background: #FF9933; border-radius: 3px; }
+        .nav-tab {
+            padding: 14px 22px; color: rgba(255,255,255,0.45); cursor: pointer;
+            font-size: 13px; font-weight: 600; border-bottom: 3px solid transparent;
+            white-space: nowrap; transition: all 0.2s; display: flex; align-items: center; gap: 7px;
+        }
+        .nav-tab.active { color: #FF9933; border-bottom: 3px solid #FF9933; }
+        .nav-tab:hover { color: rgba(255,255,255,0.85); }
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
 
         /* ── LAYOUT ── */
         .container { max-width: 1340px; margin: 0 auto; padding: 22px 20px; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+<<<<<<< HEAD
         .section-heading { font-size: 13px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin: 26px 0 12px; display: flex; align-items: center; gap: 8px; }
         .section-heading:first-child { margin-top: 0; }
 
@@ -174,12 +225,42 @@
         .mini-activity-text { color: var(--text-main); }
         .mini-activity-text strong { color: var(--saffron-dark); }
         .mini-activity-time { color: var(--text-faint); font-size: 11px; white-space: nowrap; }
+=======
+
+        /* ── HERO STAT CARDS (Complaints tab) ── */
+        .kpi-row { display: grid; grid-template-columns: repeat(5,1fr); gap: 14px; margin-bottom: 24px; }
+        .kpi-card {
+            background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px; padding: 20px 16px;
+            display: flex; align-items: center; gap: 14px;
+            transition: all 0.3s; backdrop-filter: blur(10px);
+        }
+        .kpi-card:hover { transform: translateY(-3px); border-color: rgba(255,153,51,0.35); box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+        .kpi-icon {
+            width: 46px; height: 46px; border-radius: 12px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center; font-size: 20px;
+        }
+        .kpi-icon.total   { background: rgba(99,102,241,0.2); }
+        .kpi-icon.filed   { background: rgba(255,153,51,0.2); }
+        .kpi-icon.received{ background: rgba(59,130,246,0.2); }
+        .kpi-icon.action  { background: rgba(168,85,247,0.2); }
+        .kpi-icon.resolved{ background: rgba(34,197,94,0.2); }
+        .kpi-num { font-size: 28px; font-weight: 800; line-height: 1; }
+        .kpi-num.total    { color: #a78bfa; }
+        .kpi-num.filed    { color: #FB923C; }
+        .kpi-num.received { color: #60a5fa; }
+        .kpi-num.action   { color: #c084fc; }
+        .kpi-num.resolved { color: #4ade80; }
+        .kpi-lbl { font-size: 11px; color: rgba(255,255,255,0.45); font-weight: 600; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
 
         /* ── ALERT BANNER ── */
         .alert-banner {
             border-radius: 12px; padding: 14px 20px; margin-bottom: 20px;
             display: flex; align-items: center; gap: 14px;
         }
+<<<<<<< HEAD
         .alert-banner.danger { background: #fee2e2; border: 1px solid #fca5a5; }
         .alert-banner.success { background: #dcfce7; border: 1px solid #86efac; }
         .alert-banner-text h4 { font-size: 14px; margin-bottom: 3px; }
@@ -284,34 +365,133 @@
         .suspicious-badge { background: rgba(220,38,38,0.1); color: var(--red); padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; border: 1px solid rgba(220,38,38,0.3); }
         .normal-badge     { background: rgba(22,163,74,0.1); color: var(--green-light); padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; border: 1px solid rgba(22,163,74,0.3); }
         .verified-badge   { background: rgba(22,163,74,0.1); color: var(--green-light); padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; border: 1px solid rgba(22,163,74,0.3); }
+=======
+        .alert-banner.danger { background: rgba(198,40,40,0.15); border: 1px solid rgba(198,40,40,0.4); }
+        .alert-banner.success { background: rgba(19,136,8,0.12); border: 1px solid rgba(19,136,8,0.35); }
+        .alert-banner-text h4 { font-size: 14px; margin-bottom: 3px; }
+        .alert-banner.danger h4 { color: #f87171; }
+        .alert-banner.success h4 { color: #4ade80; }
+        .alert-banner-text p { font-size: 12px; color: rgba(255,255,255,0.55); }
+
+        /* ── FILTER BAR ── */
+        .filter-bar {
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+            padding: 12px 18px; border-radius: 12px; margin-bottom: 18px;
+            display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+        }
+        .filter-bar span { font-weight: 700; color: rgba(255,255,255,0.6); font-size: 13px; }
+        .filter-btn {
+            padding: 6px 16px; border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.15); background: transparent;
+            cursor: pointer; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.55);
+            text-decoration: none; transition: all 0.2s;
+        }
+        .filter-btn:hover { border-color: rgba(255,153,51,0.5); color: #FF9933; }
+        .filter-btn.active { background: #FF9933; color: white; border-color: #FF9933; }
+        .filter-btn.fake-btn { border-color: rgba(248,113,113,0.4); color: #f87171; }
+        .filter-btn.fake-btn.active { background: #c62828; color: white; border-color: #c62828; }
+
+        /* ── TABLE CARD ── */
+        .table-card {
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 14px; overflow: hidden; margin-bottom: 20px;
+        }
+        .table-header {
+            padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+        .table-header.navy { background: rgba(13,27,62,0.8); }
+        .table-header.red { background: rgba(198,40,40,0.3); }
+        .table-header.dark { background: rgba(0,0,60,0.5); }
+        .table-header h3 { font-size: 14px; font-weight: 700; color: white; }
+        .table-header p { font-size: 11px; color: rgba(255,255,255,0.4); }
+        .confidential-notice {
+            background: rgba(255,153,51,0.08); border-left: 3px solid #FF9933;
+            padding: 9px 18px; font-size: 12px; color: rgba(255,153,51,0.85); font-weight: 600;
+        }
+        .confidential-notice.red { background: rgba(198,40,40,0.1); border-left-color: #f87171; color: #f87171; }
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 860px; }
+        thead { background: rgba(255,255,255,0.04); }
+        th { padding: 11px 14px; text-align: left; font-size: 11px; color: rgba(255,153,51,0.8); font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.07); white-space: nowrap; text-transform: uppercase; letter-spacing: 0.5px; }
+        td { padding: 11px 14px; font-size: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; color: rgba(255,255,255,0.8); }
+        tr:hover td { background: rgba(255,255,255,0.03); }
+        tr:last-child td { border-bottom: none; }
+        tr.fake-row td { background: rgba(198,40,40,0.06); }
+        tr.suspicious-row td { background: rgba(248,113,113,0.06); }
+
+        .tracking-id { font-weight: 700; color: #60a5fa; font-size: 12px; letter-spacing: 1px; font-family: monospace; }
+        .person-name { font-weight: 700; color: #e2e8f0; }
+        .person-phone { color: #4ade80; font-size: 11px; margin-top: 2px; }
+        .person-address { color: rgba(255,255,255,0.4); font-size: 11px; margin-top: 2px; max-width: 150px; }
+        .scheme-cell { max-width: 160px; font-size: 12px; }
+        .officer-cell { font-size: 11px; color: rgba(255,255,255,0.5); max-width: 140px; }
+        .date-cell { font-size: 11px; color: rgba(255,255,255,0.4); white-space: nowrap; }
+        .amount-entitled { color: #4ade80; font-weight: 700; font-size: 12px; }
+        .amount-received { color: #f87171; font-weight: 700; font-size: 12px; }
+        .amount-diff { color: #FB923C; font-size: 11px; }
+
+        /* ── STATUS & RISK BADGES ── */
+        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+        .status-Filed     { background: rgba(251,146,60,0.15); color: #FB923C; border: 1px solid rgba(251,146,60,0.3); }
+        .status-Received  { background: rgba(96,165,250,0.15); color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); }
+        .status-ActionTaken { background: rgba(192,132,252,0.15); color: #c084fc; border: 1px solid rgba(192,132,252,0.3); }
+        .status-Resolved  { background: rgba(74,222,128,0.15); color: #4ade80; border: 1px solid rgba(74,222,128,0.3); }
+        .fake-badge { background: rgba(248,113,113,0.15); color: #f87171; padding: 3px 8px; border-radius: 8px; font-size: 10px; font-weight: 700; display: block; margin-top: 3px; border: 1px solid rgba(248,113,113,0.3); }
+        .risk-high { background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.4); padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+        .risk-med  { background: rgba(251,146,60,0.2); color: #FB923C; border: 1px solid rgba(251,146,60,0.4); padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+        .suspicious-badge { background: rgba(248,113,113,0.15); color: #f87171; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; border: 1px solid rgba(248,113,113,0.3); }
+        .normal-badge     { background: rgba(74,222,128,0.15); color: #4ade80; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; border: 1px solid rgba(74,222,128,0.3); }
+        .verified-badge   { background: rgba(74,222,128,0.15); color: #4ade80; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; border: 1px solid rgba(74,222,128,0.3); }
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
 
         /* ── UPDATE FORM ── */
         .update-form { display: flex; gap: 6px; align-items: center; }
         .status-select {
+<<<<<<< HEAD
             padding: 5px 8px; border: 1px solid var(--border-soft); border-radius: 6px;
             font-size: 11px; background: var(--card-bg); color: var(--text-main);
         }
         .status-select:focus { outline: 2px solid var(--blue); outline-offset: 1px; }
         .update-btn { padding: 5px 12px; background: var(--saffron); color: white; border: none; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 700; transition: all 0.2s; }
         .update-btn:hover, .update-btn:focus-visible { background: var(--saffron-dark); }
+=======
+            padding: 5px 8px; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px;
+            font-size: 11px; background: rgba(255,255,255,0.06); color: #e2e8f0;
+        }
+        .update-btn { padding: 5px 12px; background: #FF9933; color: white; border: none; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 700; transition: all 0.2s; }
+        .update-btn:hover { background: #e65c00; }
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
 
         /* ── ANALYTICS: chart panels ── */
         .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 20px; }
         .chart-card {
+<<<<<<< HEAD
             background: var(--card-bg); border: 1px solid var(--border-soft);
             border-radius: 16px; padding: 22px; position: relative; overflow: hidden;
             box-shadow: 0 1px 3px rgba(15,23,42,0.05);
+=======
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px; padding: 22px; position: relative; overflow: hidden;
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
         }
         .chart-card::before {
             content:''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
         }
+<<<<<<< HEAD
         .chart-card.bar-card::before  { background: linear-gradient(90deg,var(--saffron),var(--saffron-dark)); }
         .chart-card.doughnut-card::before { background: linear-gradient(90deg,var(--green),var(--green-light)); }
         .chart-title { font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+=======
+        .chart-card.bar-card::before  { background: linear-gradient(90deg,#FF9933,#FB923C); }
+        .chart-card.doughnut-card::before { background: linear-gradient(90deg,#138808,#4ade80); }
+        .chart-title { font-size: 14px; font-weight: 700; color: white; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
         .chart-container { position: relative; height: 280px; }
 
         /* ── ANALYTICS: side summary ── */
         .analytics-summary {
+<<<<<<< HEAD
             background: var(--card-bg); border: 1px solid var(--border-soft);
             border-radius: 14px; padding: 20px; margin-top: 18px;
             box-shadow: 0 1px 3px rgba(15,23,42,0.04);
@@ -320,10 +500,20 @@
         .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-soft); }
         .summary-row:last-child { border-bottom: none; }
         .summary-label { font-size: 12px; color: var(--text-dim); }
+=======
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 14px; padding: 20px; margin-top: 18px;
+        }
+        .summary-title { font-size: 13px; font-weight: 700; color: rgba(255,255,51,0.8); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .summary-row:last-child { border-bottom: none; }
+        .summary-label { font-size: 12px; color: rgba(255,255,255,0.55); }
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
         .summary-val { font-size: 14px; font-weight: 700; }
 
         /* ── LOG STYLES ── */
         .log-action { font-weight: 700; font-size: 11px; }
+<<<<<<< HEAD
         .log-normal  { color: var(--green-light); }
         .log-warning { color: var(--saffron-dark); }
         .log-danger  { color: var(--red); }
@@ -370,6 +560,29 @@
             .today-row { grid-template-columns: 1fr 1fr; }
             .header { flex-direction: column; }
             .adv-filter-field input, .adv-filter-field select { min-width: 110px; }
+=======
+        .log-normal  { color: #4ade80; }
+        .log-warning { color: #FB923C; }
+        .log-danger  { color: #f87171; }
+
+        /* ── MISC ── */
+        .no-data { text-align: center; padding: 50px 20px; color: rgba(255,255,255,0.3); font-size: 14px; }
+        .no-data.green { color: #4ade80; font-weight: 700; }
+        .top-links { display: flex; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; align-items: center; }
+        .back-link { color: #60a5fa; text-decoration: none; font-size: 13px; font-weight: 700; transition: color 0.2s; }
+        .back-link:hover { color: #93c5fd; }
+        .heatmap-link { color: #FB923C; text-decoration: none; font-size: 13px; font-weight: 700; transition: color 0.2s; }
+        .heatmap-link:hover { color: #FF9933; }
+        .footer { text-align: center; padding: 24px; color: rgba(255,255,255,0.25); font-size: 11px; margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.06); }
+
+        @media (max-width: 900px) {
+            .kpi-row { grid-template-columns: repeat(2,1fr); }
+            .analytics-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 600px) {
+            .kpi-row { grid-template-columns: 1fr 1fr; }
+            .header { flex-direction: column; }
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
         }
     </style>
 </head>
@@ -393,6 +606,7 @@
     </div>
 </div>
 
+<<<<<<< HEAD
 <div class="nav-tabs" role="tablist" aria-label="Admin dashboard sections">
     <button class="nav-tab active" role="tab" aria-selected="true" aria-controls="tab-overview" onclick="showTab('overview', this)">🏠 Overview</button>
     <button class="nav-tab" role="tab" aria-selected="false" aria-controls="tab-complaints" onclick="showTab('complaints', this)">📋 Complaints ({{ total }})</button>
@@ -404,6 +618,18 @@
     <button class="nav-tab" role="tab" aria-selected="false" aria-controls="tab-alerts" style="{% if suspicious_count > 0 %}color:#c2410c;{% endif %}" onclick="showTab('alerts', this)">
         🚨 Security Alerts {% if suspicious_count > 0 %}({{ suspicious_count }}){% endif %}
     </button>
+=======
+<div class="nav-tabs">
+    <div class="nav-tab active" onclick="showTab('complaints', this)">📋 Complaints ({{ total }})</div>
+    <div class="nav-tab" onclick="showTab('analytics', this)">📊 Analytics</div>
+    <div class="nav-tab" onclick="showTab('fraud', this)">🔍 Fraud Detection</div>
+    <div class="nav-tab" onclick="showTab('ledger', this)" style="{% if not ledger_valid %}color:#FB923C;{% endif %}">🔒 Ledger Integrity {% if not ledger_valid %}⚠️{% endif %}</div>
+    <div class="nav-tab" onclick="showTab('activity', this)">📝 Activity Log</div>
+    <div class="nav-tab" onclick="showTab('ml-model', this)">🤖 AI/ML Model</div>
+    <div class="nav-tab" onclick="showTab('alerts', this)" style="{% if suspicious_count > 0 %}color:#FF9933;{% endif %}">
+        🚨 Security Alerts {% if suspicious_count > 0 %}({{ suspicious_count }}){% endif %}
+    </div>
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
 </div>
 
 <div class="container">
@@ -412,6 +638,7 @@
         <a href="/heatmap" class="heatmap-link">🗺️ View Corruption Heatmap</a>
     </div>
 
+<<<<<<< HEAD
     <!-- ═══════════ TAB: OVERVIEW ═══════════ -->
     <div class="tab-content active" id="tab-overview" role="tabpanel">
 
@@ -429,10 +656,22 @@
             <div class="alert-banner-text">
                 <h4>No Security Alerts</h4>
                 <p>No suspicious access attempts have been detected.</p>
+=======
+    <!-- ═══════════ TAB: COMPLAINTS ═══════════ -->
+    <div class="tab-content active" id="tab-complaints">
+
+        {% if suspicious_count > 0 %}
+        <div class="alert-banner danger">
+            <div style="font-size:26px;">⚠️</div>
+            <div class="alert-banner-text">
+                <h4>Security Alert — {{ suspicious_count }} Suspicious Activities Detected</h4>
+                <p>Someone tried to access confidential data without authorization. Check Security Alerts tab for details.</p>
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
             </div>
         </div>
         {% endif %}
 
+<<<<<<< HEAD
         <div class="section-heading">📊 System Snapshot</div>
         <div class="kpi-row">
             <div class="kpi-card">
@@ -593,15 +832,53 @@
             <a href="/admin?filter=Action Taken&q={{ search_q | urlencode }}&scheme={{ scheme_filter | urlencode }}&location={{ location_filter | urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&sort={{ sort_by }}" class="filter-btn {% if filter_status == 'Action Taken' %}active{% endif %}">Action Taken ({{ action }})</a>
             <a href="/admin?filter=Resolved&q={{ search_q | urlencode }}&scheme={{ scheme_filter | urlencode }}&location={{ location_filter | urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&sort={{ sort_by }}" class="filter-btn {% if filter_status == 'Resolved' %}active{% endif %}">Resolved ({{ resolved }})</a>
             <a href="/admin?filter=Fake&q={{ search_q | urlencode }}&scheme={{ scheme_filter | urlencode }}&location={{ location_filter | urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&sort={{ sort_by }}" class="filter-btn fake-btn {% if filter_status == 'Fake' %}active{% endif %}">⚠ Fake ({{ fake_count }})</a>
+=======
+        <div class="kpi-row">
+            <div class="kpi-card">
+                <div class="kpi-icon total">📊</div>
+                <div><div class="kpi-num total">{{ total }}</div><div class="kpi-lbl">Total</div></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon filed">📝</div>
+                <div><div class="kpi-num filed">{{ filed }}</div><div class="kpi-lbl">Filed</div></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon received">📬</div>
+                <div><div class="kpi-num received">{{ received }}</div><div class="kpi-lbl">Received</div></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon action">⚡</div>
+                <div><div class="kpi-num action">{{ action }}</div><div class="kpi-lbl">Action Taken</div></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon resolved">✅</div>
+                <div><div class="kpi-num resolved">{{ resolved }}</div><div class="kpi-lbl">Resolved</div></div>
+            </div>
+        </div>
+
+        <div class="filter-bar">
+            <span>Filter:</span>
+            <a href="/admin?filter=All" class="filter-btn {% if filter_status == 'All' %}active{% endif %}">All ({{ total }})</a>
+            <a href="/admin?filter=Filed" class="filter-btn {% if filter_status == 'Filed' %}active{% endif %}">Filed ({{ filed }})</a>
+            <a href="/admin?filter=Received" class="filter-btn {% if filter_status == 'Received' %}active{% endif %}">Received ({{ received }})</a>
+            <a href="/admin?filter=Action Taken" class="filter-btn {% if filter_status == 'Action Taken' %}active{% endif %}">Action Taken ({{ action }})</a>
+            <a href="/admin?filter=Resolved" class="filter-btn {% if filter_status == 'Resolved' %}active{% endif %}">Resolved ({{ resolved }})</a>
+            <a href="/admin?filter=Fake" class="filter-btn fake-btn {% if filter_status == 'Fake' %}active{% endif %}">⚠ Fake ({{ fake_count }})</a>
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
         </div>
 
         <div class="table-card">
             <div class="table-header navy">
+<<<<<<< HEAD
                 <div>
                     <h3>All Complaints</h3>
                     <p>{{ reports|length }} record{{ 's' if reports|length != 1 else '' }} shown — {{ now }}</p>
                 </div>
                 <a class="export-link" href="/admin/export?filter={{ filter_status }}&q={{ search_q | urlencode }}&scheme={{ scheme_filter | urlencode }}&location={{ location_filter | urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&sort={{ sort_by }}">⬇ Export CSV</a>
+=======
+                <h3>All Complaints</h3>
+                <p>{{ reports|length }} records — {{ now }}</p>
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
             </div>
             <div class="confidential-notice">🔒 CONFIDENTIAL — Complainant details visible only to authorized officers. All access is logged.</div>
             {% if reports %}
@@ -644,17 +921,25 @@
                         <td><div class="officer-cell">{{ r['assigned_officer'] }}</div></td>
                         <td><div class="date-cell">{{ r['filed_date'] }}</div></td>
                         <td>
+<<<<<<< HEAD
                             <span class="status-badge status-{{ r['status'].replace(' ', '') }}">
                                 {% if r['status'] == 'Resolved' %}✓{% elif r['status'] == 'Action Taken' %}◐{% elif r['status'] == 'Received' %}●{% else %}○{% endif %}
                                 {{ r['status'] }}
                             </span>
+=======
+                            <span class="status-badge status-{{ r['status'].replace(' ', '') }}">{{ r['status'] }}</span>
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
                         </td>
                         <td>
                             <form method="POST" action="/admin">
                                 <input type="hidden" name="tracking_id" value="{{ r['tracking_id'] }}"/>
                                 <div class="update-form">
+<<<<<<< HEAD
                                     <label for="upd-{{ r['tracking_id'] }}" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Update status for {{ r['tracking_id'] }}</label>
                                     <select id="upd-{{ r['tracking_id'] }}" name="new_status" class="status-select">
+=======
+                                    <select name="new_status" class="status-select">
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
                                         <option value="Filed" {% if r['status'] == 'Filed' %}selected{% endif %}>Filed</option>
                                         <option value="Received" {% if r['status'] == 'Received' %}selected{% endif %}>Received</option>
                                         <option value="Action Taken" {% if r['status'] == 'Action Taken' %}selected{% endif %}>Action Taken</option>
@@ -669,6 +954,7 @@
                 </tbody>
             </table>
             </div>
+<<<<<<< HEAD
             {% elif total == 0 %}
             <div class="no-data">
                 <span class="no-data-icon" aria-hidden="true">📭</span>
@@ -682,13 +968,21 @@
                 Try adjusting your search or filters.
                 <div><a class="clear-link" href="/admin">Clear Filters</a></div>
             </div>
+=======
+            {% else %}
+            <div class="no-data">No complaints found for this filter.</div>
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
             {% endif %}
         </div>
     </div>
 
     <!-- ═══════════ TAB: ANALYTICS ═══════════ -->
+<<<<<<< HEAD
     <div class="tab-content" id="tab-analytics" role="tabpanel">
         {% if total > 0 %}
+=======
+    <div class="tab-content" id="tab-analytics">
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
         <div class="analytics-grid">
             <div class="chart-card bar-card">
                 <div class="chart-title">📊 Complaint Resolution Trends</div>
@@ -707,6 +1001,7 @@
             <div class="summary-title">📈 Recent Complaints Overview</div>
             <div class="summary-row">
                 <span class="summary-label">Total Complaints Filed</span>
+<<<<<<< HEAD
                 <span class="summary-val" style="color:#c2410c;">{{ total }}</span>
             </div>
             <div class="summary-row">
@@ -739,6 +1034,33 @@
             <div class="table-header red">
                 <h3>🔍 Flagged Suspicious Activity (High Risk)</h3>
                 <p>Profiles with conflicting demographic entries detected by the fraud-fingerprint check</p>
+=======
+                <span class="summary-val" style="color:#FB923C;">{{ total }}</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">Resolved Successfully</span>
+                <span class="summary-val" style="color:#4ade80;">{{ resolved }}</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">Pending / In Progress</span>
+                <span class="summary-val" style="color:#c084fc;">{{ (total|int - resolved|int) }}</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">Resolution Rate</span>
+                <span class="summary-val" style="color:#60a5fa;">
+                    {% if total > 0 %}{{ ((resolved / total) * 100)|round(1) }}%{% else %}N/A{% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ TAB: FRAUD DETECTION ═══════════ -->
+    <div class="tab-content" id="tab-fraud">
+        <div class="table-card" style="margin-top:10px;">
+            <div class="table-header red">
+                <h3>🔍 Flagged Suspicious Activity (High Risk)</h3>
+                <p>Profiles with conflicting demographic entries detected by AI</p>
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
             </div>
             <div class="confidential-notice red">
                 ⚠️ ALERT — The following phone numbers submitted eligibility forms multiple times with conflicting demographics. This may indicate false claims.
@@ -761,6 +1083,7 @@
                     <tbody>
                         {% for fp in suspicious_fingerprints %}
                         <tr class="fake-row">
+<<<<<<< HEAD
                             <td><span style="font-family:monospace;color:#c2410c;">FLAG-{{ "%04d" | format(loop.index) }}</span></td>
                             <td><strong>{{ fp['phone'] }}</strong></td>
                             <td>{{ fp['ip_address'] }}</td>
@@ -773,6 +1096,20 @@
                                 <span class="risk-high">High</span>
                                 {% else %}
                                 <span class="risk-med">Med</span>
+=======
+                            <td><span style="font-family:monospace;color:#FB923C;">FLAG-{{ "%04d" | format(loop.index) }}</span></td>
+                            <td><strong>{{ fp['phone'] }}</strong></td>
+                            <td>{{ fp['ip_address'] }}</td>
+                            <td>{{ fp['age_group'] }}</td>
+                            <td><strong style="color:#f87171;">₹{{ fp['income'] }}</strong></td>
+                            <td>{{ fp['family_size'] }}</td>
+                            <td><div class="date-cell">{{ fp['submitted_at'] }}</div></td>
+                            <td>
+                                {% if loop.index % 2 == 0 %}
+                                <span class="risk-med">Med</span>
+                                {% else %}
+                                <span class="risk-high">High</span>
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
                                 {% endif %}
                             </td>
                         </tr>
@@ -789,9 +1126,15 @@
     </div>
 
     <!-- ═══════════ TAB: LEDGER INTEGRITY ═══════════ -->
+<<<<<<< HEAD
     <div class="tab-content" id="tab-ledger" role="tabpanel">
         <div class="alert-banner {% if ledger_valid %}success{% else %}danger{% endif %}" style="margin-top:10px;">
             <div style="font-size:28px;" aria-hidden="true">{% if ledger_valid %}🛡️{% else %}🚨{% endif %}</div>
+=======
+    <div class="tab-content" id="tab-ledger">
+        <div class="alert-banner {% if ledger_valid %}success{% else %}danger{% endif %}" style="margin-top:10px;">
+            <div style="font-size:28px;">{% if ledger_valid %}🛡️{% else %}🚨{% endif %}</div>
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
             <div class="alert-banner-text">
                 <h4>{{ ledger_message }}</h4>
                 <p>The Audit Ledger verifies the cryptographic SHA-256 chain of all corruption complaints. If any record is altered in the database, the chain breaks and tampering is detected.</p>
@@ -819,12 +1162,21 @@
                     <tbody>
                         {% for block in ledger_blocks %}
                         <tr>
+<<<<<<< HEAD
                             <td><strong style="color:var(--purple);">#{{ block['id'] }}</strong></td>
                             <td><span class="tracking-id">{{ block['tracking_id'] }}</span></td>
                             <td><span class="status-badge status-{{ block['status'].replace(' ', '') }}">{{ block['status'] }}</span></td>
                             <td><div class="date-cell">{{ block['timestamp'] }}</div></td>
                             <td style="font-family:monospace; font-size:10px; color:var(--text-faint);">{{ block['prev_hash'][:16] }}...</td>
                             <td style="font-family:monospace; font-size:10px; font-weight:700; color:var(--blue);">{{ block['block_hash'][:16] }}...</td>
+=======
+                            <td><strong style="color:#c084fc;">#{{ block['id'] }}</strong></td>
+                            <td><span class="tracking-id">{{ block['tracking_id'] }}</span></td>
+                            <td><span class="status-badge status-{{ block['status'].replace(' ', '') }}">{{ block['status'] }}</span></td>
+                            <td><div class="date-cell">{{ block['timestamp'] }}</div></td>
+                            <td style="font-family:monospace; font-size:10px; color:rgba(255,255,255,0.3);">{{ block['prev_hash'][:16] }}...</td>
+                            <td style="font-family:monospace; font-size:10px; font-weight:700; color:#60a5fa;">{{ block['block_hash'][:16] }}...</td>
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
                             <td><span class="verified-badge">✓ Verified</span></td>
                         </tr>
                         {% endfor %}
@@ -838,7 +1190,11 @@
     </div>
 
     <!-- ═══════════ TAB: ACTIVITY LOG ═══════════ -->
+<<<<<<< HEAD
     <div class="tab-content" id="tab-activity" role="tabpanel">
+=======
+    <div class="tab-content" id="tab-activity">
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
         <div class="table-card">
             <div class="table-header navy">
                 <h3>📝 Recent Activity Log</h3>
@@ -894,6 +1250,7 @@
         </div>
     </div>
 
+<<<<<<< HEAD
     <!-- ═══════════ TAB: AI/ML MODEL ═══════════ -->
     <div class="tab-content" id="tab-ml-model" role="tabpanel">
         <div class="table-card" style="padding: 25px;">
@@ -947,6 +1304,15 @@
             <div style="font-size:26px;" aria-hidden="true">🚨</div>
             <div class="alert-banner-text">
                 <h4>{{ suspicious_count }} Suspicious {{ 'Activity' if suspicious_count == 1 else 'Activities' }} Detected!</h4>
+=======
+    <!-- ═══════════ TAB: SECURITY ALERTS ═══════════ -->
+    <div class="tab-content" id="tab-alerts">
+        {% if suspicious_count > 0 %}
+        <div class="alert-banner danger" style="margin-top:10px;">
+            <div style="font-size:26px;">🚨</div>
+            <div class="alert-banner-text">
+                <h4>{{ suspicious_count }} Suspicious Activities Detected!</h4>
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
                 <p>Full details below — IP address, browser, device, and timestamp. Use IP to trace the person.</p>
             </div>
         </div>
@@ -974,9 +1340,15 @@
                     {% for log in suspicious_logs %}
                     <tr class="suspicious-row">
                         <td><div class="date-cell">{{ log['timestamp'] }}</div></td>
+<<<<<<< HEAD
                         <td><strong style="color:var(--red);">{{ log['username'] }}</strong></td>
                         <td><span class="log-action log-danger">{{ log['action'] }}</span></td>
                         <td><strong style="color:var(--red);">{{ log['ip_address'] }}</strong></td>
+=======
+                        <td><strong style="color:#f87171;">{{ log['username'] }}</strong></td>
+                        <td><span class="log-action log-danger">{{ log['action'] }}</span></td>
+                        <td><strong style="color:#f87171;">{{ log['ip_address'] }}</strong></td>
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
                         <td>{{ log['browser'] }}</td>
                         <td>{{ log['device'] }}</td>
                         <td style="font-size:11px;">{{ log['details'] }}</td>
@@ -994,12 +1366,64 @@
     <div class="footer">
         Poverty Aid Identifier — Admin Panel — Confidential — All access logged and monitored<br>
         Logged in as: <strong>{{ admin_name }}</strong> ({{ admin_role }}) — {{ now }}
+<<<<<<< HEAD
+=======
+    <!-- Tab: AI/ML Model -->
+    <div class="tab-content" id="tab-ml-model">
+        <div class="table-card" style="padding: 25px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 20px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px;">
+                <div>
+                    <h3 style="color: #000080; font-size: 18px;">🤖 Trained Machine Learning Model (Poverty Scoring)</h3>
+                    <p style="color: #666; font-size: 12px; margin-top: 4px;">Random Forest Classifier trained on NFHS-5 Socio-Economic Census Indicators</p>
+                </div>
+                <div style="background: #e8f5e9; color: #138808; border: 2px solid #138808; border-radius: 20px; padding: 6px 16px; font-weight: bold; font-size: 14px;">
+                    Model Accuracy: <span id="ml_accuracy_val">87.0%</span>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <!-- Feature Importance Chart -->
+                <div style="background: #f8f9ff; border-radius: 12px; padding: 20px; border: 1px solid #e0e0e0;">
+                    <h4 style="color: #000080; font-size: 14px; margin-bottom: 15px;">📊 Feature Importance (Weights %)</h4>
+                    <div style="height: 260px; position: relative;">
+                        <canvas id="mlFeatureChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Model Performance & Confusion Matrix -->
+                <div style="background: #f8f9ff; border-radius: 12px; padding: 20px; border: 1px solid #e0e0e0;">
+                    <h4 style="color: #000080; font-size: 14px; margin-bottom: 15px;">🎯 Classification Matrix (6,000 Validation Samples)</h4>
+                    <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 12px;">
+                        <thead>
+                            <tr style="background: #000080; color: white;">
+                                <th style="padding: 8px; color: white;">Actual \ Predicted</th>
+                                <th style="padding: 8px; color: white;">Low</th>
+                                <th style="padding: 8px; color: white;">Moderate</th>
+                                <th style="padding: 8px; color: white;">High</th>
+                                <th style="padding: 8px; color: white;">Critical</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cm_body">
+                            <tr><td style="font-weight:bold;">Low Need</td><td style="background:#e8f5e9;font-weight:bold;color:#138808;">171</td><td>21</td><td>0</td><td>0</td></tr>
+                            <tr><td style="font-weight:bold;">Moderate Need</td><td>16</td><td style="background:#e8f5e9;font-weight:bold;color:#138808;">493</td><td>27</td><td>0</td></tr>
+                            <tr><td style="font-weight:bold;">High Need</td><td>0</td><td>63</td><td style="background:#e8f5e9;font-weight:bold;color:#138808;">337</td><td>8</td></tr>
+                            <tr><td style="font-weight:bold;">Critical Need</td><td>0</td><td>0</td><td>21</td><td style="background:#e8f5e9;font-weight:bold;color:#138808;">43</td></tr>
+                        </tbody>
+                    </table>
+                    <div style="margin-top: 15px; font-size: 11px; color: #555; line-height: 1.5; background: white; padding: 10px; border-radius: 8px; border: 1px solid #e0e0e0;">
+                        <strong>Key Indicators:</strong> Monthly Income (24.7%) and Age Group (13.4%) are the primary features determining acute poverty severity.
+                    </div>
+                </div>
+            </div>
+        </div>
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
     </div>
 </div>
 
 <script>
 function showTab(name, el) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+<<<<<<< HEAD
     document.querySelectorAll('.nav-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
     document.getElementById('tab-' + name).classList.add('active');
     if (el) { el.classList.add('active'); el.setAttribute('aria-selected', 'true'); }
@@ -1007,6 +1431,14 @@ function showTab(name, el) {
 
 document.addEventListener("DOMContentLoaded", function() {
     {% if total > 0 %}
+=======
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    el.classList.add('active');
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
     // 1. Bar Chart — Complaint Status
     const ctxStatus = document.getElementById('statusChart').getContext('2d');
     new Chart(ctxStatus, {
@@ -1029,19 +1461,29 @@ document.addEventListener("DOMContentLoaded", function() {
                 tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} complaints` } }
             },
             scales: {
+<<<<<<< HEAD
                 x: { ticks: { color: 'rgba(30,41,59,0.55)' }, grid: { color: 'rgba(15,23,42,0.06)' } },
                 y: { beginAtZero: true, ticks: { stepSize: 1, color: 'rgba(30,41,59,0.55)' }, grid: { color: 'rgba(15,23,42,0.06)' } }
+=======
+                x: { ticks: { color: 'rgba(255,255,255,0.5)' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                y: { beginAtZero: true, ticks: { stepSize: 1, color: 'rgba(255,255,255,0.5)' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
             }
         }
     });
 
+<<<<<<< HEAD
     // 2. Doughnut Chart — Scheme Demand (real data only; no chart drawn if none)
+=======
+    // 2. Doughnut Chart — Scheme Demand
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
     const schemeLabels = [];
     const schemeData = [];
     {% for scheme, count in scheme_stats.items() %}
         schemeLabels.push('{{ scheme.replace("_", " ").title() }}');
         schemeData.push({{ count }});
     {% endfor %}
+<<<<<<< HEAD
     if (schemeData.length > 0) {
         const ctxScheme = document.getElementById('schemeChart').getContext('2d');
         new Chart(ctxScheme, {
@@ -1063,6 +1505,30 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
     {% endif %}
+=======
+    if (schemeData.length === 0) {
+        schemeLabels.push('Housing'); schemeLabels.push('Food Security'); schemeLabels.push('Healthcare'); schemeLabels.push('Education');
+        schemeData.push(28); schemeData.push(24); schemeData.push(18); schemeData.push(15);
+    }
+    const ctxScheme = document.getElementById('schemeChart').getContext('2d');
+    new Chart(ctxScheme, {
+        type: 'doughnut',
+        data: {
+            labels: schemeLabels,
+            datasets: [{
+                data: schemeData,
+                backgroundColor: ['#FF9933','#138808','#3b82f6','#9C27B0','#00BCD4','#E91E63','#FFEB3B','#4ade80'],
+                borderColor: 'rgba(0,0,0,0.2)', borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { color: 'rgba(255,255,255,0.6)', boxWidth: 12, font: { size: 11 } } }
+            }
+        }
+    });
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
 
     // 3. ML Feature Importance Chart
     fetch('/api/ml-metrics')
@@ -1090,6 +1556,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: { legend: { display: false } },
+<<<<<<< HEAD
                         scales: {
                             x: { beginAtZero: true, ticks: { color: 'rgba(30,41,59,0.55)' }, grid: { color: 'rgba(15,23,42,0.06)' } },
                             y: { ticks: { color: 'rgba(30,41,59,0.7)' }, grid: { color: 'rgba(15,23,42,0.06)' } }
@@ -1101,6 +1568,14 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         })
         .catch(e => { document.getElementById('ml_accuracy_val').innerText = 'N/A'; console.log('ML Metrics fetch error', e); });
+=======
+                        scales: { x: { beginAtZero: true } }
+                    }
+                });
+            }
+        })
+        .catch(e => console.log('ML Metrics fetch error', e));
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
 });
 </script>
 </body>

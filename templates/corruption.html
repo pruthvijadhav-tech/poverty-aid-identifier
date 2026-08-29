@@ -198,6 +198,7 @@
             </div>
             <div class="entitlement-body">
                 {% if schemes %}
+<<<<<<< HEAD
                     {% if not schemes_are_personalized %}
                     <p style="color:#a15c00;font-size:12px;text-align:center;padding:6px 10px;background:#fff3e0;border-radius:8px;margin-bottom:10px;">
                         <span class="en">You haven't filled the eligibility form yet — showing all known schemes. Fill the main form for a personalised list.</span>
@@ -205,6 +206,8 @@
                         <span class="mr">तुम्ही अजून पात्रता फॉर्म भरलेला नाही — सर्व ज्ञात योजना दाखवल्या जात आहेत. वैयक्तिक यादीसाठी मुख्य फॉर्म भरा.</span>
                     </p>
                     {% endif %}
+=======
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
                     {% for scheme_key, type, name, amount in schemes %}
                     <div class="entitlement-row">
                         <div class="scheme-name">{{ name }}</div>
@@ -296,6 +299,7 @@
                             <span class="hi">कौन सी योजना प्रभावित हुई?</span>
                             <span class="mr">कोणती योजना प्रभावित झाली?</span>
                         </label>
+<<<<<<< HEAD
                         <select name="scheme_key" id="schemeSelect" required onchange="document.getElementById('schemeNameHidden').value = this.options[this.selectedIndex].text;">
                             <option value="">-- Select / चुनें / निवडा --</option>
                             {% if schemes %}
@@ -306,6 +310,23 @@
                             <option value="other">Other / अन्य / इतर</option>
                         </select>
                         <input type="hidden" name="scheme" id="schemeNameHidden" value=""/>
+=======
+                        <select name="scheme" required>
+                            <option value="">-- Select / चुनें / निवडा --</option>
+                            {% if schemes %}
+                                {% for scheme_key, type, name, amount in schemes %}
+                                <option value="{{ name }}">{{ name }}</option>
+                                {% endfor %}
+                            {% else %}
+                                <option>PM Awas Yojana</option>
+                                <option>PM Jan Arogya Yojana</option>
+                                <option>Antyodaya Anna Yojana</option>
+                                <option>PM Ujjwala Yojana</option>
+                                <option>Ayushman Bharat</option>
+                            {% endif %}
+                            <option>Other / अन्य / इतर</option>
+                        </select>
+>>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
                     </div>
 
                     <div class="form-group">

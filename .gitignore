@@ -1,0 +1,12 @@
+reports.db
+__pycache__/
+*.pyc
+.env
+*.db
+.flask_session/
+poverty_model.pkl
+*.pdf
+static/uploads/
+venv/
+.venv/
+.pytest_cache/
