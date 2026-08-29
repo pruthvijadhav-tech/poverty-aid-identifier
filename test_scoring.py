@@ -1,27 +1,20 @@
-
 import os
 import sys
 import types
 
 if 'google' not in sys.modules:
     google_mod = types.ModuleType('google')
-<<<<<<< HEAD
 
     # Legacy 'google.generativeai' stub (kept for backward compatibility with
     # any older code paths that might still reference it).
     genai_legacy_mod = types.ModuleType('google.generativeai')
     genai_legacy_mod.configure = lambda *a, **kw: None
-=======
-    genai_mod = types.ModuleType('google.generativeai')
-    genai_mod.configure = lambda *a, **kw: None
->>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
     class _StubModel:
         def __init__(self, *a, **kw): pass
         def generate_content(self, *a, **kw):
             class R:
                 text = "stub"
             return R()
-<<<<<<< HEAD
     genai_legacy_mod.GenerativeModel = _StubModel
     google_mod.generativeai = genai_legacy_mod
 
@@ -45,12 +38,6 @@ if 'google' not in sys.modules:
     sys.modules['google.generativeai'] = genai_legacy_mod
     sys.modules['google.genai'] = genai_mod
     sys.modules['google.genai.types'] = genai_types_mod
-=======
-    genai_mod.GenerativeModel = _StubModel
-    google_mod.generativeai = genai_mod
-    sys.modules['google'] = google_mod
-    sys.modules['google.generativeai'] = genai_mod
->>>>>>> 281c6cdb0629bebeadde07d64db0f3591af67899
 
 if 'keep_alive' not in sys.modules:
     keep_alive_mod = types.ModuleType('keep_alive')

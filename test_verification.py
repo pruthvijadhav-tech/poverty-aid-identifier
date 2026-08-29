@@ -1,6 +1,6 @@
 """
 test_verification.py
-=====================
+
 Regression tests for the government-verification registry, the scheme-data
 corrections, alias/duplicate handling, the PMAY-G/PMAY-U split, closed-scheme
 exclusion, multilingual verification text, and the corruption-report flow.

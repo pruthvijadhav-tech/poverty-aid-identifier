@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 scheme_verification.py
-=======================
+
 Machine-readable government-verification registry for the Poverty Aid
 Identifier.
 
