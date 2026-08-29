@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Poverty Aid Identifier</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --navy-950: #f1f5f9;
+            --navy-900: #ffffff;
+            --navy-800: #eef2f7;
+            --saffron: #FF9933;
+            --saffron-dark: #c2410c;
+            --green: #138808;
+            --green-light: #16a34a;
+            --blue: #2563eb;
+            --purple: #9333ea;
+            --red: #dc2626;
+            --red-dark: #b91c1c;
+            --text-main: #1e293b;
+            --text-dim: #475569;
+            --text-faint: #64748b;
+            --border-soft: #e2e8f0;
+            --card-bg: #ffffff;
+        }
+        body { font-family: 'Inter', Arial, sans-serif; background: var(--navy-950); color: var(--text-main); min-height: 100vh; }
+        a { color: inherit; }
+        button, select, input { font-family: inherit; }
+
+        /* ── TOP TRICOLOR BAR ── */
+        .top-bar { background: linear-gradient(90deg, #FF9933 33%, #ffffff 33%, #ffffff 66%, #138808 66%); height: 4px; }
+
+        /* ── HEADER ── */
+        .header {
+            background: var(--navy-900);
+            border-bottom: 1px solid var(--border-soft);
+            box-shadow: 0 1px 3px rgba(15,23,42,0.05);
+            padding: 14px 28px;
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
+        }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        .header-logo {
+            width: 42px; height: 42px; border-radius: 10px;
+            background: url('/static/icons/icon-192.png') no-repeat center center;
+            background-size: cover;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 16px; color: white; letter-spacing: -1px;
+            box-shadow: 0 0 0 1px var(--border-soft);
+        }
+        .header-left h1 { font-size: 17px; font-weight: 700; color: var(--text-main); }
+        .header-left p { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
+        .header-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+        .live-badge {
+            background: rgba(19,136,8,0.1); border: 1px solid var(--green);
+            color: #15803d; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
+            animation: pulse 2s infinite; display: flex; align-items: center; gap: 6px;
+        }
+        .live-badge::before { content:''; width:7px; height:7px; border-radius:50%; background: #15803d; display:inline-block; }
+        @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.7} }
+        .admin-pill {
+            background: var(--navy-800); border: 1px solid var(--border-soft);
+            border-radius: 24px; padding: 6px 16px; font-size: 13px; color: var(--text-main); font-weight: 600;
+        }
+        .role-badge { background: var(--saffron); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; margin-left: 6px; }
+        .logout-btn {
+            padding: 8px 18px; background: linear-gradient(135deg,var(--red-dark),#b71c1c);
+            color: white; border: none; border-radius: 8px; font-size: 13px; cursor: pointer;
+            text-decoration: none; font-weight: 700; transition: all 0.2s;
+        }
+        .logout-btn:hover, .logout-btn:focus-visible { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(198,40,40,0.3); }
+
+        /* ── NAV TABS ── */
+        .nav-tabs {
+            background: var(--navy-900);
+            border-bottom: 1px solid var(--border-soft);
+            box-shadow: 0 1px 2px rgba(15,23,42,0.03);
+            display: flex; overflow-x: auto; padding: 0 20px;
+        }
+        .nav-tabs::-webkit-scrollbar { height: 3px; }
+        .nav-tabs::-webkit-scrollbar-track { background: transparent; }
+        .nav-tabs::-webkit-scrollbar-thumb { background: var(--blue); border-radius: 3px; }
+        .nav-tab {
+            padding: 14px 22px; color: var(--text-dim); cursor: pointer;
+            font-size: 13px; font-weight: 600; border-bottom: 3px solid transparent;
+            white-space: nowrap; transition: all 0.2s; display: flex; align-items: center; gap: 7px;
+            background: none; border-top: none; border-left: none; border-right: none;
+        }
+        .nav-tab.active { color: var(--blue); border-bottom: 3px solid var(--blue); background: rgba(37,99,235,0.06); }
+        .nav-tab:hover, .nav-tab:focus-visible { color: var(--text-main); background: var(--navy-800); outline: none; }
+        .nav-tab:focus-visible { box-shadow: inset 0 0 0 2px rgba(37,99,235,0.5); }
+
+        /* ── LAYOUT ── */
+        .container { max-width: 1340px; margin: 0 auto; padding: 22px 20px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .section-heading { font-size: 13px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin: 26px 0 12px; display: flex; align-items: center; gap: 8px; }
+        .section-heading:first-child { margin-top: 0; }
+
+        /* ── HERO STAT CARDS ── */
+        .kpi-row { display: grid; grid-template-columns: repeat(6,1fr); gap: 14px; margin-bottom: 8px; }
+        .kpi-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-soft);
+            border-radius: 14px; padding: 18px 16px;
+            display: flex; align-items: center; gap: 14px;
+            transition: all 0.3s; box-shadow: 0 1px 3px rgba(15,23,42,0.05);
+        }
+        .kpi-card:hover { transform: translateY(-3px); border-color: rgba(37,99,235,0.35); box-shadow: 0 8px 24px rgba(15,23,42,0.1); }
+        .kpi-icon {
+            width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center; font-size: 19px;
+        }
+        .kpi-icon.total    { background: rgba(99,102,241,0.15); }
+        .kpi-icon.pending  { background: rgba(255,153,51,0.15); }
+        .kpi-icon.filed    { background: rgba(255,153,51,0.15); }
+        .kpi-icon.received { background: rgba(37,99,235,0.15); }
+        .kpi-icon.action   { background: rgba(147,51,234,0.15); }
+        .kpi-icon.resolved { background: rgba(22,163,74,0.15); }
+        .kpi-icon.fake     { background: rgba(220,38,38,0.15); }
+        .kpi-icon.alerts   { background: rgba(220,38,38,0.15); }
+        .kpi-num { font-size: 26px; font-weight: 800; line-height: 1; }
+        .kpi-num.total    { color: #7c3aed; }
+        .kpi-num.pending  { color: var(--saffron-dark); }
+        .kpi-num.filed    { color: var(--saffron-dark); }
+        .kpi-num.received { color: var(--blue); }
+        .kpi-num.action   { color: var(--purple); }
+        .kpi-num.resolved { color: var(--green-light); }
+        .kpi-num.fake     { color: var(--red); }
+        .kpi-num.alerts   { color: var(--red); }
+        .kpi-lbl { font-size: 11px; color: var(--text-faint); font-weight: 600; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .kpi-sub { font-size: 10px; color: var(--text-faint); margin-top: 2px; }
+
+        /* ── TODAY'S OVERVIEW ── */
+        .today-row { display: grid; grid-template-columns: repeat(5,1fr); gap: 14px; }
+        .today-card {
+            background: var(--card-bg); border: 1px solid var(--border-soft); border-radius: 12px;
+            padding: 14px 16px; text-align: center; box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+        }
+        .today-num { font-size: 22px; font-weight: 800; color: var(--text-main); }
+        .today-lbl { font-size: 11px; color: var(--text-faint); margin-top: 4px; font-weight: 600; }
+
+        /* ── QUICK ACTIONS ── */
+        .quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+        .quick-action-btn {
+            background: var(--card-bg); border: 1px solid var(--border-soft); border-radius: 12px;
+            padding: 16px 14px; text-align: center; text-decoration: none; color: var(--text-main);
+            font-size: 12px; font-weight: 700; transition: all 0.2s; cursor: pointer; display: block;
+            box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+        }
+        .quick-action-btn .qa-icon { font-size: 20px; display: block; margin-bottom: 8px; }
+        .quick-action-btn:hover, .quick-action-btn:focus-visible { border-color: rgba(37,99,235,0.4); transform: translateY(-2px); color: var(--blue); outline: none; box-shadow: 0 4px 14px rgba(15,23,42,0.08); }
+
+        /* ── SYSTEM HEALTH ── */
+        .health-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 12px; }
+        .health-card {
+            background: var(--card-bg); border: 1px solid var(--border-soft); border-radius: 12px;
+            padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+        }
+        .health-name { font-size: 12px; font-weight: 700; color: var(--text-dim); }
+        .health-status { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 12px; display: inline-flex; align-items: center; gap: 5px; }
+        .health-status.ok { background: rgba(22,163,74,0.1); color: var(--green-light); border: 1px solid rgba(22,163,74,0.3); }
+        .health-status.down { background: rgba(220,38,38,0.1); color: var(--red); border: 1px solid rgba(220,38,38,0.3); }
+
+        /* ── RECENT ACTIVITY (compact) ── */
+        .mini-activity-list { background: var(--card-bg); border: 1px solid var(--border-soft); border-radius: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(15,23,42,0.04); }
+        .mini-activity-row { display: flex; justify-content: space-between; gap: 14px; padding: 12px 18px; border-bottom: 1px solid var(--border-soft); font-size: 12px; align-items: center; }
+        .mini-activity-row:last-child { border-bottom: none; }
+        .mini-activity-text { color: var(--text-main); }
+        .mini-activity-text strong { color: var(--saffron-dark); }
+        .mini-activity-time { color: var(--text-faint); font-size: 11px; white-space: nowrap; }
+
+        /* ── ALERT BANNER ── */
+        .alert-banner {
+            border-radius: 12px; padding: 14px 20px; margin-bottom: 20px;
+            display: flex; align-items: center; gap: 14px;
+        }
+        .alert-banner.danger { background: #fee2e2; border: 1px solid #fca5a5; }
+        .alert-banner.success { background: #dcfce7; border: 1px solid #86efac; }
+        .alert-banner-text h4 { font-size: 14px; margin-bottom: 3px; }
+        .alert-banner.danger h4 { color: var(--red-dark); }
+        .alert-banner.success h4 { color: #15803d; }
+        .alert-banner-text p { font-size: 12px; color: var(--text-dim); }
+
+        /* ── FILTER BAR ── */
+        .filter-bar {
+            background: var(--card-bg); border: 1px solid var(--border-soft);
+            padding: 14px 18px; border-radius: 12px; margin-bottom: 12px;
+            display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+            box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+        }
+        .filter-bar span.filter-label { font-weight: 700; color: var(--text-dim); font-size: 13px; }
+        .filter-btn {
+            padding: 6px 16px; border-radius: 20px;
+            border: 1px solid var(--border-soft); background: var(--card-bg);
+            cursor: pointer; font-size: 12px; font-weight: 600; color: var(--text-dim);
+            text-decoration: none; transition: all 0.2s; display: inline-block;
+        }
+        .filter-btn:hover, .filter-btn:focus-visible { border-color: var(--blue); color: var(--blue); outline: none; }
+        .filter-btn.active { background: var(--blue); color: white; border-color: var(--blue); }
+        .filter-btn.fake-btn { border-color: #fca5a5; color: var(--red); }
+        .filter-btn.fake-btn.active { background: var(--red-dark); color: white; border-color: var(--red-dark); }
+
+        .adv-filter-form {
+            background: var(--navy-800); border: 1px solid var(--border-soft);
+            padding: 14px 18px; border-radius: 12px; margin-bottom: 18px;
+            display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;
+        }
+        .adv-filter-field { display: flex; flex-direction: column; gap: 5px; }
+        .adv-filter-field label { font-size: 10px; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.5px; }
+        .adv-filter-field input, .adv-filter-field select {
+            padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border-soft);
+            background: var(--card-bg); color: var(--text-main); font-size: 12px; min-width: 130px;
+        }
+        .adv-filter-field input:focus, .adv-filter-field select:focus { outline: 2px solid var(--blue); outline-offset: 1px; border-color: var(--blue); }
+        .adv-filter-submit {
+            padding: 8px 18px; background: var(--saffron); color: white; border: none; border-radius: 8px;
+            font-size: 12px; font-weight: 700; cursor: pointer; transition: all .2s;
+        }
+        .adv-filter-submit:hover, .adv-filter-submit:focus-visible { background: var(--saffron-dark); }
+        .adv-filter-clear { font-size: 12px; color: var(--text-dim); text-decoration: underline; padding: 8px 4px; }
+        .adv-filter-clear:hover { color: var(--text-main); }
+
+        /* ── TABLE CARD ── */
+        .table-card {
+            background: var(--card-bg); border: 1px solid var(--border-soft);
+            border-radius: 14px; overflow: hidden; margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(15,23,42,0.05);
+        }
+        .table-header {
+            padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+            border-bottom: 1px solid var(--border-soft);
+        }
+        .table-header.navy { background: var(--navy-800); }
+        .table-header.red { background: #fef2f2; }
+        .table-header.dark { background: var(--navy-800); }
+        .table-header h3 { font-size: 14px; font-weight: 700; color: var(--text-main); }
+        .table-header p { font-size: 11px; color: var(--text-faint); }
+        .export-link {
+            font-size: 11px; font-weight: 700; color: var(--saffron-dark); text-decoration: none;
+            border: 1px solid rgba(255,153,51,0.5); padding: 5px 12px; border-radius: 20px; transition: all .2s;
+        }
+        .export-link:hover, .export-link:focus-visible { background: rgba(255,153,51,0.12); }
+        .confidential-notice {
+            background: #fff7ed; border-left: 3px solid var(--saffron);
+            padding: 9px 18px; font-size: 12px; color: var(--saffron-dark); font-weight: 600;
+        }
+        .confidential-notice.red { background: #fef2f2; border-left-color: var(--red); color: var(--red-dark); }
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 860px; }
+        thead { background: var(--navy-800); }
+        th { padding: 11px 14px; text-align: left; font-size: 11px; color: var(--text-dim); font-weight: 700; border-bottom: 1px solid var(--border-soft); white-space: nowrap; text-transform: uppercase; letter-spacing: 0.5px; }
+        td { padding: 11px 14px; font-size: 12px; border-bottom: 1px solid var(--border-soft); vertical-align: middle; color: var(--text-main); }
+        tr:hover td { background: var(--navy-800); }
+        tr:last-child td { border-bottom: none; }
+        tr.fake-row td { background: #fef2f2; }
+        tr.suspicious-row td { background: #fff1f2; }
+
+        .tracking-id { font-weight: 700; color: var(--blue); font-size: 12px; letter-spacing: 1px; font-family: monospace; }
+        .person-name { font-weight: 700; color: var(--text-main); }
+        .person-phone { color: var(--green-light); font-size: 11px; margin-top: 2px; }
+        .person-address { color: var(--text-faint); font-size: 11px; margin-top: 2px; max-width: 150px; }
+        .scheme-cell { max-width: 160px; font-size: 12px; }
+        .officer-cell { font-size: 11px; color: var(--text-faint); max-width: 140px; }
+        .date-cell { font-size: 11px; color: var(--text-faint); white-space: nowrap; }
+        .amount-entitled { color: var(--green-light); font-weight: 700; font-size: 12px; }
+        .amount-received { color: var(--red); font-weight: 700; font-size: 12px; }
+        .amount-diff { color: var(--saffron-dark); font-size: 11px; }
+
+        /* ── STATUS & RISK BADGES ── */
+        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+        .status-Filed     { background: rgba(255,153,51,0.12); color: var(--saffron-dark); border: 1px solid rgba(255,153,51,0.35); }
+        .status-Received  { background: rgba(37,99,235,0.1); color: var(--blue); border: 1px solid rgba(37,99,235,0.3); }
+        .status-ActionTaken { background: rgba(147,51,234,0.1); color: var(--purple); border: 1px solid rgba(147,51,234,0.3); }
+        .status-Resolved  { background: rgba(22,163,74,0.1); color: var(--green-light); border: 1px solid rgba(22,163,74,0.3); }
+        .fake-badge { background: rgba(220,38,38,0.1); color: var(--red); padding: 3px 8px; border-radius: 8px; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; margin-top: 3px; border: 1px solid rgba(220,38,38,0.3); }
+        .risk-high { background: rgba(220,38,38,0.12); color: var(--red); border: 1px solid rgba(220,38,38,0.4); padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+        .risk-med  { background: rgba(255,153,51,0.12); color: var(--saffron-dark); border: 1px solid rgba(255,153,51,0.4); padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+        .suspicious-badge { background: rgba(220,38,38,0.1); color: var(--red); padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; border: 1px solid rgba(220,38,38,0.3); }
+        .normal-badge     { background: rgba(22,163,74,0.1); color: var(--green-light); padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; border: 1px solid rgba(22,163,74,0.3); }
+        .verified-badge   { background: rgba(22,163,74,0.1); color: var(--green-light); padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; border: 1px solid rgba(22,163,74,0.3); }
+
+        /* ── UPDATE FORM ── */
+        .update-form { display: flex; gap: 6px; align-items: center; }
+        .status-select {
+            padding: 5px 8px; border: 1px solid var(--border-soft); border-radius: 6px;
+            font-size: 11px; background: var(--card-bg); color: var(--text-main);
+        }
+        .status-select:focus { outline: 2px solid var(--blue); outline-offset: 1px; }
+        .update-btn { padding: 5px 12px; background: var(--saffron); color: white; border: none; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 700; transition: all 0.2s; }
+        .update-btn:hover, .update-btn:focus-visible { background: var(--saffron-dark); }
+
+        /* ── ANALYTICS: chart panels ── */
+        .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 20px; }
+        .chart-card {
+            background: var(--card-bg); border: 1px solid var(--border-soft);
+            border-radius: 16px; padding: 22px; position: relative; overflow: hidden;
+            box-shadow: 0 1px 3px rgba(15,23,42,0.05);
+        }
+        .chart-card::before {
+            content:''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+        }
+        .chart-card.bar-card::before  { background: linear-gradient(90deg,var(--saffron),var(--saffron-dark)); }
+        .chart-card.doughnut-card::before { background: linear-gradient(90deg,var(--green),var(--green-light)); }
+        .chart-title { font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .chart-container { position: relative; height: 280px; }
+
+        /* ── ANALYTICS: side summary ── */
+        .analytics-summary {
+            background: var(--card-bg); border: 1px solid var(--border-soft);
+            border-radius: 14px; padding: 20px; margin-top: 18px;
+            box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+        }
+        .summary-title { font-size: 13px; font-weight: 700; color: var(--saffron-dark); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-soft); }
+        .summary-row:last-child { border-bottom: none; }
+        .summary-label { font-size: 12px; color: var(--text-dim); }
+        .summary-val { font-size: 14px; font-weight: 700; }
+
+        /* ── LOG STYLES ── */
+        .log-action { font-weight: 700; font-size: 11px; }
+        .log-normal  { color: var(--green-light); }
+        .log-warning { color: var(--saffron-dark); }
+        .log-danger  { color: var(--red); }
+
+        /* ── MISC ── */
+        .no-data { text-align: center; padding: 46px 20px; color: var(--text-faint); font-size: 13px; }
+        .no-data .no-data-icon { font-size: 28px; display: block; margin-bottom: 10px; opacity: 0.6; }
+        .no-data .no-data-title { font-size: 14px; font-weight: 700; color: var(--text-dim); margin-bottom: 4px; }
+        .no-data.green { color: var(--green-light); font-weight: 700; }
+        .no-data a.clear-link { display: inline-block; margin-top: 12px; color: var(--saffron-dark); text-decoration: none; font-weight: 700; font-size: 12px; border: 1px solid rgba(255,153,51,0.5); padding: 6px 16px; border-radius: 20px; }
+        .no-data a.clear-link:hover { background: rgba(255,153,51,0.1); }
+        .top-links { display: flex; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; align-items: center; }
+        .back-link { color: var(--blue); text-decoration: none; font-size: 13px; font-weight: 700; transition: color 0.2s; }
+        .back-link:hover { color: #1d4ed8; }
+        .heatmap-link { color: var(--saffron-dark); text-decoration: none; font-size: 13px; font-weight: 700; transition: color 0.2s; }
+        .heatmap-link:hover { color: var(--saffron); }
+        .footer { text-align: center; padding: 24px; color: var(--text-faint); font-size: 11px; margin-top: 20px; border-top: 1px solid var(--border-soft); }
+
+        /* ── AI/ML TAB ── */
+        .ml-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; border-bottom: 1px solid var(--border-soft); padding-bottom: 15px; }
+        .ml-header h3 { color: var(--text-main); font-size: 16px; }
+        .ml-header p { color: var(--text-faint); font-size: 12px; margin-top: 4px; }
+        .ml-accuracy-pill { background: rgba(22,163,74,0.1); color: var(--green-light); border: 1px solid rgba(22,163,74,0.35); border-radius: 20px; padding: 6px 16px; font-weight: 700; font-size: 13px; }
+        .ml-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .ml-panel { background: var(--navy-800); border-radius: 12px; padding: 20px; border: 1px solid var(--border-soft); }
+        .ml-panel h4 { color: var(--saffron-dark); font-size: 13px; margin-bottom: 15px; font-weight: 700; }
+        .ml-cm-table { width: 100%; border-collapse: collapse; text-align: center; font-size: 12px; }
+        .ml-cm-table th { background: var(--card-bg); color: var(--text-main); padding: 8px; font-weight: 700; border-bottom: 2px solid var(--border-soft); }
+        .ml-cm-table td { padding: 8px; color: var(--text-main); border-bottom: 1px solid var(--border-soft); }
+        .ml-cm-table td.diag { background: rgba(22,163,74,0.12); font-weight: 700; color: var(--green-light); }
+        .ml-note { margin-top: 15px; font-size: 11px; color: var(--text-dim); line-height: 1.5; background: var(--card-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border-soft); }
+
+        @media (max-width: 1100px) {
+            .kpi-row { grid-template-columns: repeat(3,1fr); }
+            .today-row { grid-template-columns: repeat(3,1fr); }
+        }
+        @media (max-width: 900px) {
+            .kpi-row { grid-template-columns: repeat(2,1fr); }
+            .today-row { grid-template-columns: repeat(2,1fr); }
+            .analytics-grid, .ml-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 600px) {
+            .kpi-row { grid-template-columns: 1fr 1fr; }
+            .today-row { grid-template-columns: 1fr 1fr; }
+            .header { flex-direction: column; }
+            .adv-filter-field input, .adv-filter-field select { min-width: 110px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="top-bar"></div>
+<div class="header">
+    <div class="header-left">
+        <div class="header-logo"></div>
+        <div>
+            <h1>Admin Dashboard</h1>
+            <p>Poverty Aid Identifier — National Dashboard</p>
+        </div>
+    </div>
+    <div class="header-right">
+        <div class="live-badge">LIVE</div>
+        <div class="admin-pill">
+            {{ admin_name }}<span class="role-badge">{{ admin_role | upper }}</span>
+        </div>
+        <a href="/admin/logout" class="logout-btn">Logout</a>
+    </div>
+</div>
+
+<div class="nav-tabs" role="tablist" aria-label="Admin dashboard sections">
+    <button class="nav-tab active" role="tab" aria-selected="true" aria-controls="tab-overview" onclick="showTab('overview', this)">🏠 Overview</button>
+    <button class="nav-tab" role="tab" aria-selected="false" aria-controls="tab-complaints" onclick="showTab('complaints', this)">📋 Complaints ({{ total }})</button>
+    <button class="nav-tab" role="tab" aria-selected="false" aria-controls="tab-analytics" onclick="showTab('analytics', this)">📊 Analytics</button>
+    <button class="nav-tab" role="tab" aria-selected="false" aria-controls="tab-fraud" onclick="showTab('fraud', this)">🔍 Fraud Detection</button>
+    <button class="nav-tab" role="tab" aria-selected="false" aria-controls="tab-ledger" style="{% if not ledger_valid %}color:#c2410c;{% endif %}" onclick="showTab('ledger', this)">🔒 Ledger Integrity {% if not ledger_valid %}⚠️{% endif %}</button>
+    <button class="nav-tab" role="tab" aria-selected="false" aria-controls="tab-activity" onclick="showTab('activity', this)">📝 Activity Log</button>
+    <button class="nav-tab" role="tab" aria-selected="false" aria-controls="tab-ml-model" onclick="showTab('ml-model', this)">🤖 AI/ML Model</button>
+    <button class="nav-tab" role="tab" aria-selected="false" aria-controls="tab-alerts" style="{% if suspicious_count > 0 %}color:#c2410c;{% endif %}" onclick="showTab('alerts', this)">
+        🚨 Security Alerts {% if suspicious_count > 0 %}({{ suspicious_count }}){% endif %}
+    </button>
+</div>
+
+<div class="container">
+    <div class="top-links">
+        <a href="/" class="back-link">← Back to Main App</a>
+        <a href="/heatmap" class="heatmap-link">🗺️ View Corruption Heatmap</a>
+    </div>
+
+    <!-- ═══════════ TAB: OVERVIEW ═══════════ -->
+    <div class="tab-content active" id="tab-overview" role="tabpanel">
+
+        {% if suspicious_count > 0 %}
+        <div class="alert-banner danger">
+            <div style="font-size:26px;" aria-hidden="true">⚠️</div>
+            <div class="alert-banner-text">
+                <h4>Security Alert — {{ suspicious_count }} Suspicious {{ 'Activity' if suspicious_count == 1 else 'Activities' }} Detected</h4>
+                <p>Someone tried to access confidential data without authorization. Check the Security Alerts tab for details.</p>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert-banner success">
+            <div style="font-size:26px;" aria-hidden="true">🛡️</div>
+            <div class="alert-banner-text">
+                <h4>No Security Alerts</h4>
+                <p>No suspicious access attempts have been detected.</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="section-heading">📊 System Snapshot</div>
+        <div class="kpi-row">
+            <div class="kpi-card">
+                <div class="kpi-icon total" aria-hidden="true">📊</div>
+                <div><div class="kpi-num total">{{ total }}</div><div class="kpi-lbl">Total Complaints</div></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon pending" aria-hidden="true">🕓</div>
+                <div><div class="kpi-num pending">{{ pending_count }}</div><div class="kpi-lbl">New / Pending</div><div class="kpi-sub">Filed + Received</div></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon action" aria-hidden="true">⚡</div>
+                <div><div class="kpi-num action">{{ action }}</div><div class="kpi-lbl">Action Taken</div></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon resolved" aria-hidden="true">✅</div>
+                <div><div class="kpi-num resolved">{{ resolved }}</div><div class="kpi-lbl">Resolved</div><div class="kpi-sub">{{ resolution_rate }}% resolution rate</div></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon fake" aria-hidden="true">⚠️</div>
+                <div><div class="kpi-num fake">{{ fake_count }}</div><div class="kpi-lbl">Fake / Invalid</div></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon alerts" aria-hidden="true">🚨</div>
+                <div><div class="kpi-num alerts">{{ suspicious_count }}</div><div class="kpi-lbl">Security Alerts</div></div>
+            </div>
+        </div>
+
+        <div class="section-heading">📅 Today's Overview</div>
+        <div class="today-row">
+            <div class="today-card">
+                <div class="today-num" style="color:#c2410c;">{{ new_today }}</div>
+                <div class="today-lbl">New Complaints Today</div>
+            </div>
+            <div class="today-card">
+                <div class="today-num" style="color:var(--blue);">{{ review_today }}</div>
+                <div class="today-lbl">Moved to Review Today</div>
+            </div>
+            <div class="today-card">
+                <div class="today-num" style="color:var(--purple);">{{ action_today }}</div>
+                <div class="today-lbl">Action Taken Today</div>
+            </div>
+            <div class="today-card">
+                <div class="today-num" style="color:var(--green-light);">{{ resolved_today }}</div>
+                <div class="today-lbl">Resolved Today</div>
+            </div>
+            <div class="today-card">
+                <div class="today-num" style="color:var(--text-main);">{% if total > 0 %}{{ resolution_rate }}%{% else %}—{% endif %}</div>
+                <div class="today-lbl">Overall Resolution Rate</div>
+            </div>
+        </div>
+
+        <div class="section-heading">⚙️ Quick Actions</div>
+        <div class="quick-actions">
+            <button type="button" class="quick-action-btn" onclick="showTab('complaints', document.querySelector('.nav-tab[aria-controls=tab-complaints]'))">
+                <span class="qa-icon" aria-hidden="true">📋</span>View Complaints
+            </button>
+            <a class="quick-action-btn" href="/heatmap"><span class="qa-icon" aria-hidden="true">🗺️</span>Corruption Heatmap</a>
+            <button type="button" class="quick-action-btn" onclick="showTab('alerts', document.querySelector('.nav-tab[aria-controls=tab-alerts]'))">
+                <span class="qa-icon" aria-hidden="true">🚨</span>Security Alerts
+            </button>
+            <button type="button" class="quick-action-btn" onclick="showTab('analytics', document.querySelector('.nav-tab[aria-controls=tab-analytics]'))">
+                <span class="qa-icon" aria-hidden="true">📊</span>Open Analytics
+            </button>
+            <a class="quick-action-btn" href="/admin/export"><span class="qa-icon" aria-hidden="true">⬇️</span>Export Report (CSV)</a>
+        </div>
+
+        <div class="section-heading">🩺 System Health</div>
+        <div class="health-grid">
+            <div class="health-card">
+                <span class="health-name">Database</span>
+                <span class="health-status {{ 'ok' if system_health.database else 'down' }}">{% if system_health.database %}✓ Healthy{% else %}✕ Unreachable{% endif %}</span>
+            </div>
+            <div class="health-card">
+                <span class="health-name">Application (Flask)</span>
+                <span class="health-status {{ 'ok' if system_health.application else 'down' }}">{% if system_health.application %}✓ Online{% else %}✕ Offline{% endif %}</span>
+            </div>
+            <div class="health-card">
+                <span class="health-name">AI/ML Service</span>
+                <span class="health-status {{ 'ok' if system_health.ml_available else 'down' }}">{% if system_health.ml_available %}✓ Available{% else %}✕ Unavailable{% endif %}</span>
+            </div>
+            <div class="health-card">
+                <span class="health-name">Session System</span>
+                <span class="health-status {{ 'ok' if system_health.session_active else 'down' }}">{% if system_health.session_active %}✓ Active{% else %}✕ Inactive{% endif %}</span>
+            </div>
+        </div>
+
+        <div class="section-heading">📝 Recent Activity</div>
+        <div class="mini-activity-list">
+            {% if recent_logs %}
+                {% for log in recent_logs[:6] %}
+                <div class="mini-activity-row">
+                    <div class="mini-activity-text">
+                        {% if log['suspicious'] %}⚠️{% elif 'LOGIN' in log['action'] %}🔑{% elif 'UPDATE' in log['action'] or 'STATUS' in log['action'] %}✏️{% else %}•{% endif %}
+                        <strong>{{ log['username'] }}</strong> — {{ log['action'] }}
+                    </div>
+                    <div class="mini-activity-time">{{ log['timestamp'] }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+            <div class="no-data"><span class="no-data-icon" aria-hidden="true">📭</span>No recent activity.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ═══════════ TAB: COMPLAINTS ═══════════ -->
+    <div class="tab-content" id="tab-complaints" role="tabpanel">
+
+        <form class="adv-filter-form" method="GET" action="/admin">
+            <input type="hidden" name="filter" value="{{ filter_status }}">
+            <div class="adv-filter-field">
+                <label for="f-q">Search</label>
+                <input type="text" id="f-q" name="q" placeholder="Name, tracking ID, phone..." value="{{ search_q }}">
+            </div>
+            <div class="adv-filter-field">
+                <label for="f-scheme">Scheme</label>
+                <select id="f-scheme" name="scheme">
+                    <option value="All" {% if scheme_filter == 'All' %}selected{% endif %}>All Schemes</option>
+                    {% for s in scheme_options %}
+                    <option value="{{ s }}" {% if scheme_filter == s %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="adv-filter-field">
+                <label for="f-location">Location</label>
+                <select id="f-location" name="location">
+                    <option value="All" {% if location_filter == 'All' %}selected{% endif %}>All Locations</option>
+                    {% for l in location_options %}
+                    <option value="{{ l }}" {% if location_filter == l %}selected{% endif %}>{{ l }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="adv-filter-field">
+                <label for="f-from">From</label>
+                <input type="date" id="f-from" name="date_from" value="{{ date_from }}">
+            </div>
+            <div class="adv-filter-field">
+                <label for="f-to">To</label>
+                <input type="date" id="f-to" name="date_to" value="{{ date_to }}">
+            </div>
+            <div class="adv-filter-field">
+                <label for="f-sort">Sort</label>
+                <select id="f-sort" name="sort">
+                    <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Newest First</option>
+                    <option value="oldest" {% if sort_by == 'oldest' %}selected{% endif %}>Oldest First</option>
+                    <option value="status" {% if sort_by == 'status' %}selected{% endif %}>Status</option>
+                </select>
+            </div>
+            <button type="submit" class="adv-filter-submit">Apply</button>
+            <a href="/admin" class="adv-filter-clear">Clear all</a>
+        </form>
+
+        <div class="filter-bar">
+            <span class="filter-label">Status:</span>
+            <a href="/admin?filter=All&q={{ search_q | urlencode }}&scheme={{ scheme_filter | urlencode }}&location={{ location_filter | urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&sort={{ sort_by }}" class="filter-btn {% if filter_status == 'All' %}active{% endif %}">All ({{ total }})</a>
+            <a href="/admin?filter=Filed&q={{ search_q | urlencode }}&scheme={{ scheme_filter | urlencode }}&location={{ location_filter | urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&sort={{ sort_by }}" class="filter-btn {% if filter_status == 'Filed' %}active{% endif %}">Filed ({{ filed }})</a>
+            <a href="/admin?filter=Received&q={{ search_q | urlencode }}&scheme={{ scheme_filter | urlencode }}&location={{ location_filter | urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&sort={{ sort_by }}" class="filter-btn {% if filter_status == 'Received' %}active{% endif %}">Received ({{ received }})</a>
+            <a href="/admin?filter=Action Taken&q={{ search_q | urlencode }}&scheme={{ scheme_filter | urlencode }}&location={{ location_filter | urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&sort={{ sort_by }}" class="filter-btn {% if filter_status == 'Action Taken' %}active{% endif %}">Action Taken ({{ action }})</a>
+            <a href="/admin?filter=Resolved&q={{ search_q | urlencode }}&scheme={{ scheme_filter | urlencode }}&location={{ location_filter | urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&sort={{ sort_by }}" class="filter-btn {% if filter_status == 'Resolved' %}active{% endif %}">Resolved ({{ resolved }})</a>
+            <a href="/admin?filter=Fake&q={{ search_q | urlencode }}&scheme={{ scheme_filter | urlencode }}&location={{ location_filter | urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&sort={{ sort_by }}" class="filter-btn fake-btn {% if filter_status == 'Fake' %}active{% endif %}">⚠ Fake ({{ fake_count }})</a>
+        </div>
+
+        <div class="table-card">
+            <div class="table-header navy">
+                <div>
+                    <h3>All Complaints</h3>
+                    <p>{{ reports|length }} record{{ 's' if reports|length != 1 else '' }} shown — {{ now }}</p>
+                </div>
+                <a class="export-link" href="/admin/export?filter={{ filter_status }}&q={{ search_q | urlencode }}&scheme={{ scheme_filter | urlencode }}&location={{ location_filter | urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&sort={{ sort_by }}">⬇ Export CSV</a>
+            </div>
+            <div class="confidential-notice">🔒 CONFIDENTIAL — Complainant details visible only to authorized officers. All access is logged.</div>
+            {% if reports %}
+            <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tracking ID</th>
+                        <th>Complainant</th>
+                        <th>Scheme</th>
+                        <th>Amount</th>
+                        <th>Location</th>
+                        <th>Assigned Officer</th>
+                        <th>Filed On</th>
+                        <th>Status</th>
+                        <th>Update</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in reports %}
+                    <tr {% if r['fake_flag'] %}class="fake-row"{% endif %}>
+                        <td>
+                            <div class="tracking-id">{{ r['tracking_id'] }}</div>
+                            {% if r['fake_flag'] %}<span class="fake-badge">⚠ FAKE SUSPECTED</span>{% endif %}
+                        </td>
+                        <td>
+                            <div class="person-name">{{ r['person_name'] or 'N/A' }}</div>
+                            <div class="person-phone">📞 {{ r['phone'] or 'N/A' }}</div>
+                            <div class="person-address">📍 {{ r['address'] or 'N/A' }}</div>
+                        </td>
+                        <td><div class="scheme-cell">{{ r['scheme'] }}</div></td>
+                        <td>
+                            <div class="amount-entitled">Due: ₹{{ r['entitled_amount'] }}</div>
+                            <div class="amount-received">Got: ₹{{ r['received_amount'] }}</div>
+                            {% if r['entitled_amount'] and r['received_amount'] %}
+                            <div class="amount-diff">Gap: ₹{{ (r['entitled_amount']|int - r['received_amount']|int) }}</div>
+                            {% endif %}
+                        </td>
+                        <td>{{ r['location'] }}</td>
+                        <td><div class="officer-cell">{{ r['assigned_officer'] }}</div></td>
+                        <td><div class="date-cell">{{ r['filed_date'] }}</div></td>
+                        <td>
+                            <span class="status-badge status-{{ r['status'].replace(' ', '') }}">
+                                {% if r['status'] == 'Resolved' %}✓{% elif r['status'] == 'Action Taken' %}◐{% elif r['status'] == 'Received' %}●{% else %}○{% endif %}
+                                {{ r['status'] }}
+                            </span>
+                        </td>
+                        <td>
+                            <form method="POST" action="/admin">
+                                <input type="hidden" name="tracking_id" value="{{ r['tracking_id'] }}"/>
+                                <div class="update-form">
+                                    <label for="upd-{{ r['tracking_id'] }}" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Update status for {{ r['tracking_id'] }}</label>
+                                    <select id="upd-{{ r['tracking_id'] }}" name="new_status" class="status-select">
+                                        <option value="Filed" {% if r['status'] == 'Filed' %}selected{% endif %}>Filed</option>
+                                        <option value="Received" {% if r['status'] == 'Received' %}selected{% endif %}>Received</option>
+                                        <option value="Action Taken" {% if r['status'] == 'Action Taken' %}selected{% endif %}>Action Taken</option>
+                                        <option value="Resolved" {% if r['status'] == 'Resolved' %}selected{% endif %}>Resolved</option>
+                                    </select>
+                                    <button type="submit" class="update-btn">Update</button>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% elif total == 0 %}
+            <div class="no-data">
+                <span class="no-data-icon" aria-hidden="true">📭</span>
+                <div class="no-data-title">No complaints found</div>
+                New complaints will appear here when citizens submit reports.
+            </div>
+            {% else %}
+            <div class="no-data">
+                <span class="no-data-icon" aria-hidden="true">🔎</span>
+                <div class="no-data-title">No complaints match these filters</div>
+                Try adjusting your search or filters.
+                <div><a class="clear-link" href="/admin">Clear Filters</a></div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ═══════════ TAB: ANALYTICS ═══════════ -->
+    <div class="tab-content" id="tab-analytics" role="tabpanel">
+        {% if total > 0 %}
+        <div class="analytics-grid">
+            <div class="chart-card bar-card">
+                <div class="chart-title">📊 Complaint Resolution Trends</div>
+                <div class="chart-container">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card doughnut-card">
+                <div class="chart-title">🍰 Scheme Demand by Sector</div>
+                <div class="chart-container">
+                    <canvas id="schemeChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="analytics-summary">
+            <div class="summary-title">📈 Recent Complaints Overview</div>
+            <div class="summary-row">
+                <span class="summary-label">Total Complaints Filed</span>
+                <span class="summary-val" style="color:#c2410c;">{{ total }}</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">Resolved Successfully</span>
+                <span class="summary-val" style="color:var(--green-light);">{{ resolved }}</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">Pending / In Progress</span>
+                <span class="summary-val" style="color:var(--purple);">{{ (total|int - resolved|int) }}</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">Resolution Rate</span>
+                <span class="summary-val" style="color:var(--blue);">{{ resolution_rate }}%</span>
+            </div>
+        </div>
+        {% else %}
+        <div class="table-card">
+            <div class="no-data">
+                <span class="no-data-icon" aria-hidden="true">📊</span>
+                <div class="no-data-title">No complaint data available yet.</div>
+                Charts will appear here once complaints start coming in.
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- ═══════════ TAB: FRAUD DETECTION ═══════════ -->
+    <div class="tab-content" id="tab-fraud" role="tabpanel">
+        <div class="table-card" style="margin-top:10px;">
+            <div class="table-header red">
+                <h3>🔍 Flagged Suspicious Activity (High Risk)</h3>
+                <p>Profiles with conflicting demographic entries detected by the fraud-fingerprint check</p>
+            </div>
+            <div class="confidential-notice red">
+                ⚠️ ALERT — The following phone numbers submitted eligibility forms multiple times with conflicting demographics. This may indicate false claims.
+            </div>
+            {% if suspicious_fingerprints %}
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Flag ID</th>
+                            <th>Phone Number</th>
+                            <th>IP Address</th>
+                            <th>Age Group</th>
+                            <th>Income (₹)</th>
+                            <th>Family Size</th>
+                            <th>Submitted At</th>
+                            <th>Risk Level</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fp in suspicious_fingerprints %}
+                        <tr class="fake-row">
+                            <td><span style="font-family:monospace;color:#c2410c;">FLAG-{{ "%04d" | format(loop.index) }}</span></td>
+                            <td><strong>{{ fp['phone'] }}</strong></td>
+                            <td>{{ fp['ip_address'] }}</td>
+                            <td>{{ fp['age_group'] }}</td>
+                            <td><strong style="color:var(--red);">₹{{ fp['income'] }}</strong></td>
+                            <td>{{ fp['family_size'] }}</td>
+                            <td><div class="date-cell">{{ fp['submitted_at'] }}</div></td>
+                            <td>
+                                {% if phone_risk.get(fp['phone']) == 'High' %}
+                                <span class="risk-high">High</span>
+                                {% else %}
+                                <span class="risk-med">Med</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="no-data green">
+                ✓ No suspicious eligibility submissions detected. All profiles are consistent!
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ═══════════ TAB: LEDGER INTEGRITY ═══════════ -->
+    <div class="tab-content" id="tab-ledger" role="tabpanel">
+        <div class="alert-banner {% if ledger_valid %}success{% else %}danger{% endif %}" style="margin-top:10px;">
+            <div style="font-size:28px;" aria-hidden="true">{% if ledger_valid %}🛡️{% else %}🚨{% endif %}</div>
+            <div class="alert-banner-text">
+                <h4>{{ ledger_message }}</h4>
+                <p>The Audit Ledger verifies the cryptographic SHA-256 chain of all corruption complaints. If any record is altered in the database, the chain breaks and tampering is detected.</p>
+            </div>
+        </div>
+        <div class="table-card">
+            <div class="table-header dark">
+                <h3>🔒 Cryptographic Grievance Audit Trail</h3>
+                <p>Chained grievance blocks using SHA-256 (Genesis-linked)</p>
+            </div>
+            {% if ledger_blocks %}
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Block ID</th>
+                            <th>Tracking ID</th>
+                            <th>Status</th>
+                            <th>Timestamp</th>
+                            <th>Previous Hash</th>
+                            <th>Block Hash</th>
+                            <th>Verification</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for block in ledger_blocks %}
+                        <tr>
+                            <td><strong style="color:var(--purple);">#{{ block['id'] }}</strong></td>
+                            <td><span class="tracking-id">{{ block['tracking_id'] }}</span></td>
+                            <td><span class="status-badge status-{{ block['status'].replace(' ', '') }}">{{ block['status'] }}</span></td>
+                            <td><div class="date-cell">{{ block['timestamp'] }}</div></td>
+                            <td style="font-family:monospace; font-size:10px; color:var(--text-faint);">{{ block['prev_hash'][:16] }}...</td>
+                            <td style="font-family:monospace; font-size:10px; font-weight:700; color:var(--blue);">{{ block['block_hash'][:16] }}...</td>
+                            <td><span class="verified-badge">✓ Verified</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="no-data">No ledger entries yet. File a complaint to start the cryptographic audit trail.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ═══════════ TAB: ACTIVITY LOG ═══════════ -->
+    <div class="tab-content" id="tab-activity" role="tabpanel">
+        <div class="table-card">
+            <div class="table-header navy">
+                <h3>📝 Recent Activity Log</h3>
+                <p>Last 20 actions in the system</p>
+            </div>
+            {% if recent_logs %}
+            <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>IP Address</th>
+                        <th>Browser</th>
+                        <th>Device</th>
+                        <th>Details</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in recent_logs %}
+                    <tr {% if log['suspicious'] %}class="suspicious-row"{% endif %}>
+                        <td><div class="date-cell">{{ log['timestamp'] }}</div></td>
+                        <td><strong>{{ log['username'] }}</strong></td>
+                        <td>
+                            <span class="log-action
+                                {% if log['suspicious'] %}log-danger
+                                {% elif 'LOGIN' in log['action'] %}log-warning
+                                {% else %}log-normal{% endif %}">
+                                {{ log['action'] }}
+                            </span>
+                        </td>
+                        <td>{{ log['ip_address'] }}</td>
+                        <td>{{ log['browser'] }}</td>
+                        <td>{{ log['device'] }}</td>
+                        <td style="max-width:200px;font-size:11px;">{{ log['details'] }}</td>
+                        <td>
+                            {% if log['suspicious'] %}
+                            <span class="suspicious-badge">⚠ SUSPICIOUS</span>
+                            {% else %}
+                            <span class="normal-badge">✓ NORMAL</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% else %}
+            <div class="no-data">No activity logs yet.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ═══════════ TAB: AI/ML MODEL ═══════════ -->
+    <div class="tab-content" id="tab-ml-model" role="tabpanel">
+        <div class="table-card" style="padding: 25px;">
+            <div class="ml-header">
+                <div>
+                    <h3>🤖 Trained Machine Learning Model (Poverty Scoring)</h3>
+                    <p>Random Forest Classifier trained on NFHS-5 Socio-Economic Census Indicators</p>
+                </div>
+                <div class="ml-accuracy-pill">Model Accuracy: <span id="ml_accuracy_val">—</span></div>
+            </div>
+
+            <div class="ml-grid">
+                <div class="ml-panel">
+                    <h4>📊 Feature Importance (Weights %)</h4>
+                    <div style="height: 260px; position: relative;">
+                        <canvas id="mlFeatureChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="ml-panel">
+                    <h4>🎯 Classification Matrix (6,000 Validation Samples)</h4>
+                    <table class="ml-cm-table">
+                        <thead>
+                            <tr>
+                                <th>Actual \ Predicted</th>
+                                <th>Low</th>
+                                <th>Moderate</th>
+                                <th>High</th>
+                                <th>Critical</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cm_body">
+                            <tr><td style="font-weight:bold;text-align:left;">Low Need</td><td class="diag">171</td><td>21</td><td>0</td><td>0</td></tr>
+                            <tr><td style="font-weight:bold;text-align:left;">Moderate Need</td><td>16</td><td class="diag">493</td><td>27</td><td>0</td></tr>
+                            <tr><td style="font-weight:bold;text-align:left;">High Need</td><td>0</td><td>63</td><td class="diag">337</td><td>8</td></tr>
+                            <tr><td style="font-weight:bold;text-align:left;">Critical Need</td><td>0</td><td>0</td><td>21</td><td class="diag">43</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="ml-note">
+                        <strong>Key Indicators:</strong> Monthly Income (24.7%) and Age Group (13.4%) are the primary features determining acute poverty severity.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ TAB: SECURITY ALERTS ═══════════ -->
+    <div class="tab-content" id="tab-alerts" role="tabpanel">
+        {% if suspicious_count > 0 %}
+        <div class="alert-banner danger" style="margin-top:10px;">
+            <div style="font-size:26px;" aria-hidden="true">🚨</div>
+            <div class="alert-banner-text">
+                <h4>{{ suspicious_count }} Suspicious {{ 'Activity' if suspicious_count == 1 else 'Activities' }} Detected!</h4>
+                <p>Full details below — IP address, browser, device, and timestamp. Use IP to trace the person.</p>
+            </div>
+        </div>
+        {% endif %}
+        <div class="table-card">
+            <div class="table-header red">
+                <h3>🚨 Security Alerts</h3>
+                <p>{{ suspicious_count }} total alerts</p>
+            </div>
+            {% if suspicious_logs %}
+            <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Username Attempted</th>
+                        <th>Action</th>
+                        <th>IP Address</th>
+                        <th>Browser</th>
+                        <th>Device</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in suspicious_logs %}
+                    <tr class="suspicious-row">
+                        <td><div class="date-cell">{{ log['timestamp'] }}</div></td>
+                        <td><strong style="color:var(--red);">{{ log['username'] }}</strong></td>
+                        <td><span class="log-action log-danger">{{ log['action'] }}</span></td>
+                        <td><strong style="color:var(--red);">{{ log['ip_address'] }}</strong></td>
+                        <td>{{ log['browser'] }}</td>
+                        <td>{{ log['device'] }}</td>
+                        <td style="font-size:11px;">{{ log['details'] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% else %}
+            <div class="no-data green">✓ No suspicious activity detected. System is secure!</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="footer">
+        Poverty Aid Identifier — Admin Panel — Confidential — All access logged and monitored<br>
+        Logged in as: <strong>{{ admin_name }}</strong> ({{ admin_role }}) — {{ now }}
+    </div>
+</div>
+
+<script>
+function showTab(name, el) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+    document.getElementById('tab-' + name).classList.add('active');
+    if (el) { el.classList.add('active'); el.setAttribute('aria-selected', 'true'); }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    {% if total > 0 %}
+    // 1. Bar Chart — Complaint Status
+    const ctxStatus = document.getElementById('statusChart').getContext('2d');
+    new Chart(ctxStatus, {
+        type: 'bar',
+        data: {
+            labels: ['Filed', 'Received', 'Action Taken', 'Resolved'],
+            datasets: [{
+                label: 'Complaints',
+                data: [{{ filed }}, {{ received }}, {{ action }}, {{ resolved }}],
+                backgroundColor: ['rgba(251,146,60,0.7)','rgba(96,165,250,0.7)','rgba(192,132,252,0.7)','rgba(74,222,128,0.7)'],
+                borderColor:     ['#FB923C','#60a5fa','#c084fc','#4ade80'],
+                borderWidth: 1,
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} complaints` } }
+            },
+            scales: {
+                x: { ticks: { color: 'rgba(30,41,59,0.55)' }, grid: { color: 'rgba(15,23,42,0.06)' } },
+                y: { beginAtZero: true, ticks: { stepSize: 1, color: 'rgba(30,41,59,0.55)' }, grid: { color: 'rgba(15,23,42,0.06)' } }
+            }
+        }
+    });
+
+    // 2. Doughnut Chart — Scheme Demand (real data only; no chart drawn if none)
+    const schemeLabels = [];
+    const schemeData = [];
+    {% for scheme, count in scheme_stats.items() %}
+        schemeLabels.push('{{ scheme.replace("_", " ").title() }}');
+        schemeData.push({{ count }});
+    {% endfor %}
+    if (schemeData.length > 0) {
+        const ctxScheme = document.getElementById('schemeChart').getContext('2d');
+        new Chart(ctxScheme, {
+            type: 'doughnut',
+            data: {
+                labels: schemeLabels,
+                datasets: [{
+                    data: schemeData,
+                    backgroundColor: ['#FF9933','#138808','#3b82f6','#9C27B0','#00BCD4','#E91E63','#FFEB3B','#4ade80'],
+                    borderColor: 'rgba(0,0,0,0.2)', borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: 'rgba(30,41,59,0.7)', boxWidth: 12, font: { size: 11 } } }
+                }
+            }
+        });
+    }
+    {% endif %}
+
+    // 3. ML Feature Importance Chart
+    fetch('/api/ml-metrics')
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.metrics) {
+                document.getElementById('ml_accuracy_val').innerText = data.metrics.accuracy + '%';
+                const featDict = data.metrics.feature_importances;
+                const labels = Object.keys(featDict);
+                const values = Object.values(featDict);
+                const ctxMl = document.getElementById('mlFeatureChart').getContext('2d');
+                new Chart(ctxMl, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Feature Weight (%)',
+                            data: values,
+                            backgroundColor: '#FF9933',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { beginAtZero: true, ticks: { color: 'rgba(30,41,59,0.55)' }, grid: { color: 'rgba(15,23,42,0.06)' } },
+                            y: { ticks: { color: 'rgba(30,41,59,0.7)' }, grid: { color: 'rgba(15,23,42,0.06)' } }
+                        }
+                    }
+                });
+            } else {
+                document.getElementById('ml_accuracy_val').innerText = 'N/A';
+            }
+        })
+        .catch(e => { document.getElementById('ml_accuracy_val').innerText = 'N/A'; console.log('ML Metrics fetch error', e); });
+});
+</script>
+</body>
+</html>

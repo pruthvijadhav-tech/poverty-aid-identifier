@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Application - Poverty Aid Identifier</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#000080">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AidApp">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; color: #333; }
+        .top-bar { background: linear-gradient(90deg, #FF9933, #ffffff, #138808); height: 6px; }
+        .header { background: #000080; color: white; padding: 20px; text-align: center; }
+        .header h1 { font-size: 20px; margin-bottom: 4px; }
+        .header p { font-size: 12px; opacity: 0.8; }
+        .container { max-width: 700px; margin: 0 auto; padding: 20px; }
+
+        .track-form-card { background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 25px; margin-top: 20px; border-top: 4px solid #000080; }
+        .track-form-card h2 { color: #000080; font-size: 18px; margin-bottom: 8px; border-bottom: 2px solid #FF9933; padding-bottom: 8px; }
+        .track-form-card p { font-size: 13px; color: #666; margin-bottom: 20px; margin-top: 8px; }
+        .track-input-row { display: flex; gap: 10px; }
+        .track-input-row input { flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 15px; background: #fafafa; }
+        .track-input-row input:focus { border-color: #FF9933; outline: none; }
+        .track-btn { padding: 12px 20px; background: #000080; color: white; border: none; border-radius: 10px; font-size: 15px; cursor: pointer; font-weight: bold; }
+        .track-btn:hover { background: #0000aa; }
+
+        .not-found { background: #ffebee; border-left: 4px solid #c62828; padding: 15px; border-radius: 10px; color: #c62828; font-size: 14px; margin-top: 20px; }
+
+        .track-card { background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; margin-top: 25px; }
+        .track-header { background: #000080; color: white; padding: 20px 25px; }
+        .track-header h3 { font-size: 14px; opacity: 0.8; margin-bottom: 5px; }
+        .track-id { font-size: 22px; font-weight: bold; letter-spacing: 2px; color: #FF9933; }
+        .track-header .person-name { font-size: 12px; opacity: 0.85; margin-top: 4px; }
+        .track-body { padding: 20px 25px; }
+
+        .scheme-block { border-bottom: 1px solid #f0f0f0; padding: 18px 0; }
+        .scheme-block:last-child { border-bottom: none; }
+        .scheme-name { font-size: 14px; font-weight: bold; color: #000080; margin-bottom: 14px; }
+
+        .progress-steps { display: flex; justify-content: space-between; position: relative; margin-bottom: 4px; }
+        .progress-steps::before { content: ''; position: absolute; top: 13px; left: 0; right: 0; height: 3px; background: #e0e0e0; z-index: 0; }
+        .progress-line { position: absolute; top: 13px; left: 0; height: 3px; background: linear-gradient(90deg, #FF9933, #138808); z-index: 1; }
+        .progress-line.rejected-line { background: #c62828; }
+        .step { display: flex; flex-direction: column; align-items: center; position: relative; z-index: 2; flex: 1; }
+        .step-dot { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; border: 2px solid #e0e0e0; background: white; color: #999; }
+        .step-dot.done { background: #138808; border-color: #138808; color: white; }
+        .step-dot.active { background: #FF9933; border-color: #FF9933; color: white; }
+        .step-dot.rejected { background: #c62828; border-color: #c62828; color: white; }
+        .step-label { font-size: 9.5px; color: #666; margin-top: 5px; text-align: center; font-weight: bold; }
+
+        .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; display: inline-block; margin-top: 10px; }
+        .status-not_applied { background: #f0f0f0; color: #777; }
+        .status-applied { background: #fff3e0; color: #e65c00; }
+        .status-under_review { background: #e3f2fd; color: #1565c0; }
+        .status-approved { background: #e8f5e9; color: #1b5e20; }
+        .status-rejected { background: #ffebee; color: #c62828; }
+
+        .back-btn { display: block; width: 100%; padding: 14px; background: #000080; color: white; border: none; border-radius: 10px; font-size: 15px; cursor: pointer; font-weight: bold; text-align: center; text-decoration: none; margin-top: 20px; }
+        .back-btn:hover { opacity: 0.9; }
+        .footer { text-align: center; padding: 20px; color: #999; font-size: 12px; margin-top: 20px; }
+
+        .lang-en .hi, .lang-en .mr { display: none; }
+        .lang-hi .en, .lang-hi .mr { display: none; }
+        .lang-mr .en, .lang-mr .hi { display: none; }
+
+        @media (max-width: 480px) {
+            .track-id { font-size: 18px; }
+            .track-input-row { flex-direction: column; }
+            .step-label { font-size: 8.5px; }
+        }
+    </style>
+</head>
+<body class="lang-{{ lang }}">
+<div class="top-bar"></div>
+<div class="header">
+    <h1>
+        <span class="en">Track Your Application</span>
+        <span class="hi">अपना आवेदन ट्रैक करें</span>
+        <span class="mr">तुमचा अर्ज ट्रॅक करा</span>
+    </h1>
+    <p>
+        <span class="en">See the real status of every scheme you were recommended</span>
+        <span class="hi">आपको सुझाई गई हर योजना की असली स्थिति देखें</span>
+        <span class="mr">तुम्हाला सुचवलेल्या प्रत्येक योजनेची खरी स्थिती पहा</span>
+    </p>
+</div>
+
+<div class="container">
+    <div class="track-form-card">
+        <h2>
+            <span class="en">Track Application</span>
+            <span class="hi">आवेदन ट्रैक करें</span>
+            <span class="mr">अर्ज ट्रॅक करा</span>
+        </h2>
+        <p>
+            <span class="en">Enter the Application ID you received (e.g. APP-2026-7842)</span>
+            <span class="hi">अपनी Application ID दर्ज करें (जैसे APP-2026-7842)</span>
+            <span class="mr">तुमचा Application ID टाका (उदा. APP-2026-7842)</span>
+        </p>
+        <form method="POST">
+            <input type="hidden" name="lang" value="{{ lang }}"/>
+            <div class="track-input-row">
+                <input type="text" name="application_id_input" placeholder="APP-2026-XXXX" value="{{ prefill_id }}" required/>
+                <button type="submit" class="track-btn">
+                    <span class="en">Track</span>
+                    <span class="hi">ट्रैक</span>
+                    <span class="mr">ट्रॅक</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {% if not_found %}
+    <div class="not-found">
+        <span class="en">No application found with this ID. Please check and try again.</span>
+        <span class="hi">इस ID से कोई आवेदन नहीं मिला। कृपया जांचें और फिर कोशिश करें।</span>
+        <span class="mr">या ID सह कोणताही अर्ज सापडला नाही. कृपया तपासा आणि पुन्हा प्रयत्न करा.</span>
+    </div>
+    {% endif %}
+
+    {% if outcomes %}
+    <div class="track-card">
+        <div class="track-header">
+            <h3>
+                <span class="en">Application Tracking</span>
+                <span class="hi">आवेदन ट्रैकिंग</span>
+                <span class="mr">अर्ज ट्रॅकिंग</span>
+            </h3>
+            <div class="track-id">{{ application_id }}</div>
+            <div class="person-name">{{ person_name }}</div>
+        </div>
+        <div class="track-body">
+            {% for row in outcomes %}
+            {% set status = row.status %}
+            <div class="scheme-block">
+                <div class="scheme-name">{{ row.scheme_name }}</div>
+
+                {% if status == 'rejected' %}
+                <div class="progress-steps">
+                    <div class="progress-line rejected-line" style="width:66%"></div>
+                    <div class="step">
+                        <div class="step-dot done">✓</div>
+                        <div class="step-label"><span class="en">Not Applied</span><span class="hi">आवेदन नहीं</span><span class="mr">अर्ज नाही</span></div>
+                    </div>
+                    <div class="step">
+                        <div class="step-dot done">✓</div>
+                        <div class="step-label"><span class="en">Applied</span><span class="hi">आवेदन किया</span><span class="mr">अर्ज केला</span></div>
+                    </div>
+                    <div class="step">
+                        <div class="step-dot rejected">✕</div>
+                        <div class="step-label"><span class="en">Rejected</span><span class="hi">अस्वीकृत</span><span class="mr">नाकारले</span></div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="progress-steps">
+                    <div class="progress-line" style="width:
+                        {% if status == 'not_applied' %}0%
+                        {% elif status == 'applied' %}33%
+                        {% elif status == 'under_review' %}66%
+                        {% elif status == 'approved' %}100%
+                        {% else %}0%{% endif %}">
+                    </div>
+                    <div class="step">
+                        <div class="step-dot done">✓</div>
+                        <div class="step-label"><span class="en">Not Applied</span><span class="hi">आवेदन नहीं</span><span class="mr">अर्ज नाही</span></div>
+                    </div>
+                    <div class="step">
+                        <div class="step-dot {% if status in ['applied','under_review','approved'] %}done{% elif status == 'not_applied' %}active{% endif %}">
+                            {% if status in ['applied','under_review','approved'] %}✓{% else %}2{% endif %}
+                        </div>
+                        <div class="step-label"><span class="en">Applied</span><span class="hi">आवेदन किया</span><span class="mr">अर्ज केला</span></div>
+                    </div>
+                    <div class="step">
+                        <div class="step-dot {% if status in ['under_review','approved'] %}done{% elif status == 'applied' %}active{% endif %}">
+                            {% if status in ['under_review','approved'] %}✓{% else %}3{% endif %}
+                        </div>
+                        <div class="step-label"><span class="en">Under Review</span><span class="hi">समीक्षा में</span><span class="mr">पुनरावलोकनात</span></div>
+                    </div>
+                    <div class="step">
+                        <div class="step-dot {% if status == 'approved' %}done{% elif status == 'under_review' %}active{% endif %}">
+                            {% if status == 'approved' %}✓{% else %}4{% endif %}
+                        </div>
+                        <div class="step-label"><span class="en">Approved</span><span class="hi">मंजूर</span><span class="mr">मंजूर</span></div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <span class="status-badge status-{{ status }}">
+                    {% if status == 'not_applied' %}<span class="en">Not yet applied</span><span class="hi">अभी आवेदन नहीं</span><span class="mr">अजून अर्ज नाही</span>
+                    {% elif status == 'applied' %}<span class="en">Applied</span><span class="hi">आवेदन किया गया</span><span class="mr">अर्ज केला</span>
+                    {% elif status == 'under_review' %}<span class="en">Under Review</span><span class="hi">समीक्षा में</span><span class="mr">पुनरावलोकनात</span>
+                    {% elif status == 'approved' %}<span class="en">Approved</span><span class="hi">मंजूर</span><span class="mr">मंजूर</span>
+                    {% elif status == 'rejected' %}<span class="en">Rejected</span><span class="hi">अस्वीकृत</span><span class="mr">नाकारले</span>
+                    {% endif %}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <p style="text-align:center;font-size:12px;color:#888;margin-top:12px;">
+        <span class="en">Status changed? Just tell the AI Assistant chatbot — e.g. "I got approved for Widow Pension".</span>
+        <span class="hi">स्थिति बदली? बस AI Assistant चैटबॉट को बताएं — जैसे "मुझे Widow Pension मंजूर हो गई"।</span>
+        <span class="mr">स्थिती बदलली? फक्त AI Assistant चॅटबॉटला सांगा — उदा. "मला Widow Pension मंजूर झाली".</span>
+    </p>
+    {% endif %}
+
+    <a href="/" class="back-btn">
+        <span class="en">← Back to Main App</span>
+        <span class="hi">← मुख्य ऐप पर वापस</span>
+        <span class="mr">← मुख्य अॅपवर परत</span>
+    </a>
+    <div class="footer">Poverty Aid Identifier - Real outcomes, not just recommendations.</div>
+</div>
+</body>
+</html>

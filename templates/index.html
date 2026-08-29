@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poverty Aid Identifier</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <script src="/static/offline-scoring.js" defer></script>
+    <meta name="theme-color" content="#000080">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AidApp">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; color: #333; }
+
+        .loading-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,128,0.90); z-index: 99999; align-items: center; justify-content: center; flex-direction: column; }
+        .loading-overlay.show { display: flex; }
+        .spinner { width: 55px; height: 55px; border: 5px solid rgba(255,255,255,0.3); border-top: 5px solid #FF9933; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loading-text { color: white; font-size: 18px; font-weight: bold; }
+        .loading-sub { color: rgba(255,255,255,0.7); font-size: 13px; margin-top: 8px; text-align: center; }
+
+        .lang-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #FF9933 0%, #ffffff 50%, #138808 100%); }
+        .lang-logo { width: 80px; height: 80px; background: #000080; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+        .lang-logo span { color: white; font-size: 32px; font-weight: bold; }
+        .lang-title { font-size: 28px; font-weight: bold; color: #000080; margin-bottom: 8px; text-align: center; }
+        .lang-tagline { font-size: 13px; color: #333; margin-bottom: 5px; text-align: center; }
+        .lang-card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.15); margin-top: 25px; width: 320px; text-align: center; }
+        .lang-card h3 { color: #000080; margin-bottom: 20px; font-size: 15px; }
+        .lang-buttons { display: flex; flex-direction: column; gap: 12px; }
+        .lang-btn { padding: 16px; font-size: 17px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: transform 0.2s; }
+        .lang-btn:hover { transform: scale(1.04); }
+        .btn-english { background: #000080; color: white; }
+        .btn-hindi { background: #FF9933; color: white; }
+        .btn-marathi { background: #138808; color: white; }
+        .hidden { display: none; }
+
+        .top-bar { background: linear-gradient(90deg, #FF9933, #ffffff, #138808); height: 6px; }
+        .header { background: #000080; color: white; padding: 20px; text-align: center; }
+        .header h1 { font-size: 22px; margin-bottom: 5px; }
+        .header p { font-size: 13px; opacity: 0.85; }
+
+        .container { max-width: 700px; margin: 0 auto; padding: 20px; }
+
+        .error-alert { background: #ffebee; border-left: 4px solid #c62828; padding: 12px 15px; border-radius: 8px; color: #c62828; font-size: 13px; margin-top: 15px; margin-bottom: 5px; }
+
+        .form-card { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-top: 20px; border-top: 4px solid #FF9933; }
+        .form-section-title { font-size: 13px; font-weight: bold; color: #FF9933; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid #f0f0f0; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 7px; color: #000080; font-size: 15px; }
+        input, select { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 15px; background: #fafafa; transition: border 0.2s; }
+        input:focus, select:focus { border-color: #FF9933; outline: none; background: white; }
+        input.error-field, select.error-field { border-color: #c62828; }
+        input.success-field, select.success-field { border-color: #138808; }
+        .field-error { color: #c62828; font-size: 11px; margin-top: 4px; display: none; }
+        .field-error.show { display: block; }
+        .field-hint { color: #888; font-size: 11px; margin-top: 4px; }
+        .input-with-mic { display: flex; gap: 8px; align-items: center; }
+        .input-with-mic input { flex: 1; }
+        .mic-btn { flex-shrink: 0; width: 44px; height: 44px; border-radius: 10px; border: 2px solid #e0e0e0; background: #fafafa; font-size: 18px; cursor: pointer; transition: all 0.2s; }
+        .mic-btn:hover { border-color: #FF9933; background: #fff3e0; }
+        .mic-btn.listening { border-color: #c62828; background: #ffebee; animation: mic-pulse 1s infinite; }
+        @keyframes mic-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .consent-group { display: flex; align-items: flex-start; gap: 10px; background: #fff9f0; border: 1px solid #FF9933; border-radius: 10px; padding: 12px 14px; margin: 16px 0; }
+        .consent-group input[type="checkbox"] { width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0; accent-color: #FF9933; }
+        .consent-group label { font-size: 12px; color: #555; font-weight: normal; margin-bottom: 0; line-height: 1.5; }
+
+        .submit-btn { width: 100%; padding: 16px; background: linear-gradient(90deg, #FF9933, #e65c00); color: white; border: none; border-radius: 10px; font-size: 17px; cursor: pointer; font-weight: bold; margin-top: 10px; letter-spacing: 1px; transition: opacity 0.2s; }
+        .submit-btn:hover { opacity: 0.9; }
+        .submit-btn:active { transform: scale(0.98); }
+
+        .privacy-note { background: #e8f5e9; border-left: 4px solid #138808; padding: 10px 15px; border-radius: 8px; font-size: 12px; color: #1b5e20; margin-bottom: 20px; }
+
+        .result-card { margin-top: 25px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; }
+        .result-header { background: #000080; color: white; padding: 20px 25px; }
+        .result-header h2 { font-size: 16px; margin-bottom: 5px; opacity: 0.8; }
+        .result-status { font-size: 22px; font-weight: bold; color: #FF9933; }
+        .result-name { font-size: 14px; margin-top: 5px; opacity: 0.9; }
+        .result-body { padding: 20px 25px; }
+        .score-label { font-size: 14px; color: #666; margin-bottom: 6px; }
+        .score-bar { height: 12px; background: #e0e0e0; border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
+        .score-fill { height: 100%; background: linear-gradient(90deg, #138808, #FF9933, #cc0000); border-radius: 10px; }
+        .schemes-title { color: #000080; font-size: 16px; font-weight: bold; margin-bottom: 12px; border-bottom: 2px solid #FF9933; padding-bottom: 8px; }
+        .scheme-item { background: #f0f7f0; border-left: 4px solid #138808; padding: 12px 15px; border-radius: 8px; margin-bottom: 10px; font-size: 14px; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
+        .scheme-item:hover { background: #e0f0e0; }
+        .scheme-item.urgent { background: #fff3e0; border-left: 4px solid #FF9933; font-weight: bold; }
+        .scheme-item.urgent:hover { background: #ffe0b0; }
+        .scheme-amount { font-weight: bold; color: #138808; font-size: 13px; margin-left: 10px; white-space: nowrap; }
+        .scheme-item.urgent .scheme-amount { color: #e65c00; }
+        .scheme-click-hint { font-size: 12px; color: #888; margin-bottom: 8px; font-style: italic; }
+
+        .print-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px; background: linear-gradient(90deg, #138808, #0d6e05); color: white; border: none; border-radius: 10px; font-size: 15px; cursor: pointer; font-weight: bold; margin-top: 15px; }
+        .print-btn:hover { opacity: 0.9; }
+
+        .corruption-section { margin-top: 15px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; border-top: 4px solid #c62828; }
+        .corruption-section-header { background: #c62828; color: white; padding: 15px 25px; font-size: 16px; font-weight: bold; }
+        .corruption-section-body { padding: 20px 25px; }
+        .corruption-section-body p { font-size: 14px; color: #555; margin-bottom: 10px; line-height: 1.6; }
+        .corruption-btn { display: block; width: 100%; padding: 15px; background: linear-gradient(90deg, #c62828, #b71c1c); color: white; border: none; border-radius: 10px; font-size: 15px; cursor: pointer; font-weight: bold; text-align: center; text-decoration: none; margin-top: 15px; }
+        .corruption-btn:hover { opacity: 0.9; }
+
+        .action-btns { margin-top: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .check-another { display: block; text-align: center; color: #000080; font-size: 14px; text-decoration: none; font-weight: bold; padding: 12px; background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .track-btn-main { display: block; text-align: center; color: #138808; font-size: 14px; text-decoration: none; font-weight: bold; padding: 12px; background: #e8f5e9; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .back-btn-main { display: block; text-align: center; color: #555; font-size: 14px; text-decoration: none; font-weight: bold; padding: 12px; background: #f5f5f5; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .heatmap-btn { display: block; text-align: center; color: #e65c00; font-size: 14px; text-decoration: none; font-weight: bold; padding: 12px; background: #fff3e0; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+        .footer { text-align: center; padding: 20px; color: #999; font-size: 12px; margin-top: 20px; }
+
+        @media print {
+            .no-print { display: none !important; }
+            .top-bar { display: none; }
+            .header { background: #000080 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .result-header { background: #000080 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            body { background: white; }
+            .container { padding: 0; }
+            .print-header { display: block !important; }
+        }
+        .print-header { display: none; text-align: center; padding: 15px; border-bottom: 3px solid #000080; margin-bottom: 15px; }
+        .print-header h2 { color: #000080; font-size: 20px; }
+        .print-header p { font-size: 13px; color: #666; margin-top: 4px; }
+
+        .install-banner { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #000080; color: white; padding: 15px 20px; z-index: 9999; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 -4px 20px rgba(0,0,0,0.3); }
+        .install-banner.show { display: flex; }
+        .install-banner-info { display: flex; align-items: center; gap: 12px; }
+        .install-banner-icon { width: 40px; height: 40px; border-radius: 10px; }
+        .install-banner-title { font-weight: bold; font-size: 14px; }
+        .install-banner-sub { font-size: 11px; opacity: 0.8; }
+        .install-banner-btns { display: flex; gap: 8px; flex-shrink: 0; }
+        .install-later { padding: 8px 15px; background: transparent; color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; font-size: 13px; cursor: pointer; }
+        .install-now { padding: 8px 15px; background: #FF9933; color: white; border: none; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: bold; }
+
+        @media (max-width: 480px) {
+            .header h1 { font-size: 18px; }
+            .result-status { font-size: 18px; }
+            .lang-card { width: 290px; }
+            .install-banner { flex-direction: column; text-align: center; }
+        }
+
+        .ocr-card { background: #fff8f0; border: 2px dashed #FF9933; border-radius: 14px; padding: 16px; margin-bottom: 22px; }
+        .ocr-toggle { width: 100%; display: flex; align-items: center; gap: 8px; background: transparent; border: 1px solid #e0e0e0; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; color: #666; cursor: pointer; margin-bottom: 14px; text-align: left; }
+        .ocr-toggle:hover { border-color: #FF9933; color: #000080; }
+        .ocr-chevron { margin-left: auto; font-size: 11px; }
+        .ocr-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .ocr-icon { font-size: 26px; }
+        .ocr-title { font-weight: 700; font-size: 14px; color: #000080; }
+        .ocr-sub { font-size: 12px; color: #777; margin-top: 2px; }
+        .ocr-upload-btn { width: 100%; padding: 12px; background: #000080; color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .ocr-upload-btn:hover { background: #1a1a9e; }
+        .ocr-upload-btn:disabled { background: #aaa; cursor: not-allowed; }
+        #docPreview { width: 100%; max-height: 180px; object-fit: contain; border-radius: 10px; margin-top: 12px; border: 1px solid #eee; }
+        .ocr-status { margin-top: 10px; padding: 10px 12px; border-radius: 8px; font-size: 12.5px; line-height: 1.5; }
+        .ocr-status.loading { background: #fff3cd; color: #856404; }
+        .ocr-status.success { background: #e8f5e9; color: #1b5e20; }
+        .ocr-status.error { background: #ffebee; color: #c62828; }
+        .ocr-note { font-size: 10.5px; color: #999; margin-top: 10px; text-align: center; }
+        .autofilled { background: #e8f5e9 !important; border-color: #138808 !important; transition: background 0.6s ease; }
+    </style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">Checking Eligibility...</div>
+    <div class="loading-sub" id="loadingSub">Please wait a moment</div>
+</div>
+
+<div class="install-banner" id="installBanner">
+    <div class="install-banner-info">
+        <img src="/static/icons/icon-192.png" class="install-banner-icon" alt="App Icon"/>
+        <div>
+            <div class="install-banner-title">Install Poverty Aid App</div>
+            <div class="install-banner-sub">Works offline • No app store needed</div>
+        </div>
+    </div>
+    <div class="install-banner-btns">
+        <button class="install-later" id="dismissBtn">Later</button>
+        <button class="install-now" id="installBtn">Install</button>
+    </div>
+</div>
+
+{% if not result %}
+<div class="lang-screen" id="langScreen">
+    <img src="/static/icons/icon-192.png" alt="AidLink Logo" style="width: 80px; height: 80px; border-radius: 18px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); object-fit: cover;">
+    <div class="lang-title">Poverty Aid Identifier</div>
+    <div class="lang-tagline" style="font-weight: 600; margin-bottom: 20px;">Select Questionnaire Language / भाषा चुनें</div>
+    
+    <div class="lang-card" style="margin-top: 0px;">
+        <div class="lang-buttons">
+            <button class="lang-btn btn-english lang-en" onclick="selectLang('en')">English</button>
+            <button class="lang-btn btn-hindi lang-hi" onclick="selectLang('hi')">Hindi - हिंदी</button>
+            <button class="lang-btn btn-marathi lang-mr" onclick="selectLang('mr')">Marathi - मराठी</button>
+        </div>
+    </div>
+</div>
+<div id="mainApp" class="hidden">
+{% else %}
+<div id="mainApp">
+{% endif %}
+
+    <div class="top-bar"></div>
+    <div class="header">
+        <h1 id="appTitle">Poverty Aid Identifier</h1>
+        <p id="appSubtitle">Every person will receive help. Priority given to children, elderly and emergencies.</p>
+    </div>
+
+    <div class="container">
+
+        {% if error %}
+        <div class="error-alert">⚠️ {{ error }}</div>
+        {% endif %}
+
+        {% if not result %}
+        <div class="form-card">
+            <!-- FIX: autocomplete="off" prevents the browser from re-filling
+                 old values into a "fresh" form, and novalidate lets our JS
+                 validation run consistently across browsers. -->
+            <form method="POST" id="mainForm" autocomplete="off" novalidate onsubmit="return validateAndSubmit()">
+                <input type="hidden" name="lang" id="langInput" value="en"/>
+
+                <div class="form-section-title" id="section_personal">Personal Details</div>
+                <div class="privacy-note" id="privacyNote">Your personal details are confidential and will only be shared with authorized government officers if you file a corruption complaint.</div>
+
+                <button type="button" class="ocr-toggle" id="ocrToggle" onclick="toggleOcrCard()">
+                    <span class="ocr-icon">📷</span>
+                    <span id="ocrToggleText">Have a document? Tap to auto-fill (optional)</span>
+                    <span class="ocr-chevron" id="ocrChevron">▾</span>
+                </button>
+                <div class="ocr-card" id="ocrCard" style="display:none">
+                    <div class="ocr-header">
+                        <span class="ocr-icon">📷</span>
+                        <div>
+                            <div class="ocr-title" id="ocrTitle">Have your Aadhaar or Ration Card?</div>
+                            <div class="ocr-sub" id="ocrSub">Upload a photo and we'll fill in your details automatically</div>
+                        </div>
+                    </div>
+                    <input type="file" id="docFileInput" accept="image/*" capture="environment" style="display:none" />
+                    <button type="button" class="ocr-upload-btn" id="ocrUploadBtn" onclick="document.getElementById('docFileInput').click()">Upload Document Photo</button>
+                    <img id="docPreview" style="display:none" />
+                    <div class="ocr-status" id="ocrStatus" style="display:none"></div>
+                    <div class="ocr-note" id="ocrNote">Optional shortcut — you can skip this and fill the form manually. No documents are required to check eligibility.</div>
+                </div>
+
+                <div class="form-group">
+                    <label id="lbl_name">Full Name</label>
+                    <div class="input-with-mic">
+                        <input type="text" name="person_name" id="person_name" placeholder="e.g. Ramesh Kumar" autocomplete="off" required />
+                        <button type="button" class="mic-btn" data-target="person_name" title="Speak your name">🎤</button>
+                    </div>
+                    <div class="field-error" id="err_name">Please enter your full name</div>
+                </div>
+
+                <div class="form-group">
+                    <label id="lbl_phone">Phone Number</label>
+                    <input type="tel" name="phone" id="phone" placeholder="e.g. 9876543210" maxlength="10" autocomplete="off" required />
+                    <div class="field-hint">Enter 10 digit mobile number</div>
+                    <div class="field-error" id="err_phone">Please enter a valid 10-digit phone number</div>
+                </div>
+
+                <div class="form-group">
+                    <label id="lbl_address">Address</label>
+                    <div class="input-with-mic">
+                        <input type="text" name="address" id="address" placeholder="e.g. Village Rampur, Dist. Pune, Maharashtra" autocomplete="off" required />
+                        <button type="button" class="mic-btn" data-target="address" title="Speak your address">🎤</button>
+                    </div>
+                    <div class="field-error" id="err_address">Please enter your address</div>
+                </div>
+
+                <div class="form-section-title" id="section_aid">Aid Details</div>
+
+                <div class="form-group">
+                    <label id="lbl_age">Who is this for?</label>
+                    <select name="age_group" id="age_group" required>
+                        <option value="">-- Select --</option>
+                        <option value="child" id="opt_child">Child (0-18 years)</option>
+                        <option value="adult" id="opt_adult">Adult (19-59 years)</option>
+                        <option value="elderly" id="opt_elderly">Elderly (60+ years)</option>
+                    </select>
+                    <div class="field-error" id="err_age">Please select an option</div>
+                </div>
+
+                <div class="form-group">
+                    <label id="lbl_income">Monthly Family Income (Rs.)</label>
+                    <input type="number" name="income" id="ph_income" placeholder="e.g. 5000" min="0" required />
+                    <div class="field-error" id="err_income">Please enter monthly income</div>
+                </div>
+
+                <div class="form-group">
+                    <label id="lbl_family">Family Size</label>
+                    <input type="number" name="family_size" id="ph_family" placeholder="e.g. 4" min="1" max="30" required />
+                    <div class="field-error" id="err_family">Please enter family size</div>
+                </div>
+
+                <div class="form-group">
+                    <label id="lbl_housing">Housing Condition</label>
+                    <select name="housing" required>
+                        <option value="">-- Select --</option>
+                        <option value="homeless" id="opt_homeless">Homeless</option>
+                        <option value="kutcha" id="opt_kutcha">Kutcha House (mud/temporary)</option>
+                        <option value="rented" id="opt_rented">Rented House</option>
+                        <option value="pucca" id="opt_pucca">Pucca House (permanent)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label id="lbl_residence_type">Area of Residence (for housing scheme matching)</label>
+                    <select name="residence_type" id="ph_residence_type">
+                        <option value="" id="opt_residence_unknown">-- Not sure / Skip --</option>
+                        <option value="rural" id="opt_residence_rural">Rural / Village</option>
+                        <option value="urban" id="opt_residence_urban">Urban / City / Town</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label id="lbl_category">Community Category (for Gharkul/Ramai Awas matching only)</label>
+                    <select name="category" id="ph_category">
+                        <option value="" id="opt_category_unknown">-- Prefer not to say / Skip --</option>
+                        <option value="sc" id="opt_category_sc">Scheduled Caste (SC)</option>
+                        <option value="neo_buddhist" id="opt_category_neo_buddhist">Neo-Buddhist (Nav-Bauddha)</option>
+                        <option value="st" id="opt_category_st">Scheduled Tribe (ST)</option>
+                        <option value="obc" id="opt_category_obc">OBC</option>
+                        <option value="general" id="opt_category_general">General / Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label id="lbl_electricity">Electricity Access</label>
+                    <select name="electricity" required>
+                        <option value="">-- Select --</option>
+                        <option value="no" id="opt_elec_no">No Electricity</option>
+                        <option value="sometimes" id="opt_elec_sometimes">Sometimes</option>
+                        <option value="yes" id="opt_elec_yes">Yes, Regular</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label id="lbl_ration">Ration Card</label>
+                    <select name="ration" required>
+                        <option value="">-- Select --</option>
+                        <option value="no" id="opt_ration_no">No Ration Card</option>
+                        <option value="yes" id="opt_ration_yes">Yes, Have Ration Card</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label id="lbl_medical">Medical Condition</label>
+                    <select name="medical" required>
+                        <option value="">-- Select --</option>
+                        <option value="emergency" id="opt_med_emergency">Medical Emergency</option>
+                        <option value="chronic_illness" id="opt_med_chronic">Chronic Illness</option>
+                        <option value="disability" id="opt_med_disability">Disability</option>
+                        <option value="none" id="opt_med_none">No Medical Issues</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label id="lbl_accident">Any Recent Accident?</label>
+                    <select name="accident" required>
+                        <option value="">-- Select --</option>
+                        <option value="yes" id="opt_acc_yes">Yes</option>
+                        <option value="no" id="opt_acc_no">No</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label id="lbl_earning">Has Earning Member of Family Died?</label>
+                    <select name="earning_member_died" required>
+                        <option value="">-- Select --</option>
+                        <option value="yes" id="opt_earn_yes">Yes</option>
+                        <option value="no" id="opt_earn_no">No</option>
+                    </select>
+                </div>
+                <div class="form-group">
+    <label id="lbl_gender">Gender</label>
+    <select name="gender" required>
+        <option value="">-- Select --</option>
+        <option value="female" id="opt_female">Female</option>
+        <option value="male" id="opt_male">Male</option>
+        <option value="other" id="opt_other">Other</option>
+    </select>
+</div>
+
+<div class="form-group">
+    <label id="lbl_widow">Widow / Widower Status</label>
+    <select name="widow_status" required>
+        <option value="">-- Select --</option>
+        <option value="yes" id="opt_widow_yes">Yes — Widow/Widower</option>
+        <option value="no" id="opt_widow_no">No</option>
+    </select>
+</div>
+
+                <div class="consent-group">
+                    <input type="checkbox" name="consent" id="consent" required />
+                    <label for="consent" id="lbl_consent">I agree that my details may be shared with authorized government officers only if I file a corruption complaint. My data will not be sold or shared for any other purpose.</label>
+                </div>
+                <div class="field-error" id="err_consent">Please accept to continue</div>
+
+                <button type="submit" class="submit-btn" id="submitBtn">Check Aid Eligibility</button>
+
+                
+            </form>
+        </div>
+        {% endif %}
+
+        {% if result %}
+        <div class="print-header">
+            <h2>Poverty Aid Identifier — Official Scheme List</h2>
+            <p>Name: <strong>{{ person_name }}</strong></p>
+            <p>Government schemes applicable based on submitted information.</p>
+            <p style="font-size:11px;color:#999;margin-top:4px;">Generated on: {{ now }}</p>
+        </div>
+
+        <div class="result-card">
+            <div class="result-header">
+                <h2>Result / परिणाम / निकाल</h2>
+                <div class="result-status">{{ result }}</div>
+                <div class="result-name">
+                    {% if lang == 'hi' %}नाम: {{ person_name }}{% elif lang == 'mr' %}नाव: {{ person_name }}{% else %}Name: {{ person_name }}{% endif %}
+                </div>
+            </div>
+            <div class="result-body">
+                <div class="score-label">Need Score: {{ score }} / 225</div>
+                <div class="score-bar no-print">
+                    <div class="score-fill" style="width: {{ [((score / 225 * 100) | int), 100] | min }}%"></div>
+                </div>
+                <div class="schemes-title">
+                    {% if lang == 'hi' %}आप जिन योजनाओं के पात्र हैं{% elif lang == 'mr' %}तुम्ही पात्र असलेल्या योजना{% else %}Schemes You Are Eligible For{% endif %}
+                </div>
+                <div class="scheme-click-hint no-print">
+                    {% if lang == 'hi' %}किसी भी योजना पर क्लिक करें — पूरी जानकारी देखें{% elif lang == 'mr' %}कोणत्याही योजनेवर क्लिक करा — संपूर्ण माहिती पाहा{% else %}Click any scheme to see full details{% endif %}
+                </div>
+                {% for scheme_key, type, scheme, amount in schemes %}
+                <a href="/scheme/{{ scheme_key }}?lang={{ lang }}" style="text-decoration:none;" class="no-print">
+                    <div class="scheme-item {% if type == 'urgent' %}urgent{% endif %}">
+                        <span>{{ scheme }}</span>
+                        <span class="scheme-amount">{{ amount }} →</span>
+                    </div>
+                </a>
+                <div class="scheme-item {% if type == 'urgent' %}urgent{% endif %}" style="display:none;" id="ps-{{ loop.index }}">
+                    <span>{{ scheme }}</span>
+                    <span class="scheme-amount">{{ amount }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <button class="print-btn no-print" onclick="printResult()">
+            🖨️
+            {% if lang == 'hi' %}परिणाम प्रिंट करें{% elif lang == 'mr' %}निकाल प्रिंट करा{% else %}Print / Download Result{% endif %}
+        </button>
+
+        <div class="corruption-section no-print">
+            <div class="corruption-section-header">
+                {% if lang == 'hi' %}पूरी सहायता नहीं मिली? यहाँ रिपोर्ट करें{% elif lang == 'mr' %}पूर्ण मदत मिळाली नाही? येथे तक्रार करा{% else %}Did Not Receive Full Aid? Report Here{% endif %}
+            </div>
+            <div class="corruption-section-body">
+                <p>Every rupee of government aid belongs to you. If any official has deducted money — report immediately.</p>
+                <p>सरकारी सहायता का हर रुपया आपका है। अगर किसी अधिकारी ने पैसे काटे हैं — तुरंत रिपोर्ट करें।</p>
+                <p>सरकारी मदतीचा प्रत्येक रुपया तुमचा आहे। जर कोणत्या अधिकाऱ्याने पैसे कापले — तात्काळ तक्रार करा।</p>
+                <a href="/corruption?lang={{ lang }}" class="corruption-btn">
+                    {% if lang == 'hi' %}भ्रष्टाचार रिपोर्ट करें{% elif lang == 'mr' %}भ्रष्टाचाराची तक्रार करा{% else %}Report Corruption / Deduction of Aid{% endif %}
+                </a>
+            </div>
+        </div>
+
+        <div class="action-btns no-print">
+            <a href="javascript:history.back()" class="back-btn-main">
+                {% if lang == 'hi' %}← वापस जाएं{% elif lang == 'mr' %}← मागे जा{% else %}← Go Back{% endif %}
+            </a>
+            <a href="/?fresh=1" class="check-another">
+                {% if lang == 'hi' %}दूसरे व्यक्ति की जांच करें{% elif lang == 'mr' %}दुसऱ्या व्यक्तीची तपासणी करा{% else %}Check Another Person{% endif %}
+            </a>
+            <a href="/track?lang={{ lang }}" class="track-btn-main">
+                {% if lang == 'hi' %}मेरी शिकायत ट्रैक करें{% elif lang == 'mr' %}माझी तक्रार ट्रॅक करा{% else %}Track My Complaint{% endif %}
+            </a>
+            <a href="/heatmap" class="heatmap-btn">
+                {% if lang == 'hi' %}🗺️ भ्रष्टाचार हीटमैप देखें{% elif lang == 'mr' %}🗺️ भ्रष्टाचार हीटमॅप पाहा{% else %}🗺️ View Corruption Heatmap{% endif %}
+            </a>
+        </div>
+        {% endif %}
+
+        <div class="footer no-print">Poverty Aid Identifier - Helping Every Indian in Need</div>
+    </div>
+</div>
+
+<script>
+const translations = {
+    en: {
+        title: "Poverty Aid Identifier",
+        subtitle: "Every person will receive help. Priority given to children, elderly and emergencies.",
+        section_personal: "Personal Details", section_aid: "Aid Details",
+        privacyNote: "Your personal details are confidential and will only be shared with authorized government officers if you file a corruption complaint.",
+        lbl_consent: "I agree that my details may be shared with authorized government officers only if I file a corruption complaint. My data will not be sold or shared for any other purpose.",
+        err_consent: "Please accept to continue",
+        lbl_name: "Full Name", ph_name: "e.g. Ramesh Kumar",
+        lbl_phone: "Phone Number", ph_phone: "e.g. 9876543210",
+        lbl_address: "Address", ph_address: "e.g. Village Rampur, Dist. Pune, Maharashtra",
+        lbl_age: "Who is this for?",
+        opt_child: "Child (0-18 years)", opt_adult: "Adult (19-59 years)", opt_elderly: "Elderly (60+ years)",
+        lbl_income: "Monthly Family Income (Rs.)", ph_income: "e.g. 5000",
+        lbl_family: "Family Size", ph_family: "e.g. 4",
+        lbl_housing: "Housing Condition",
+        opt_homeless: "Homeless", opt_kutcha: "Kutcha House (mud/temporary)", opt_rented: "Rented House", opt_pucca: "Pucca House (permanent)",
+        lbl_residence_type: "Area of Residence (for housing scheme matching)",
+        opt_residence_unknown: "-- Not sure / Skip --", opt_residence_rural: "Rural / Village", opt_residence_urban: "Urban / City / Town",
+        lbl_category: "Community Category (for Gharkul/Ramai Awas matching only)",
+        opt_category_unknown: "-- Prefer not to say / Skip --", opt_category_sc: "Scheduled Caste (SC)",
+        opt_category_neo_buddhist: "Neo-Buddhist (Nav-Bauddha)", opt_category_st: "Scheduled Tribe (ST)",
+        opt_category_obc: "OBC", opt_category_general: "General / Other",
+        lbl_electricity: "Electricity Access",
+        opt_elec_no: "No Electricity", opt_elec_sometimes: "Sometimes", opt_elec_yes: "Yes, Regular",
+        lbl_ration: "Ration Card", opt_ration_no: "No Ration Card", opt_ration_yes: "Yes, Have Ration Card",
+        lbl_medical: "Medical Condition",
+        opt_med_emergency: "Medical Emergency", opt_med_chronic: "Chronic Illness", opt_med_disability: "Disability", opt_med_none: "No Medical Issues",
+        lbl_accident: "Any Recent Accident?", opt_acc_yes: "Yes", opt_acc_no: "No",
+        lbl_earning: "Has Earning Member of Family Died?", opt_earn_yes: "Yes", opt_earn_no: "No",
+        lbl_gender: "Gender", opt_female: "Female", opt_male: "Male", opt_other: "Other",
+        lbl_widow: "Widow / Widower Status", opt_widow_yes: "Yes — Widow/Widower", opt_widow_no: "No",
+        ocrToggleText: "Have a document? Tap to auto-fill (optional)",
+        ocrTitle: "Have your Aadhaar or Ration Card?",
+        ocrSub: "Optional — upload a photo and we'll fill in your details",
+        ocrUploadBtn: "Upload Document Photo",
+        ocrUploadBtnBusy: "Reading document...",
+        ocrNote: "Optional shortcut — you can skip this and fill the form manually. No documents are required to check eligibility.",
+        ocr_loading: "🔍 Reading your document — this takes a few seconds...",
+        ocr_filled_prefix: "✅ Filled in: ",
+        ocr_filled_suffix: ". Please check these are correct, then continue filling the rest of the form below.",
+        ocr_error_unclear: "⚠️ Couldn't clearly read any details from this photo. Please fill the form manually.",
+        ocr_error_upload: "⚠️ Upload failed. Please check your connection and try again, or fill the form manually.",
+        ocr_error_timeout: "⚠️ This is taking too long — please try again with better network, or fill the form manually.",
+        submitBtn: "Check Aid Eligibility",
+        loading: "Checking Eligibility...", loadingSub: "Please wait a moment",
+        err_name: "Please enter your full name",
+        err_phone: "Please enter a valid 10-digit phone number",
+        err_address: "Please enter your address",
+        err_age: "Please select an option",
+        err_income: "Please enter monthly income",
+        err_family: "Please enter family size"
+    },
+    hi: {
+        title: "गरीबी सहायता पहचानकर्ता",
+        subtitle: "हर व्यक्ति को मदद मिलेगी। बच्चों, बुजुर्गों और आपात स्थितियों को प्राथमिकता।",
+        section_personal: "व्यक्तिगत विवरण", section_aid: "सहायता विवरण",
+        privacyNote: "आपका व्यक्तिगत विवरण गोपनीय है और केवल अधिकृत सरकारी अधिकारियों के साथ साझा किया जाएगा।",
+        lbl_consent: "मैं सहमत हूं कि मेरा विवरण केवल भ्रष्टाचार शिकायत दर्ज करने पर अधिकृत सरकारी अधिकारियों के साथ साझा किया जा सकता है। मेरा डेटा किसी अन्य उद्देश्य के लिए नहीं बेचा या साझा किया जाएगा।",
+        err_consent: "कृपया जारी रखने के लिए स्वीकार करें",
+        lbl_name: "पूरा नाम", ph_name: "जैसे रमेश कुमार",
+        lbl_phone: "फोन नंबर", ph_phone: "जैसे 9876543210",
+        lbl_address: "पता", ph_address: "जैसे गांव रामपुर, जिला पुणे, महाराष्ट्र",
+        lbl_age: "यह किसके लिए है?",
+        opt_child: "बच्चा (0-18 वर्ष)", opt_adult: "वयस्क (19-59 वर्ष)", opt_elderly: "बुजुर्ग (60+ वर्ष)",
+        lbl_income: "मासिक पारिवारिक आय (रु.)", ph_income: "जैसे 5000",
+        lbl_family: "परिवार का आकार", ph_family: "जैसे 4",
+        lbl_housing: "आवास की स्थिति",
+        opt_homeless: "बेघर", opt_kutcha: "कच्चा मकान", opt_rented: "किराये का मकान", opt_pucca: "पक्का मकान",
+        lbl_residence_type: "निवास क्षेत्र (आवास योजना मिलान हेतु)",
+        opt_residence_unknown: "-- पक्का नहीं / छोड़ें --", opt_residence_rural: "ग्रामीण / गांव", opt_residence_urban: "शहरी / शहर",
+        lbl_category: "समुदाय श्रेणी (केवल घरकुल/रमाई आवास मिलान हेतु)",
+        opt_category_unknown: "-- बताना नहीं चाहते / छोड़ें --", opt_category_sc: "अनुसूचित जाति (SC)",
+        opt_category_neo_buddhist: "नवबौद्ध (Neo-Buddhist)", opt_category_st: "अनुसूचित जनजाति (ST)",
+        opt_category_obc: "OBC", opt_category_general: "सामान्य / अन्य",
+        lbl_electricity: "बिजली की सुविधा",
+        opt_elec_no: "बिजली नहीं", opt_elec_sometimes: "कभी-कभी", opt_elec_yes: "हाँ, नियमित",
+        lbl_ration: "राशन कार्ड", opt_ration_no: "राशन कार्ड नहीं है", opt_ration_yes: "हाँ, राशन कार्ड है",
+        lbl_medical: "चिकित्सा स्थिति",
+        opt_med_emergency: "चिकित्सा आपात स्थिति", opt_med_chronic: "दीर्घकालिक बीमारी", opt_med_disability: "विकलांगता", opt_med_none: "कोई चिकित्सा समस्या नहीं",
+        lbl_accident: "कोई हालिया दुर्घटना?", opt_acc_yes: "हाँ", opt_acc_no: "नहीं",
+        lbl_earning: "क्या परिवार के कमाने वाले सदस्य का निधन हुआ है?", opt_earn_yes: "हाँ", opt_earn_no: "नहीं",
+        lbl_gender: "लिंग", opt_female: "महिला", opt_male: "पुरुष", opt_other: "अन्य",
+        lbl_widow: "विधवा / विधुर स्थिति", opt_widow_yes: "हां — विधवा/विधुर", opt_widow_no: "नहीं",
+        ocrToggleText: "दस्तावेज़ है? ऑटो-फिल के लिए टैप करें (वैकल्पिक)",
+        ocrTitle: "आपके पास आधार या राशन कार्ड है?",
+        ocrSub: "वैकल्पिक — फोटो अपलोड करें और हम आपका विवरण भर देंगे",
+        ocrUploadBtn: "दस्तावेज़ फोटो अपलोड करें",
+        ocrUploadBtnBusy: "दस्तावेज़ पढ़ा जा रहा है...",
+        ocrNote: "वैकल्पिक शॉर्टकट — आप इसे छोड़ सकते हैं और फॉर्म खुद भर सकते हैं। पात्रता जांचने के लिए किसी दस्तावेज़ की आवश्यकता नहीं है।",
+        ocr_loading: "🔍 आपका दस्तावेज़ पढ़ा जा रहा है — इसमें कुछ सेकंड लगेंगे...",
+        ocr_filled_prefix: "✅ भरा गया: ",
+        ocr_filled_suffix: "। कृपया जांच लें कि ये सही हैं, फिर नीचे फॉर्म भरना जारी रखें।",
+        ocr_error_unclear: "⚠️ इस फोटो से कोई विवरण स्पष्ट रूप से नहीं पढ़ा जा सका। कृपया फॉर्म खुद भरें।",
+        ocr_error_upload: "⚠️ अपलोड विफल रहा। कृपया अपना कनेक्शन जांचें और फिर कोशिश करें, या फॉर्म खुद भरें।",
+        ocr_error_timeout: "⚠️ इसमें बहुत समय लग रहा है — कृपया बेहतर नेटवर्क के साथ फिर कोशिश करें, या फॉर्म खुद भरें।",
+        submitBtn: "सहायता पात्रता जांचें",
+        loading: "पात्रता जांच रही है...", loadingSub: "कृपया प्रतीक्षा करें",
+        err_name: "कृपया अपना पूरा नाम दर्ज करें",
+        err_phone: "कृपया 10 अंकों का फोन नंबर दर्ज करें",
+        err_address: "कृपया अपना पता दर्ज करें",
+        err_age: "कृपया एक विकल्प चुनें",
+        err_income: "कृपया मासिक आय दर्ज करें",
+        err_family: "कृपया परिवार का आकार दर्ज करें"
+    },
+    mr: {
+        title: "गरिबी मदत ओळखकर्ता",
+        subtitle: "प्रत्येक व्यक्तीला मदत मिळेल. मुले, वृद्ध आणि आपत्कालीन परिस्थितिंना प्राधान्य.",
+        section_personal: "वैयक्तिक तपशील", section_aid: "मदत तपशील",
+        privacyNote: "तुमचे वैयक्तिक तपशील गोपनीय आहेत आणि केवळ अधिकृत सरकारी अधिकाऱ्यांसोबत सामायिक केले जातील.",
+        lbl_consent: "मी सहमत आहे की माझा तपशील केवळ भ्रष्टाचाराची तक्रार दाखल केल्यास अधिकृत सरकारी अधिकाऱ्यांसोबत सामायिक केला जाऊ शकतो. माझा डेटा इतर कोणत्याही कारणासाठी विकला किंवा सामायिक केला जाणार नाही.",
+        err_consent: "कृपया सुरू ठेवण्यासाठी स्वीकार करा",
+        lbl_name: "पूर्ण नाव", ph_name: "उदा. रमेश कुमार",
+        lbl_phone: "फोन नंबर", ph_phone: "उदा. 9876543210",
+        lbl_address: "पत्ता", ph_address: "उदा. गाव रामपूर, जि. पुणे, महाराष्ट्र",
+        lbl_age: "हे कोणासाठी आहे?",
+        opt_child: "मूल (0-18 वर्षे)", opt_adult: "प्रौढ (19-59 वर्षे)", opt_elderly: "वृद्ध (60+ वर्षे)",
+        lbl_income: "मासिक कौटुंबिक उत्पन्न (रु.)", ph_income: "उदा. 5000",
+        lbl_family: "कुटुंबाचा आकार", ph_family: "उदा. 4",
+        lbl_housing: "घराची स्थिती",
+        opt_homeless: "बेघर", opt_kutcha: "कच्चे घर", opt_rented: "भाड्याचे घर", opt_pucca: "पक्के घर",
+        lbl_residence_type: "निवासाचे क्षेत्र (घरबांधणी योजना जुळणीसाठी)",
+        opt_residence_unknown: "-- खात्री नाही / वगळा --", opt_residence_rural: "ग्रामीण / गाव", opt_residence_urban: "शहरी / शहर",
+        lbl_category: "समुदाय प्रवर्ग (फक्त घरकुल/रमाई आवास जुळणीसाठी)",
+        opt_category_unknown: "-- सांगायचे नाही / वगळा --", opt_category_sc: "अनुसूचित जाती (SC)",
+        opt_category_neo_buddhist: "नवबौद्ध (Neo-Buddhist)", opt_category_st: "अनुसूचित जमाती (ST)",
+        opt_category_obc: "OBC", opt_category_general: "सर्वसाधारण / इतर",
+        lbl_electricity: "वीज सुविधा",
+        opt_elec_no: "वीज नाही", opt_elec_sometimes: "कधी कधी", opt_elec_yes: "हो, नियमित",
+        lbl_ration: "रेशन कार्ड", opt_ration_no: "रेशन कार्ड नाही", opt_ration_yes: "हो, रेशन कार्ड आहे",
+        lbl_medical: "वैद्यकीय स्थिती",
+        opt_med_emergency: "वैद्यकीय आणीबाणी", opt_med_chronic: "दीर्घकालीन आजार", opt_med_disability: "अपंगत्व", opt_med_none: "कोणतीही वैद्यकीय समस्या नाही",
+        lbl_accident: "कोणताही अलीकडील अपघात?", opt_acc_yes: "हो", opt_acc_no: "नाही",
+        lbl_earning: "कुटुंबातील कमावत्या सदस्याचे निधन झाले आहे का?", opt_earn_yes: "हो", opt_earn_no: "नाही",
+        lbl_gender: "लिंग", opt_female: "स्त्री", opt_male: "पुरुष", opt_other: "इतर",
+        lbl_widow: "विधवा / विधुर स्थिती", opt_widow_yes: "हो — विधवा/विधुर", opt_widow_no: "नाही",
+        ocrToggleText: "कागदपत्र आहे? ऑटो-फिलसाठी टॅप करा (ऐच्छिक)",
+        ocrTitle: "तुमच्याकडे आधार किंवा रेशन कार्ड आहे का?",
+        ocrSub: "ऐच्छिक — फोटो अपलोड करा आणि आम्ही तुमचा तपशील भरू",
+        ocrUploadBtn: "कागदपत्राचा फोटो अपलोड करा",
+        ocrUploadBtnBusy: "कागदपत्र वाचले जात आहे...",
+        ocrNote: "ऐच्छिक शॉर्टकट — तुम्ही हे वगळू शकता आणि फॉर्म स्वतः भरू शकता. पात्रता तपासण्यासाठी कोणत्याही कागदपत्राची गरज नाही.",
+        ocr_loading: "🔍 तुमचे कागदपत्र वाचले जात आहे — यास काही सेकंद लागतील...",
+        ocr_filled_prefix: "✅ भरले गेले: ",
+        ocr_filled_suffix: ". कृपया हे बरोबर आहेत का ते तपासा, नंतर खाली फॉर्म भरणे सुरू ठेवा.",
+        ocr_error_unclear: "⚠️ या फोटोमधून कोणताही तपशील स्पष्टपणे वाचता आला नाही. कृपया फॉर्म स्वतः भरा.",
+        ocr_error_upload: "⚠️ अपलोड अयशस्वी झाले. कृपया तुमचे कनेक्शन तपासा आणि पुन्हा प्रयत्न करा, किंवा फॉर्म स्वतः भरा.",
+        ocr_error_timeout: "⚠️ यास खूप वेळ लागत आहे — कृपया चांगल्या नेटवर्कसह पुन्हा प्रयत्न करा, किंवा फॉर्म स्वतः भरा.",
+        submitBtn: "मदत पात्रता तपासा",
+        loading: "पात्रता तपासत आहोत...", loadingSub: "कृपया थांबा",
+        err_name: "कृपया तुमचे पूर्ण नाव टाका",
+        err_phone: "कृपया 10 अंकी फोन नंबर टाका",
+        err_address: "कृपया तुमचा पत्ता टाका",
+        err_age: "कृपया एक पर्याय निवडा",
+        err_income: "कृपया मासिक उत्पन्न टाका",
+        err_family: "कृपया कुटुंबाचा आकार टाका"
+    }
+};
+
+let currentLang = 'en';
+
+function toggleOcrCard() {
+    const card = document.getElementById('ocrCard');
+    const chevron = document.getElementById('ocrChevron');
+    const expanded = card.style.display !== 'none';
+    card.style.display = expanded ? 'none' : 'block';
+    chevron.textContent = expanded ? '▾' : '▴';
+}
+
+function selectLang(lang) {
+    currentLang = lang;
+    document.getElementById('langScreen').classList.add('hidden');
+    document.getElementById('mainApp').classList.remove('hidden');
+    document.getElementById('langInput').value = lang;
+    applyTranslations(lang);
+}
+
+function applyTranslations(lang) {
+    const t = translations[lang];
+    if (!t) return;
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+    const ph = (id, val) => { const el = document.getElementById(id); if (el) el.placeholder = val; };
+    set('appTitle', t.title);
+    set('appSubtitle', t.subtitle);
+    set('section_personal', t.section_personal);
+    set('section_aid', t.section_aid);
+    set('privacyNote', t.privacyNote);
+    set('lbl_consent', t.lbl_consent);
+    set('err_consent', t.err_consent);
+    set('lbl_name', t.lbl_name); ph('person_name', t.ph_name);
+    set('lbl_phone', t.lbl_phone); ph('phone', t.ph_phone);
+    set('lbl_address', t.lbl_address); ph('address', t.ph_address);
+    set('lbl_age', t.lbl_age);
+    set('opt_child', t.opt_child); set('opt_adult', t.opt_adult); set('opt_elderly', t.opt_elderly);
+    set('lbl_income', t.lbl_income); ph('ph_income', t.ph_income);
+    set('lbl_family', t.lbl_family); ph('ph_family', t.ph_family);
+    set('lbl_housing', t.lbl_housing);
+    set('opt_homeless', t.opt_homeless); set('opt_kutcha', t.opt_kutcha); set('opt_rented', t.opt_rented); set('opt_pucca', t.opt_pucca);
+    set('lbl_residence_type', t.lbl_residence_type);
+    set('opt_residence_unknown', t.opt_residence_unknown); set('opt_residence_rural', t.opt_residence_rural); set('opt_residence_urban', t.opt_residence_urban);
+    set('lbl_category', t.lbl_category);
+    set('opt_category_unknown', t.opt_category_unknown); set('opt_category_sc', t.opt_category_sc);
+    set('opt_category_neo_buddhist', t.opt_category_neo_buddhist); set('opt_category_st', t.opt_category_st);
+    set('opt_category_obc', t.opt_category_obc); set('opt_category_general', t.opt_category_general);
+    set('lbl_electricity', t.lbl_electricity);
+    set('opt_elec_no', t.opt_elec_no); set('opt_elec_sometimes', t.opt_elec_sometimes); set('opt_elec_yes', t.opt_elec_yes);
+    set('lbl_ration', t.lbl_ration); set('opt_ration_no', t.opt_ration_no); set('opt_ration_yes', t.opt_ration_yes);
+    set('lbl_medical', t.lbl_medical);
+    set('opt_med_emergency', t.opt_med_emergency); set('opt_med_chronic', t.opt_med_chronic); set('opt_med_disability', t.opt_med_disability); set('opt_med_none', t.opt_med_none);
+    set('lbl_accident', t.lbl_accident); set('opt_acc_yes', t.opt_acc_yes); set('opt_acc_no', t.opt_acc_no);
+    set('lbl_earning', t.lbl_earning); set('opt_earn_yes', t.opt_earn_yes); set('opt_earn_no', t.opt_earn_no);
+    set('lbl_gender', t.lbl_gender); set('opt_female', t.opt_female); set('opt_male', t.opt_male); set('opt_other', t.opt_other);
+    set('lbl_widow', t.lbl_widow); set('opt_widow_yes', t.opt_widow_yes); set('opt_widow_no', t.opt_widow_no);
+    set('ocrToggleText', t.ocrToggleText);
+    set('ocrTitle', t.ocrTitle); set('ocrSub', t.ocrSub); set('ocrNote', t.ocrNote);
+    const uploadBtnEl = document.getElementById('ocrUploadBtn');
+    if (uploadBtnEl && !uploadBtnEl.disabled) uploadBtnEl.innerText = t.ocrUploadBtn;
+    set('submitBtn', t.submitBtn);
+    set('err_name', t.err_name); set('err_phone', t.err_phone);
+    set('err_address', t.err_address); set('err_age', t.err_age);
+    set('err_income', t.err_income); set('err_family', t.err_family);
+}
+
+function showError(fieldId, errId) {
+    const field = document.getElementById(fieldId);
+    const err = document.getElementById(errId);
+    if (field) field.classList.add('error-field');
+    if (err) err.classList.add('show');
+}
+
+function clearForm() {
+    // FIX: force a real reload (bypasses bfcache) instead of a soft navigation
+    window.location.href = '/?fresh=' + Date.now();
+}
+
+function clearError(fieldId, errId) {
+    const field = document.getElementById(fieldId);
+    const err = document.getElementById(errId);
+    if(field) {
+        field.classList.remove('error-field');
+        field.classList.add('success-field');
+    }
+    if(err) err.classList.remove('show');
+}
+
+function validateAndSubmit() {
+    const t = translations[currentLang] || translations['en'];
+    let valid = true;
+
+    const name = document.getElementById('person_name');
+    if (name && name.value.trim().length < 2) { showError('person_name', 'err_name'); valid = false; }
+    else clearError('person_name', 'err_name');
+
+    const phone = document.getElementById('phone');
+    if (phone && !/^[0-9]{10}$/.test(phone.value.trim())) { showError('phone', 'err_phone'); valid = false; }
+    else clearError('phone', 'err_phone');
+
+    const address = document.getElementById('address');
+    if (address && address.value.trim().length < 3) { showError('address', 'err_address'); valid = false; }
+    else clearError('address', 'err_address');
+
+    const age = document.getElementById('age_group');
+    if (age && !age.value) { showError('age_group', 'err_age'); valid = false; }
+    else clearError('age_group', 'err_age');
+
+    const income = document.getElementById('ph_income');
+    if (income && !income.value) { showError('ph_income', 'err_income'); valid = false; }
+    else clearError('ph_income', 'err_income');
+
+    const family = document.getElementById('ph_family');
+    if (family && !family.value) { showError('ph_family', 'err_family'); valid = false; }
+    else clearError('ph_family', 'err_family');
+
+    const consent = document.getElementById('consent');
+    const consentErr = document.getElementById('err_consent');
+    if (consent && !consent.checked) {
+        consentErr.classList.add('show');
+        consent.closest('.consent-group').style.borderColor = '#c62828';
+        valid = false;
+    } else if (consentErr) {
+        consentErr.classList.remove('show');
+        if (consent) consent.closest('.consent-group').style.borderColor = '#FF9933';
+    }
+
+    if (valid) {
+        if (tryOfflineSubmit()) {
+            return false; // handled entirely on-device, don't submit to the server
+        }
+        const overlay = document.getElementById('loadingOverlay');
+        const loadingText = document.getElementById('loadingText');
+        const loadingSub = document.getElementById('loadingSub');
+        loadingText.innerText = t.loading;
+        loadingSub.innerText = t.loadingSub;
+        overlay.classList.add('show');
+        setTimeout(() => overlay.classList.remove('show'), 15000);
+    } else {
+        const firstError = document.querySelector('.error-field');
+        if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    return valid;
+}
+
+// Voice input for text fields (Full Name, Address)
+(function () {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const micButtons = document.querySelectorAll('.mic-btn');
+    if (!SpeechRecognition) {
+        // Browser doesn't support voice input — hide mic buttons instead of showing a dead control
+        micButtons.forEach(btn => btn.style.display = 'none');
+        return;
+    }
+    const langMap = { en: 'en-IN', hi: 'hi-IN', mr: 'mr-IN' };
+    micButtons.forEach(btn => {
+        let recognition = null;
+        let listening = false;
+        btn.addEventListener('click', () => {
+            if (listening) {
+                if (recognition) recognition.stop();
+                return;
+            }
+            const targetId = btn.getAttribute('data-target');
+            const targetInput = document.getElementById(targetId);
+            if (!targetInput) return;
+
+            recognition = new SpeechRecognition();
+            recognition.lang = langMap[currentLang] || 'en-IN';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            recognition.onstart = () => { listening = true; btn.classList.add('listening'); };
+            recognition.onend = () => { listening = false; btn.classList.remove('listening'); };
+            recognition.onerror = () => { listening = false; btn.classList.remove('listening'); };
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                targetInput.value = transcript;
+                targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+            };
+            recognition.start();
+        });
+    });
+})();
+
+// Real-time phone validation
+document.addEventListener('DOMContentLoaded', () => {
+    const phone = document.getElementById('phone');
+    if (phone) {
+        phone.addEventListener('input', () => {
+            phone.value = phone.value.replace(/\D/g, '').slice(0, 10);
+            if (phone.value.length === 10) {
+                phone.classList.remove('error-field');
+                phone.classList.add('success-field');
+                document.getElementById('err_phone').classList.remove('show');
+            } else if (phone.value.length > 0) {
+                phone.classList.remove('success-field');
+            }
+        });
+    }
+    const name = document.getElementById('person_name');
+    if (name) {
+        name.addEventListener('input', () => {
+            if (name.value.trim().length >= 2) {
+                name.classList.remove('error-field');
+                name.classList.add('success-field');
+                document.getElementById('err_name').classList.remove('show');
+            }
+        });
+    }
+});
+
+
+window.addEventListener('pageshow', function (event) {
+    const form = document.getElementById('mainForm');
+    if (event.persisted && form) {
+        form.reset();
+        document.querySelectorAll('.error-field, .success-field').forEach(el => {
+            el.classList.remove('error-field', 'success-field');
+        });
+        document.querySelectorAll('.field-error.show').forEach(el => {
+            el.classList.remove('show');
+        });
+    }
+});
+
+function printResult() {
+    document.querySelectorAll('[id^="ps-"]').forEach(el => el.style.display = 'flex');
+    window.print();
+    setTimeout(() => {
+        document.querySelectorAll('[id^="ps-"]').forEach(el => el.style.display = 'none');
+    }, 1000);
+}
+
+// Service Worker
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/static/service-worker.js')
+            .then(() => console.log('SW registered'))
+            .catch(err => console.log('SW failed', err));
+    });
+}
+
+// PWA Install
+let deferredPrompt;
+const installBanner = document.getElementById('installBanner');
+window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (installBanner) installBanner.classList.add('show');
+});
+document.getElementById('installBtn')?.addEventListener('click', async () => {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        installBanner.classList.remove('show');
+    }
+});
+document.getElementById('dismissBtn')?.addEventListener('click', () => {
+    installBanner.classList.remove('show');
+});
+window.addEventListener('appinstalled', () => {
+    installBanner.classList.remove('show');
+});
+</script>
+<script>
+(function(){
+    var params = new URLSearchParams(window.location.search);
+    var urlLang = params.get('lang');
+    if(urlLang && ['en','hi','mr'].indexOf(urlLang) !== -1){
+        var langField = document.querySelector('input[name="lang"]');
+        if(langField) langField.value = urlLang;
+        if(typeof selectLang === 'function'){
+            selectLang(urlLang);
+        }
+        var btn = document.querySelector('.lang-' + urlLang);
+        if(btn && btn.click) btn.click();
+    }
+})();
+</script>
+<!-- FLOATING CHATBOT BUTTON -->
+<a href="/chatbot" id="chat-float" style="
+    position: fixed;
+    bottom: 24px;
+    right: 20px;
+    width: 58px;
+    height: 58px;
+    background: linear-gradient(135deg, #000080, #3D2B8E);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    text-decoration: none;
+    box-shadow: 0 4px 20px rgba(0,0,80,0.4);
+    z-index: 999;
+    animation: pulse-chat 2s infinite;
+">🤖</a>
+
+<!-- Tooltip label -->
+<div style="
+    position: fixed;
+    bottom: 32px;
+    right: 86px;
+    background: #1a1a2e;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 20px;
+    z-index: 998;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+">Ask AI Assistant ✨</div>
+
+<style>
+@keyframes pulse-chat {
+    0%   { box-shadow: 0 4px 20px rgba(0,0,80,0.4); }
+    50%  { box-shadow: 0 4px 30px rgba(0,0,80,0.7), 0 0 0 8px rgba(0,0,128,0.15); }
+    100% { box-shadow: 0 4px 20px rgba(0,0,80,0.4); }
+}
+</style>
+
+<script>
+(function(){
+    var fileInput = document.getElementById('docFileInput');
+    var uploadBtn = document.getElementById('ocrUploadBtn');
+    var preview = document.getElementById('docPreview');
+    var statusEl = document.getElementById('ocrStatus');
+    if (!fileInput) return; // OCR widget not on this page state (e.g. results view)
+
+    function t() {
+        return (typeof translations !== 'undefined' && typeof currentLang !== 'undefined' && translations[currentLang])
+            ? translations[currentLang] : translations.en;
+    }
+
+    function showStatus(kind, text) {
+        statusEl.style.display = 'block';
+        statusEl.className = 'ocr-status ' + kind;
+        statusEl.textContent = text;
+    }
+
+    function flashAutofilled(el) {
+        if (!el) return;
+        el.classList.add('autofilled');
+        setTimeout(function(){ el.classList.remove('autofilled'); }, 2500);
+    }
+
+    function compressImage(file, maxDim, quality) {
+        return new Promise(function(resolve, reject){
+            var img = new Image();
+            var url = URL.createObjectURL(file);
+            img.onload = function(){
+                URL.revokeObjectURL(url);
+                var w = img.width, h = img.height;
+                if (w > h && w > maxDim) { h = Math.round(h * (maxDim / w)); w = maxDim; }
+                else if (h > maxDim) { w = Math.round(w * (maxDim / h)); h = maxDim; }
+                var canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                canvas.toBlob(function(blob){
+                    if (!blob) { reject(new Error('compression failed')); return; }
+                    resolve(new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' }));
+                }, 'image/jpeg', quality);
+            };
+            img.onerror = function(){ URL.revokeObjectURL(url); reject(new Error('image load failed')); };
+            img.src = url;
+        });
+    }
+
+    fileInput.addEventListener('change', function(){
+        var file = fileInput.files[0];
+        if (!file) return;
+        var T = t();
+
+        // Local preview immediately (from the original file, before compression)
+        var reader = new FileReader();
+        reader.onload = function(e){
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = T.ocrUploadBtnBusy;
+        showStatus('loading', T.ocr_loading);
+
+        // Shrink large phone photos before upload — this is usually the
+        // biggest reason scanning feels slow. A 4000x3000px multi-MB photo
+        // becomes ~1280px and a few hundred KB, with no visible quality
+        // loss for reading text.
+        compressImage(file, 1280, 0.75)
+            .catch(function(){ return file; }) // if compression fails for any reason, fall back to the original file rather than blocking the upload
+            .then(function(uploadFile){
+                var formData = new FormData();
+                formData.append('document', uploadFile);
+
+                // Hard timeout: if the server hasn't responded in 30s, stop
+                // waiting and show a clear message instead of hanging forever.
+                var controller = new AbortController();
+                var timedOut = false;
+                var timeoutId = setTimeout(function(){
+                    timedOut = true;
+                    controller.abort();
+                }, 30000);
+
+                return fetch('/ocr-extract', { method: 'POST', body: formData, signal: controller.signal })
+                    .then(function(r){
+                        clearTimeout(timeoutId);
+                        if (!r.ok) throw new Error('server error ' + r.status);
+                        return r.json();
+                    })
+                    .catch(function(err){
+                        clearTimeout(timeoutId);
+                        if (timedOut) throw new Error('timeout');
+                        throw err;
+                    });
+            })
+            .then(function(data){
+                var T = t();
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = T.ocrUploadBtn;
+
+                if (!data.success) {
+                    showStatus('error', '⚠️ ' + (data.error || T.ocr_error_unclear));
+                    return;
+                }
+
+                var ex = data.extracted;
+                var filledFields = [];
+
+                if (ex.name) {
+                    var nameEl = document.getElementById('person_name');
+                    nameEl.value = ex.name;
+                    flashAutofilled(nameEl);
+                    filledFields.push(T.lbl_name);
+                }
+                if (ex.address) {
+                    var addrEl = document.getElementById('address');
+                    addrEl.value = ex.address;
+                    flashAutofilled(addrEl);
+                    filledFields.push(T.lbl_address);
+                }
+                if (ex.gender) {
+                    var genderEl = document.querySelector('select[name="gender"]');
+                    if (genderEl) {
+                        genderEl.value = ex.gender;
+                        flashAutofilled(genderEl);
+                        filledFields.push(T.lbl_gender);
+                    }
+                }
+                if (ex.age_group) {
+                    var ageEl = document.querySelector('select[name="age_group"]');
+                    if (ageEl) {
+                        ageEl.value = ex.age_group;
+                        flashAutofilled(ageEl);
+                        filledFields.push(T.lbl_age);
+                    }
+                }
+
+                if (filledFields.length > 0) {
+                    showStatus('success', T.ocr_filled_prefix + filledFields.join(', ') + T.ocr_filled_suffix);
+                } else {
+                    showStatus('error', T.ocr_error_unclear);
+                }
+            })
+            .catch(function(err){
+                var T = t();
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = T.ocrUploadBtn;
+                if (err && err.message === 'timeout') {
+                    showStatus('error', T.ocr_error_timeout);
+                } else {
+                    showStatus('error', T.ocr_error_upload);
+                }
+            });
+    });
+})();
+</script>
+
+<div id="offlineResultOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:2000; align-items:center; justify-content:center; padding:16px;">
+    <div style="background:white; border-radius:16px; max-width:420px; width:100%; max-height:85vh; overflow-y:auto; padding:20px;">
+        <div style="background:#fff3e0; color:#e65c00; border-radius:10px; padding:10px 14px; font-size:12px; font-weight:bold; margin-bottom:14px;">
+            📡 You're offline — this is an estimate computed on your device. Connect to the internet and submit again to save it and get an Application ID.
+        </div>
+        <div style="text-align:center; margin-bottom:14px;">
+            <div style="font-size:32px; font-weight:800; color:#000080;" id="offlineScoreNum"></div>
+            <div style="font-size:12px; color:#666;">Need Score</div>
+            <div style="margin-top:8px; font-size:13px; font-weight:bold; color:#c62828;" id="offlinePriorityText"></div>
+        </div>
+        <div style="font-size:12px; font-weight:bold; color:#000080; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Schemes You May Be Eligible For</div>
+        <div id="offlineSchemesList" style="display:flex; flex-direction:column; gap:8px;"></div>
+        <button onclick="document.getElementById('offlineResultOverlay').style.display='none';" style="width:100%; padding:12px; background:#000080; color:white; border:none; border-radius:10px; font-size:14px; font-weight:bold; margin-top:16px; cursor:pointer;">Close</button>
+    </div>
+</div>
+
+<script>
+// Offline fallback: if the browser has no connection when the form is
+// submitted, compute the result entirely on-device using offline-scoring.js
+// (a verified, faithful copy of the server's real scoring engine) instead
+// of letting the submission silently fail.
+function tryOfflineSubmit() {
+    if (navigator.onLine) return false; // let the normal server submission proceed
+    if (typeof checkEligibilityOffline !== 'function') return false; // script didn't load, fall through
+
+    const getVal = (name) => {
+        const el = document.querySelector(`[name="${name}"]`);
+        return el ? el.value : '';
+    };
+    const data = {
+        age_group: getVal('age_group'),
+        income: getVal('income'),
+        family_size: getVal('family_size'),
+        housing: getVal('housing'),
+        electricity: getVal('electricity'),
+        ration: getVal('ration'),
+        medical: getVal('medical'),
+        accident: getVal('accident'),
+        earning_member_died: getVal('earning_member_died'),
+        widow_status: getVal('widow_status'),
+        address: getVal('address'),
+    };
+
+    const result = checkEligibilityOffline(data);
+    document.getElementById('offlineScoreNum').innerText = result.score + ' / 225';
+    document.getElementById('offlinePriorityText').innerText = result.priority;
+    const list = document.getElementById('offlineSchemesList');
+    list.innerHTML = '';
+    result.schemes.forEach((sc) => {
+        const row = document.createElement('div');
+        row.style.cssText = 'background:#fafafa; border-radius:8px; padding:10px 12px; font-size:12.5px;';
+        row.innerHTML = `<strong>${sc[2]}</strong><br><span style="color:#666;">${sc[3]}</span>`;
+        list.appendChild(row);
+    });
+    document.getElementById('offlineResultOverlay').style.display = 'flex';
+    return true; // handled offline, don't let the native form submission happen
+}
+</script>
+</body>
+</html>

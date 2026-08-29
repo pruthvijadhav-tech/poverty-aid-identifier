@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Poverty Aid Identifier</title>
+    <!-- PWA -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#000080">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AidApp">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #FF9933 0%, #ffffff 50%, #138808 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+
+        .login-card { background: white; padding: 40px 35px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); width: 100%; max-width: 360px; text-align: center; }
+        .logo { width: 70px; height: 70px; background: #000080; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; color: white; font-size: 28px; font-weight: bold; }
+        h2 { color: #000080; font-size: 20px; margin-bottom: 5px; }
+        .subtitle { font-size: 12px; color: #888; margin-bottom: 25px; }
+
+        .confidential-badge { background: #ffebee; border: 1px solid #c62828; color: #c62828; padding: 6px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; display: inline-block; margin-bottom: 25px; }
+
+        .form-group { margin-bottom: 18px; text-align: left; }
+        label { display: block; font-weight: bold; margin-bottom: 6px; color: #000080; font-size: 13px; }
+        input { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 14px; background: #fafafa; transition: border 0.2s; }
+        input:focus { border-color: #FF9933; outline: none; background: white; }
+
+        .login-btn { width: 100%; padding: 14px; background: linear-gradient(90deg, #000080, #0000aa); color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; font-weight: bold; margin-top: 5px; letter-spacing: 1px; }
+        .login-btn:hover { opacity: 0.9; }
+
+        .error-box { background: #ffebee; border-left: 4px solid #c62828; padding: 10px 15px; border-radius: 8px; color: #c62828; font-size: 13px; margin-bottom: 20px; text-align: left; }
+        .back-link { display: block; margin-top: 20px; color: #000080; text-decoration: none; font-size: 13px; }
+        .divider { height: 1px; background: #e0e0e0; margin: 20px 0; }
+        .login-info { font-size: 11px; color: #999; line-height: 1.8; }
+
+        @media (max-width: 400px) {
+            .login-card { padding: 30px 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <img src="/static/icons/icon-192.png" alt="AidLink Logo" style="width: 70px; height: 70px; border-radius: 16px; margin: 0 auto 15px; display: block; box-shadow: 0 4px 15px rgba(0,0,0,0.15); object-fit: cover;">
+        <h2>Admin Login</h2>
+        <p class="subtitle">Poverty Aid Identifier — Secure Access</p>
+        <div class="confidential-badge">CONFIDENTIAL — Authorized Personnel Only</div>
+
+        {% if error %}
+        <div class="error-box">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" name="username" placeholder="Enter username" required autocomplete="off"/>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" placeholder="Enter password" required/>
+            </div>
+            <button type="submit" class="login-btn">Login to Dashboard</button>
+        </form>
+
+        <div class="divider"></div>
+        <div class="login-info">
+            This dashboard contains confidential complainant information.<br>
+            Unauthorized access is strictly prohibited.<br>
+            All access is logged and monitored.
+        </div>
+        <a href="/" class="back-link">← Back to Main App</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volunteer Dashboard - Poverty Aid Identifier</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#000080">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: Arial, sans-serif; background:#f5f5f5; color:#333; }
+        .top-bar { background: linear-gradient(90deg, #FF9933, #ffffff, #138808); height: 6px; }
+        .header { background:#000080; color:white; padding:20px; display:flex; justify-content:space-between; align-items:center; }
+        .header-left h1 { font-size:17px; }
+        .header-left p { font-size:11.5px; opacity:0.8; margin-top:2px; }
+        .logout-link { color:rgba(255,255,255,0.85); font-size:12px; text-decoration:none; border:1px solid rgba(255,255,255,0.4); padding:6px 12px; border-radius:20px; }
+        .logout-link:hover { background:rgba(255,255,255,0.1); }
+
+        .container { max-width:700px; margin:0 auto; padding:20px; }
+        .volunteer-badge { display:inline-flex; align-items:center; gap:6px; background:#e8f5e9; color:#1b5e20; padding:6px 14px; border-radius:20px; font-size:12.5px; font-weight:bold; margin-bottom:16px; }
+
+        .new-app-btn { display:block; width:100%; padding:14px; background:#000080; color:white; border:none; border-radius:12px; font-size:15px; font-weight:bold; cursor:pointer; text-align:center; text-decoration:none; margin-bottom:20px; }
+        .new-app-btn:hover { background:#1a1a9e; }
+
+        .card { background:white; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,0.08); overflow:hidden; }
+        .card-header { padding:16px 20px; border-bottom:2px solid #FF9933; }
+        .card-header h2 { color:#000080; font-size:15px; }
+
+        .app-row { display:flex; justify-content:space-between; align-items:center; padding:14px 20px; border-bottom:1px solid #f0f0f0; }
+        .app-row:last-child { border-bottom:none; }
+        .app-name { font-weight:bold; font-size:14px; color:#333; }
+        .app-meta { font-size:11.5px; color:#888; margin-top:3px; }
+        .app-score { background:#fff3e0; color:#e65c00; font-size:11.5px; font-weight:bold; padding:4px 11px; border-radius:14px; white-space:nowrap; }
+        .app-id { font-family:monospace; font-size:11px; color:#000080; margin-top:3px; }
+
+        .empty-state { text-align:center; padding:40px 20px; color:#999; font-size:13px; }
+        .footer { text-align:center; padding:20px; color:#999; font-size:11px; }
+    </style>
+</head>
+<body>
+<div class="top-bar"></div>
+<div class="header">
+    <div class="header-left">
+        <h1>🤝 Volunteer Dashboard</h1>
+        <p>{{ volunteer_name }}</p>
+    </div>
+    <a href="/admin/logout" class="logout-link">Logout</a>
+</div>
+
+<div class="container">
+    <a href="/volunteer/new-application" class="new-app-btn">+ File New Application</a>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>Applications You've Filed ({{ applications|length }})</h2>
+        </div>
+
+        {% if applications %}
+            {% for app in applications %}
+            <div class="app-row">
+                <div>
+                    <div class="app-name">{{ app.person_name }}</div>
+                    <div class="app-meta">{{ app.state }} &middot; {{ app.created_at }} &middot; {{ app.schemes_count }} scheme(s) matched</div>
+                    <div class="app-id">{{ app.application_id }}</div>
+                </div>
+                <div class="app-score">Score: {{ app.score }}</div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="empty-state">You haven't filed any applications yet.<br>Tap "+ File New Application" to help your first citizen.</div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="footer">Poverty Aid Identifier — you can only see applications you personally filed.</div>
+</body>
+</html>

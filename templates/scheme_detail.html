@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scheme Details - Poverty Aid Identifier</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; color: #333; }
+
+        .top-bar { background: linear-gradient(90deg, #FF9933, #ffffff, #138808); height: 6px; }
+        .header { background: #000080; color: white; padding: 20px; text-align: center; }
+        .header h1 { font-size: 20px; margin-bottom: 4px; }
+        .header p { font-size: 12px; opacity: 0.8; }
+
+        .container { max-width: 700px; margin: 0 auto; padding: 20px; }
+
+        .scheme-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .scheme-header {
+            background: #000080;
+            color: white;
+            padding: 20px 25px;
+        }
+        .scheme-header h2 { font-size: 18px; margin-bottom: 8px; }
+        .scheme-amount {
+            background: #FF9933;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        .scheme-body { padding: 25px; }
+
+        .section { margin-bottom: 25px; }
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #000080;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #FF9933;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-icon {
+            width: 24px;
+            height: 24px;
+            background: #000080;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .description {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.7;
+        }
+
+        .list-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+        .list-item:last-child { border-bottom: none; }
+        .list-dot {
+            width: 8px;
+            height: 8px;
+            background: #138808;
+            border-radius: 50%;
+            margin-top: 5px;
+            flex-shrink: 0;
+        }
+        .list-dot.orange { background: #FF9933; }
+
+        .how-to-apply {
+            background: #e8f5e9;
+            border-left: 4px solid #138808;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .helpline-box {
+            background: #fff3e0;
+            border-left: 4px solid #FF9933;
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .helpline-icon { font-size: 24px; }
+        .helpline-number { font-size: 22px; font-weight: bold; color: #000080; }
+        .helpline-label { font-size: 12px; color: #666; }
+
+        .website-btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(90deg, #138808, #0d6e05);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            text-align: center;
+            text-decoration: none;
+            margin-top: 20px;
+        }
+        .website-btn:hover { opacity: 0.9; }
+
+        .back-btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: #000080;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            text-align: center;
+            text-decoration: none;
+            margin-top: 10px;
+        }
+        .back-btn:hover { opacity: 0.9; }
+
+        .footer { text-align: center; padding: 20px; color: #999; font-size: 12px; margin-top: 20px; }
+
+        .lang-en .hi, .lang-en .mr { display: none; }
+        .lang-hi .en, .lang-hi .mr { display: none; }
+        .lang-mr .en, .lang-mr .hi { display: none; }
+
+        .verification-box {
+            background: #f0f4ff;
+            border-left: 4px solid #000080;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 13px;
+            color: #333;
+            line-height: 1.6;
+        }
+        .verification-box.status-closed { background: #fdecea; border-left-color: #c62828; }
+        .verification-box.status-duplicate { background: #fff8e1; border-left-color: #f9a825; }
+        .verification-box.status-program_policy { background: #f3e5f5; border-left-color: #6a1b9a; }
+        .verification-box.status-partial, .verification-box.status-verified_with_chain { background: #fff3e0; border-left-color: #ef6c00; }
+        .verification-box.status-needs_verification { background: #fdecea; border-left-color: #c62828; }
+        .verification-status-badge {
+            display: inline-block;
+            font-weight: bold;
+            font-size: 13px;
+            background: #000080;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+        .status-closed .verification-status-badge { background: #c62828; }
+        .status-duplicate .verification-status-badge { background: #f9a825; color: #333; }
+        .status-program_policy .verification-status-badge { background: #6a1b9a; }
+        .verification-explanation { margin-bottom: 8px; color: #555; }
+        .verification-alias-note, .verification-closed-note { font-weight: bold; margin-bottom: 8px; }
+        .verification-row { margin-bottom: 4px; }
+        .verification-doc { background: rgba(255,255,255,0.6); border-radius: 8px; padding: 10px; margin: 8px 0; }
+        .verification-doc-link { display: inline-block; margin-top: 6px; color: #000080; font-weight: bold; text-decoration: none; }
+        .verification-doc-link:hover { text-decoration: underline; }
+        .verification-notes { margin-top: 10px; font-style: italic; color: #555; }
+        .verification-current { margin-top: 8px; font-size: 12px; color: #444; }
+        .verification-updated { margin-top: 6px; font-size: 11px; color: #888; }
+    </style>
+</head>
+<body class="lang-{{ lang }}">
+
+<div class="top-bar"></div>
+<div class="header">
+    <h1>
+        <span class="en">Scheme Details</span>
+        <span class="hi">योजना विवरण</span>
+        <span class="mr">योजना तपशील</span>
+    </h1>
+    <p>
+        <span class="en">Complete information about this government scheme</span>
+        <span class="hi">इस सरकारी योजना के बारे में पूरी जानकारी</span>
+        <span class="mr">या सरकारी योजनेबद्दल संपूर्ण माहिती</span>
+    </p>
+</div>
+
+<div class="container">
+    <div class="scheme-card">
+        <div class="scheme-header">
+            <h2>{{ scheme.name }}</h2>
+            <div class="scheme-amount">{{ scheme.amount }}</div>
+        </div>
+
+        <div class="scheme-body">
+
+            <!-- Description -->
+            <div class="section">
+                <div class="section-title">
+                    <div class="section-icon">i</div>
+                    <span class="en">About This Scheme</span>
+                    <span class="hi">इस योजना के बारे में</span>
+                    <span class="mr">या योजनेबद्दल</span>
+                </div>
+                <div class="description">{{ scheme.description }}</div>
+            </div>
+
+            <!-- Eligibility -->
+            <div class="section">
+                <div class="section-title">
+                    <div class="section-icon">✓</div>
+                    <span class="en">Who is Eligible?</span>
+                    <span class="hi">कौन पात्र है?</span>
+                    <span class="mr">कोण पात्र आहे?</span>
+                </div>
+                {% for item in scheme.eligibility %}
+                <div class="list-item">
+                    <div class="list-dot"></div>
+                    <span>{{ item }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Documents -->
+            <div class="section">
+                <div class="section-title">
+                    <div class="section-icon">D</div>
+                    <span class="en">Documents Needed</span>
+                    <span class="hi">आवश्यक दस्तावेज</span>
+                    <span class="mr">आवश्यक कागदपत्रे</span>
+                </div>
+                {% for doc in scheme.documents %}
+                <div class="list-item">
+                    <div class="list-dot orange"></div>
+                    <span>{{ doc }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- How to Apply -->
+            <div class="section">
+                <div class="section-title">
+                    <div class="section-icon">→</div>
+                    <span class="en">How to Apply</span>
+                    <span class="hi">कैसे आवेदन करें</span>
+                    <span class="mr">अर्ज कसा करावा</span>
+                </div>
+                <div class="how-to-apply">{{ scheme.how_to_apply }}</div>
+            </div>
+
+            <!-- Helpline -->
+            <div class="section">
+                <div class="section-title">
+                    <div class="section-icon">T</div>
+                    <span class="en">Helpline Number</span>
+                    <span class="hi">हेल्पलाइन नंबर</span>
+                    <span class="mr">हेल्पलाइन नंबर</span>
+                </div>
+                <div class="helpline-box">
+                    <div class="helpline-icon">📞</div>
+                    <div>
+                        <div class="helpline-number">{{ scheme.helpline }}</div>
+                        <div class="helpline-label">
+                            <span class="en">Toll Free — Call anytime for help</span>
+                            <span class="hi">टोल फ्री — मदद के लिए कभी भी कॉल करें</span>
+                            <span class="mr">टोल फ्री — मदतीसाठी कधीही कॉल करा</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if verification %}
+            <!-- Government Verification -->
+            <div class="section">
+                <div class="section-title">
+                    <div class="section-icon">✓</div>
+                    <span>{{ ui_labels.government_verification_heading }}</span>
+                </div>
+                <div class="verification-box status-{{ verification.status|lower }}">
+                    <div class="verification-status-badge">{{ verification.status_label }}</div>
+                    <div class="verification-explanation">{{ verification.status_explanation }}</div>
+
+                    {% if verification.is_alias %}
+                    <div class="verification-alias-note">
+                        {{ ui_labels.alias_explanation.format(canonical_name=(canonical_name or verification.canonical_key)) }}
+                    </div>
+                    {% endif %}
+
+                    {% if verification.is_closed %}
+                    <div class="verification-closed-note">⚠ {{ verification.notes }}</div>
+                    {% endif %}
+
+                    <div class="verification-row"><strong>{{ ui_labels.department_label }}:</strong> {{ verification.department }}</div>
+
+                    {% if verification.documents %}
+                        {% for doc in verification.documents %}
+                        <div class="verification-doc">
+                            <div class="verification-row"><strong>{{ ui_labels.document_type_label }}:</strong> {{ doc.document_type }}</div>
+                            {% if doc.document_number %}
+                            <div class="verification-row"><strong>{{ ui_labels.document_number_label }}:</strong> {{ doc.document_number }}</div>
+                            {% endif %}
+                            {% if doc.document_date %}
+                            <div class="verification-row"><strong>{{ ui_labels.document_date_label }}:</strong> {{ doc.document_date }}</div>
+                            {% endif %}
+                            <div class="verification-row"><strong>{{ ui_labels.source_label }}:</strong> {{ doc.source_authority }}</div>
+                            {% if doc.official_url %}
+                            <a href="{{ doc.official_url }}" target="_blank" class="verification-doc-link">🔗 {{ ui_labels.view_official_document }}</a>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    {% elif not verification.has_gr_style_document %}
+                        <div class="verification-row">{{ verification.no_gr_explanation }}</div>
+                    {% endif %}
+
+                    <div class="verification-notes">{{ verification.notes }}</div>
+                    <div class="verification-current">{{ verification.current_2026_label }}</div>
+                    <div class="verification-updated">
+                        <span class="en">Last checked:</span><span class="hi">अंतिम जांच:</span><span class="mr">शेवटची तपासणी:</span>
+                        {{ verification.last_verified_date }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Apply Online Button -->
+            <a href="/documents/{{ scheme_key }}?lang={{ lang }}" class="website-btn" style="background:linear-gradient(90deg,#000080,#0000aa); margin-bottom:10px;">
+    📋
+    <span class="en">View Document Checklist</span>
+    <span class="hi">दस्तावेज़ चेकलिस्ट देखें</span>
+    <span class="mr">कागदपत्र यादी पाहा</span>
+</a>
+<a href="/apply/{{ scheme_key }}?lang={{ lang }}" class="website-btn">
+    📝
+    <span class="en">Apply Online — Fill Application</span>
+    <span class="hi">ऑनलाइन आवेदन करें</span>
+    <span class="mr">ऑनलाइन अर्ज करा</span>
+</a>
+<a href="{{ scheme.website }}" target="_blank" class="website-btn" style="background:#666; margin-top:10px;">
+    🔗
+    <span class="en">Official Government Website</span>
+    <span class="hi">आधिकारिक सरकारी वेबसाइट</span>
+    <span class="mr">अधिकृत सरकारी वेबसाइट</span>
+</a>
+
+            <a href="/" class="back-btn">
+                <span class="en">Go Back</span>
+                <span class="hi">वापस जाएं</span>
+                <span class="mr">मागे जा</span>
+            </a>
+
+        </div>
+    </div>
+
+    <div class="footer">Poverty Aid Identifier - Helping Every Indian in Need</div>                 
+</div>
+
+</body>
+</html>
+      

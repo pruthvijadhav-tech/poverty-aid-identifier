@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Checklist - Poverty Aid Identifier</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#000080">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; color: #333; }
+        .top-bar { background: linear-gradient(90deg, #FF9933, #ffffff, #138808); height: 6px; }
+        .header { background: #000080; color: white; padding: 20px; text-align: center; }
+        .header h1 { font-size: 20px; margin-bottom: 4px; }
+        .header p { font-size: 12px; opacity: 0.8; }
+        .container { max-width: 700px; margin: 0 auto; padding: 20px; }
+
+        .scheme-badge { background: white; border-radius: 16px; padding: 20px 25px; margin-top: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border-left: 6px solid #000080; }
+        .scheme-badge h2 { color: #000080; font-size: 18px; margin-bottom: 5px; }
+        .scheme-badge p { font-size: 13px; color: #666; }
+        .amount-tag { display: inline-block; background: #FF9933; color: white; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; margin-top: 8px; }
+
+        .progress-card { background: white; border-radius: 16px; padding: 20px 25px; margin-top: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .progress-title { color: #000080; font-size: 16px; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid #FF9933; padding-bottom: 8px; }
+        .progress-bar-container { background: #f0f0f0; border-radius: 10px; height: 12px; margin-bottom: 8px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #138808, #FF9933); border-radius: 10px; transition: width 1s; }
+        .progress-text { font-size: 13px; color: #666; display: flex; justify-content: space-between; }
+
+        .checklist-card { background: white; border-radius: 16px; padding: 20px 25px; margin-top: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .checklist-title { color: #000080; font-size: 16px; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid #FF9933; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .checklist-count { font-size: 12px; background: #e8f5e9; color: #138808; padding: 3px 10px; border-radius: 20px; }
+
+        .doc-item { display: flex; align-items: center; gap: 15px; padding: 15px 0; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.2s; border-radius: 8px; padding-left: 5px; }
+        .doc-item:last-child { border-bottom: none; }
+        .doc-item:hover { background: #f8f9ff; }
+        .doc-checkbox { width: 28px; height: 28px; border: 3px solid #e0e0e0; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; font-size: 16px; }
+        .doc-checkbox.checked { background: #138808; border-color: #138808; color: white; }
+        .doc-info { flex: 1; }
+        .doc-name { font-size: 15px; font-weight: bold; color: #333; margin-bottom: 3px; }
+        .doc-detail { font-size: 12px; color: #888; line-height: 1.5; }
+        .doc-required { font-size: 11px; color: #c62828; font-weight: bold; margin-top: 3px; }
+        .doc-optional { font-size: 11px; color: #FF9933; font-weight: bold; margin-top: 3px; }
+
+        .tips-card { background: #e8f5e9; border-left: 4px solid #138808; border-radius: 10px; padding: 20px; margin-top: 20px; }
+        .tips-card h3 { color: #138808; font-size: 15px; margin-bottom: 12px; }
+        .tip-item { display: flex; gap: 10px; margin-bottom: 10px; font-size: 13px; color: #333; }
+        .tip-item:last-child { margin-bottom: 0; }
+        .tip-icon { font-size: 16px; flex-shrink: 0; }
+
+        .warning-card { background: #fff3e0; border-left: 4px solid #FF9933; border-radius: 10px; padding: 15px 20px; margin-top: 15px; }
+        .warning-card h4 { color: #e65c00; font-size: 14px; margin-bottom: 8px; }
+        .warning-card p { font-size: 13px; color: #555; line-height: 1.6; }
+
+        .action-btns { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .apply-btn { display: block; width: 100%; padding: 16px; background: linear-gradient(90deg, #FF9933, #e65c00); color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; font-weight: bold; text-align: center; text-decoration: none; }
+        .apply-btn:hover { opacity: 0.9; }
+        .print-btn { display: block; width: 100%; padding: 14px; background: linear-gradient(90deg, #138808, #0d6e05); color: white; border: none; border-radius: 10px; font-size: 15px; cursor: pointer; font-weight: bold; text-align: center; text-decoration: none; }
+        .back-btn { display: block; width: 100%; padding: 14px; background: #000080; color: white; border: none; border-radius: 10px; font-size: 15px; cursor: pointer; font-weight: bold; text-align: center; text-decoration: none; }
+
+        .footer { text-align: center; padding: 20px; color: #999; font-size: 12px; margin-top: 20px; }
+
+        .lang-en .hi, .lang-en .mr { display: none; }
+        .lang-hi .en, .lang-hi .mr { display: none; }
+        .lang-mr .en, .lang-mr .hi { display: none; }
+
+        @media print {
+            .action-btns { display: none; }
+            .top-bar { display: none; }
+            body { background: white; }
+        }
+        @media (max-width: 480px) {
+            .doc-name { font-size: 14px; }
+        }
+    </style>
+</head>
+<body class="lang-{{ lang }}">
+<div class="top-bar"></div>
+<div class="header">
+    <h1>
+        <span class="en">📋 Document Checklist</span>
+        <span class="hi">📋 दस्तावेज़ चेकलिस्ट</span>
+        <span class="mr">📋 कागदपत्र यादी</span>
+    </h1>
+    <p>
+        <span class="en">Check all documents before going to the office</span>
+        <span class="hi">कार्यालय जाने से पहले सभी दस्तावेज़ जांचें</span>
+        <span class="mr">कार्यालयात जाण्यापूर्वी सर्व कागदपत्रे तपासा</span>
+    </p>
+</div>
+
+<div class="container">
+
+    <div class="scheme-badge">
+        <h2>{{ scheme.name }}</h2>
+        <p>{{ scheme.description }}</p>
+        <div class="amount-tag">{{ scheme.amount }}</div>
+    </div>
+
+    <div class="progress-card">
+        <div class="progress-title">
+            <span class="en">Your Readiness</span>
+            <span class="hi">आपकी तैयारी</span>
+            <span class="mr">तुमची तयारी</span>
+        </div>
+        <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+        </div>
+        <div class="progress-text">
+            <span id="progressText">
+                <span class="en">0 of {{ scheme.documents|length }} documents ready</span>
+                <span class="hi">{{ scheme.documents|length }} में से 0 दस्तावेज़ तैयार</span>
+                <span class="mr">{{ scheme.documents|length }} पैकी 0 कागदपत्रे तयार</span>
+            </span>
+            <span id="progressPercent">0%</span>
+        </div>
+    </div>
+
+    <div class="checklist-card">
+        <div class="checklist-title">
+            <span>
+                <span class="en">Required Documents</span>
+                <span class="hi">आवश्यक दस्तावेज़</span>
+                <span class="mr">आवश्यक कागदपत्रे</span>
+            </span>
+            <span class="checklist-count">{{ scheme.documents|length }} docs</span>
+        </div>
+
+        {% set doc_details = {
+            'Aadhaar Card': {'detail': 'Original + 2 photocopies. Must be linked to mobile number.', 'detail_hi': 'मूल + 2 फोटोकॉपी। मोबाइल नंबर से लिंक होना चाहिए।', 'detail_mr': 'मूळ + 2 छायाप्रती. मोबाइल नंबरशी लिंक असणे आवश्यक.'},
+            'Ration Card': {'detail': 'Original + 1 photocopy. BPL/Yellow card preferred.', 'detail_hi': 'मूल + 1 फोटोकॉपी। BPL/पीला कार्ड बेहतर।', 'detail_mr': 'मूळ + 1 छायाप्रत. BPL/पिवळे कार्ड उत्तम.'},
+            'Income Certificate': {'detail': 'Issued by Tehsildar. Valid for current financial year.', 'detail_hi': 'तहसीलदार द्वारा जारी। चालू वित्त वर्ष के लिए वैध।', 'detail_mr': 'तहसीलदारांनी जारी केलेले. चालू आर्थिक वर्षासाठी वैध.'},
+            'BPL Certificate': {'detail': 'Below Poverty Line certificate from Gram Panchayat.', 'detail_hi': 'ग्राम पंचायत से BPL प्रमाण पत्र।', 'detail_mr': 'ग्रामपंचायतकडून BPL प्रमाणपत्र.'},
+            'Bank Account Details': {'detail': 'Passbook first page copy or cancelled cheque.', 'detail_hi': 'पासबुक पहले पेज की कॉपी या रद्द किया चेक।', 'detail_mr': 'पासबुक पहिल्या पानाची प्रत किंवा रद्द केलेला चेक.'},
+            'Passport size photo': {'detail': '4 recent passport size photographs (white background).', 'detail_hi': '4 हालिया पासपोर्ट साइज फोटो (सफेद पृष्ठभूमि)।', 'detail_mr': '4 अलीकडील पासपोर्ट आकाराचे फोटो (पांढरी पार्श्वभूमी).'},
+            'Age Proof': {'detail': 'Birth certificate, school certificate, or Aadhaar.', 'detail_hi': 'जन्म प्रमाण पत्र, स्कूल प्रमाण पत्र, या आधार।', 'detail_mr': 'जन्म प्रमाणपत्र, शाळा प्रमाणपत्र, किंवा आधार.'},
+            'Death Certificate': {'detail': 'Municipal Corporation/Gram Panchayat issued. Original required.', 'detail_hi': 'नगर निगम/ग्राम पंचायत द्वारा जारी। मूल आवश्यक।', 'detail_mr': 'महानगरपालिका/ग्रामपंचायत जारी. मूळ आवश्यक.'},
+            'Disability Certificate': {'detail': 'Government hospital issued. Must show 40% or more disability.', 'detail_hi': 'सरकारी अस्पताल से जारी। 40% या अधिक विकलांगता दिखानी होगी।', 'detail_mr': 'सरकारी रुग्णालय जारी. 40% किंवा अधिक अपंगत्व दाखवणे आवश्यक.'},
+            'FIR Copy': {'detail': 'Police station issued FIR. Original + 1 photocopy.', 'detail_hi': 'पुलिस स्टेशन से जारी FIR। मूल + 1 फोटोकॉपी।', 'detail_mr': 'पोलीस स्टेशन जारी FIR. मूळ + 1 छायाप्रत.'},
+            'Medical Certificate': {'detail': 'Government hospital doctor signature required.', 'detail_hi': 'सरकारी अस्पताल के डॉक्टर का हस्ताक्षर आवश्यक।', 'detail_mr': 'सरकारी रुग्णालय डॉक्टरची सही आवश्यक.'},
+            'Land Ownership Document': {'detail': '7/12 extract or property document from revenue office.', 'detail_hi': '7/12 उद्धरण या राजस्व कार्यालय से संपत्ति दस्तावेज।', 'detail_mr': '7/12 उतारा किंवा महसूल कार्यालयाचा मालमत्ता दस्तऐवज.'},
+            'Address Proof': {'detail': 'Electricity bill, ration card, or Aadhaar with address.', 'detail_hi': 'बिजली बिल, राशन कार्ड, या पते वाला आधार।', 'detail_mr': 'वीज बिल, रेशन कार्ड, किंवा पत्त्यासह आधार.'},
+            'School Admission Certificate': {'detail': 'Current school enrollment certificate signed by principal.', 'detail_hi': 'प्रधानाचार्य द्वारा हस्ताक्षरित वर्तमान स्कूल नामांकन प्रमाण पत्र।', 'detail_mr': 'मुख्याध्यापकांनी सही केलेले सध्याचे शाळा प्रवेश प्रमाणपत्र.'},
+            'Birth Certificate of child': {'detail': 'Hospital or municipal corporation issued birth certificate.', 'detail_hi': 'अस्पताल या नगर निगम द्वारा जारी जन्म प्रमाण पत्र।', 'detail_mr': 'रुग्णालय किंवा महानगरपालिका जारी जन्म प्रमाणपत्र.'},
+            'SECC/BPL Certificate': {'detail': 'Socio Economic Caste Census certificate from Gram Panchayat.', 'detail_hi': 'ग्राम पंचायत से SECC प्रमाण पत्र।', 'detail_mr': 'ग्रामपंचायतकडून SECC प्रमाणपत्र.'},
+            'SECC Certificate': {'detail': 'Socio Economic Caste Census certificate.', 'detail_hi': 'SECC प्रमाण पत्र।', 'detail_mr': 'SECC प्रमाणपत्र.'}
+        } %}
+
+        <div id="docList">
+        {% for doc in scheme.documents %}
+        <div class="doc-item" onclick="toggleDoc({{ loop.index0 }}, {{ scheme.documents|length }})" id="doc-{{ loop.index0 }}">
+            <div class="doc-checkbox" id="check-{{ loop.index0 }}"></div>
+            <div class="doc-info">
+                <div class="doc-name">{{ doc }}</div>
+                {% if doc in doc_details %}
+                <div class="doc-detail">
+                    <span class="en">{{ doc_details[doc].detail }}</span>
+                    <span class="hi">{{ doc_details[doc].detail_hi }}</span>
+                    <span class="mr">{{ doc_details[doc].detail_mr }}</span>
+                </div>
+                {% endif %}
+                <div class="doc-required">
+                    <span class="en">✦ Required</span>
+                    <span class="hi">✦ आवश्यक</span>
+                    <span class="mr">✦ आवश्यक</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        </div>
+    </div>
+
+    <div class="tips-card">
+        <h3>
+            <span class="en">💡 Tips Before You Go</span>
+            <span class="hi">💡 जाने से पहले टिप्स</span>
+            <span class="mr">💡 जाण्यापूर्वी टिप्स</span>
+        </h3>
+        <div class="tip-item">
+            <span class="tip-icon">📄</span>
+            <span>
+                <span class="en">Always carry originals + 2 photocopies of every document</span>
+                <span class="hi">हर दस्तावेज़ की मूल + 2 फोटोकॉपी हमेशा साथ रखें</span>
+                <span class="mr">प्रत्येक कागदपत्राचे मूळ + 2 छायाप्रती नेहमी सोबत ठेवा</span>
+            </span>
+        </div>
+        <div class="tip-item">
+            <span class="tip-icon">📅</span>
+            <span>
+                <span class="en">Visit office on Tuesday, Wednesday or Thursday — less crowd</span>
+                <span class="hi">मंगलवार, बुधवार या गुरुवार को कार्यालय जाएं — कम भीड़</span>
+                <span class="mr">मंगळवार, बुधवार किंवा गुरुवारी कार्यालयात जा — कमी गर्दी</span>
+            </span>
+        </div>
+        <div class="tip-item">
+            <span class="tip-icon">🕐</span>
+            <span>
+                <span class="en">Go between 10 AM - 12 PM for faster service</span>
+                <span class="hi">तेज़ सेवा के लिए सुबह 10 - 12 बजे जाएं</span>
+                <span class="mr">जलद सेवेसाठी सकाळी 10 - 12 वाजता जा</span>
+            </span>
+        </div>
+        <div class="tip-item">
+            <span class="tip-icon">📱</span>
+            <span>
+                <span class="en">Keep this checklist open on phone while at office</span>
+                <span class="hi">कार्यालय में रहते हुए फोन पर यह चेकलिस्ट खुली रखें</span>
+                <span class="mr">कार्यालयात असताना फोनवर ही यादी उघडी ठेवा</span>
+            </span>
+        </div>
+        <div class="tip-item">
+            <span class="tip-icon">🚫</span>
+            <span>
+                <span class="en">Do not pay any bribe — report immediately if asked</span>
+                <span class="hi">कोई रिश्वत न दें — मांगने पर तुरंत रिपोर्ट करें</span>
+                <span class="mr">कोणताही लाच देऊ नका — मागितल्यास तात्काळ तक्रार करा</span>
+            </span>
+        </div>
+    </div>
+
+    <div class="warning-card">
+        <h4>
+            <span class="en">⚠️ If Anyone Asks for Money</span>
+            <span class="hi">⚠️ अगर कोई पैसे मांगे</span>
+            <span class="mr">⚠️ जर कोणी पैसे मागितले</span>
+        </h4>
+        <p>
+            <span class="en">This scheme is completely FREE. If any official asks for money, report immediately using our Corruption Complaint System.</span>
+            <span class="hi">यह योजना बिल्कुल मुफ्त है। अगर कोई अधिकारी पैसे मांगे, हमारे भ्रष्टाचार शिकायत सिस्टम का उपयोग करके तुरंत रिपोर्ट करें।</span>
+            <span class="mr">ही योजना पूर्णपणे मोफत आहे. जर कोणी अधिकारी पैसे मागत असेल तर आमच्या भ्रष्टाचार तक्रार प्रणालीचा वापर करून तात्काळ तक्रार करा.</span>
+        </p>
+    </div>
+
+    <div class="action-btns">
+        <a href="/apply/{{ scheme_key }}?lang={{ lang }}" class="apply-btn">
+            📝
+            <span class="en">Fill Application Form</span>
+            <span class="hi">आवेदन फॉर्म भरें</span>
+            <span class="mr">अर्ज फॉर्म भरा</span>
+        </a>
+        <button onclick="window.print()" class="print-btn">
+            🖨️
+            <span class="en">Print This Checklist</span>
+            <span class="hi">यह चेकलिस्ट प्रिंट करें</span>
+            <span class="mr">ही यादी प्रिंट करा</span>
+        </button>
+        <a href="/corruption?lang={{ lang }}" class="apply-btn" style="background:linear-gradient(90deg,#c62828,#b71c1c);">
+            🚨
+            <span class="en">Report Corruption</span>
+            <span class="hi">भ्रष्टाचार रिपोर्ट करें</span>
+            <span class="mr">भ्रष्टाचाराची तक्रार करा</span>
+        </a>
+        <a href="javascript:history.back()" class="back-btn">
+            ←
+            <span class="en">Go Back</span>
+            <span class="hi">वापस जाएं</span>
+            <span class="mr">मागे जा</span>
+        </a>
+    </div>
+
+    <div class="footer">Poverty Aid Identifier — Document Checklist — Print and carry to office</div>
+</div>
+
+<script>
+let checkedDocs = 0;
+const totalDocs = {{ scheme.documents|length }};
+
+function toggleDoc(index, total) {
+    const checkbox = document.getElementById('check-' + index);
+    const docItem = document.getElementById('doc-' + index);
+    const isChecked = checkbox.classList.contains('checked');
+    if (isChecked) {
+        checkbox.classList.remove('checked');
+        checkbox.innerText = '';
+        docItem.style.background = '';
+        checkedDocs--;
+    } else {
+        checkbox.classList.add('checked');
+        checkbox.innerText = '✓';
+        docItem.style.background = '#f0fff0';
+        checkedDocs++;
+    }
+    updateProgress();
+}
+
+function updateProgress() {
+    const percent = Math.round((checkedDocs / totalDocs) * 100);
+    document.getElementById('progressBar').style.width = percent + '%';
+    document.getElementById('progressPercent').innerText = percent + '%';
+    const lang = '{{ lang }}';
+    if (lang === 'hi') {
+        document.getElementById('progressText').innerHTML = `<span class="hi">${totalDocs} में से ${checkedDocs} दस्तावेज़ तैयार</span>`;
+    } else if (lang === 'mr') {
+        document.getElementById('progressText').innerHTML = `<span class="mr">${totalDocs} पैकी ${checkedDocs} कागदपत्रे तयार</span>`;
+    } else {
+        document.getElementById('progressText').innerHTML = `<span class="en">${checkedDocs} of ${totalDocs} documents ready</span>`;
+    }
+}
+</script>
+</body>
+</html>

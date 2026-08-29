@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Form — {{ scheme.name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Noto Sans Devanagari', 'Plus Jakarta Sans', sans-serif;
+            background: #f4f6f9;
+            color: #1a1a2e;
+            padding: 20px;
+        }
+
+        .no-print-bar {
+            max-width: 800px;
+            margin: 0 auto 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #000080;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .btn-print {
+            background: #FF9933;
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-print:hover { background: #e68523; }
+
+        .btn-back {
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Printable Form Sheet */
+        .form-sheet {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border: 2px solid #000080;
+            border-radius: 8px;
+            padding: 36px 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            position: relative;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px double #000080;
+            padding-bottom: 16px;
+            margin-bottom: 20px;
+        }
+
+        .gov-emblem {
+            font-size: 32px;
+            margin-bottom: 4px;
+        }
+
+        .gov-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #000080;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #d97706;
+            margin-top: 6px;
+        }
+
+        .ref-bar {
+            display: flex;
+            justify-content: space-between;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            background: #000080;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            margin: 18px 0 10px;
+            text-transform: uppercase;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px 20px;
+            font-size: 13px;
+        }
+
+        .field {
+            border-bottom: 1px dotted #94a3b8;
+            padding-bottom: 4px;
+        }
+
+        .field-label {
+            font-weight: 700;
+            color: #475569;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        .field-value {
+            font-weight: 600;
+            color: #0f172a;
+            font-size: 13px;
+        }
+
+        /* Checkbox list */
+        .doc-list {
+            list-style: none;
+            margin-top: 8px;
+        }
+
+        .doc-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .checkbox-box {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #000080;
+            border-radius: 3px;
+        }
+
+        /* Receipt Slip Cut line */
+        .cut-line {
+            border-top: 2px dashed #94a3b8;
+            margin: 30px 0 20px;
+            position: relative;
+            text-align: center;
+        }
+
+        .cut-label {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 0 10px;
+            font-size: 10px;
+            color: #64748b;
+            font-weight: 700;
+        }
+
+        .receipt-box {
+            border: 1px solid #000080;
+            border-radius: 6px;
+            padding: 14px;
+            background: #f0f4ff;
+            font-size: 12px;
+        }
+
+        .receipt-title {
+            font-weight: 700;
+            color: #000080;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .sign-area {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .no-print-bar { display: none !important; }
+            .form-sheet { border: none; box-shadow: none; padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="no-print-bar">
+    <a href="/apply/{{ scheme_key }}" class="btn-back">← Back to Scheme</a>
+    <button class="btn-print" onclick="window.print()">🖨️ Print / Save Application Form</button>
+</div>
+
+<div class="form-sheet">
+    <div class="header">
+        <div class="gov-emblem">🏛️</div>
+        <div class="gov-title">
+            {% if lang == 'mr' %}महाराष्ट्र शासन / भारत सरकार — जनकल्याण अर्ज
+            {% elif lang == 'hi' %}भारत सरकार / राज्य सरकार — समाज कल्याण आवेदन
+            {% else %}GOVERNMENT WELFARE SCHEME APPLICATION FORM
+            {% endif %}
+        </div>
+        <div class="form-title">{{ scheme.name }}</div>
+    </div>
+
+    <div class="ref-bar">
+        <div>App Ref ID: <strong>{{ app_id }}</strong></div>
+        <div>Date: <strong>{{ profile.created_at or '04-08-2026' }}</strong></div>
+        <div>Need Score: <strong>{{ profile.score or '125' }}/225</strong></div>
+    </div>
+
+    <!-- Applicant Personal Information -->
+    <div class="section-title">
+        {% if lang == 'mr' %}१. अर्जदाराची वैयक्तिक माहिती (Applicant Details)
+        {% elif lang == 'hi' %}१. आवेदक का व्यक्तिगत विवरण (Applicant Details)
+        {% else %}1. APPLICANT PERSONAL INFORMATION
+        {% endif %}
+    </div>
+
+    <div class="grid-2">
+        <div class="field">
+            <div class="field-label">Applicant Name</div>
+            <div class="field-value">{{ profile.name or 'Rajesh Kumar / नाम' }}</div>
+        </div>
+        <div class="field">
+            <div class="field-label">Age Group / Gender</div>
+            <div class="field-value">{{ profile.age_group or '60+ Elderly' }} / {{ profile.gender or 'Male' }}</div>
+        </div>
+        <div class="field">
+            <div class="field-label">Monthly Income</div>
+            <div class="field-value">₹{{ profile.income or '4,000' }}/month</div>
+        </div>
+        <div class="field">
+            <div class="field-label">Housing Type</div>
+            <div class="field-value">{{ profile.housing or 'Kutcha (Weak House)' }}</div>
+        </div>
+        <div class="field">
+            <div class="field-label">Ration Card / Electricity</div>
+            <div class="field-value">Ration: {{ profile.ration or 'BPL Yellow' }} | Elec: {{ profile.electricity or 'Yes' }}</div>
+        </div>
+        <div class="field">
+            <div class="field-label">Address / Location</div>
+            <div class="field-value">{{ profile.address or 'Village Post, District Maharashtra' }}</div>
+        </div>
+    </div>
+
+    <!-- Scheme Details & Benefit -->
+    <div class="section-title">
+        {% if lang == 'mr' %}२. योजनेचा तपशील आणि लाभ (Scheme Details)
+        {% elif lang == 'hi' %}२. योजना विवरण एवं लाभ (Scheme Details)
+        {% else %}2. SCHEME & BENEFIT DETAILS
+        {% endif %}
+    </div>
+
+    <div class="grid-2">
+        <div class="field">
+            <div class="field-label">Scheme Name</div>
+            <div class="field-value">{{ scheme.name }}</div>
+        </div>
+        <div class="field">
+            <div class="field-label">Sanctioned Amount / Benefit</div>
+            <div class="field-value">{{ scheme.amount }}</div>
+        </div>
+    </div>
+
+    <!-- Enclosed Document Checklist -->
+    <div class="section-title">
+        {% if lang == 'mr' %}३. जोडावयाची आवश्यक कागदपत्रे (Required Document Checklist)
+        {% elif lang == 'hi' %}३. आवश्यक संलग्न दस्तावेज़ सूची (Document Checklist)
+        {% else %}3. ATTACHED DOCUMENTS CHECKLIST
+        {% endif %}
+    </div>
+
+    <ul class="doc-list">
+        {% for doc in scheme.documents %}
+        <li class="doc-item">
+            <div class="checkbox-box"></div>
+            <span>{{ doc }}</span>
+        </li>
+        {% else %}
+        <li class="doc-item"><div class="checkbox-box"></div><span>Aadhaar Card (आधार कार्ड)</span></li>
+        <li class="doc-item"><div class="checkbox-box"></div><span>BPL Ration Card (बीपीएल राशन कार्ड)</span></li>
+        <li class="doc-item"><div class="checkbox-box"></div><span>Bank Passbook Copy (बैंक पासबुक प्रति)</span></li>
+        <li class="doc-item"><div class="checkbox-box"></div><span>Income Certificate (आय प्रमाण पत्र)</span></li>
+        {% endfor %}
+    </ul>
+
+    <!-- Signatures -->
+    <div class="sign-area">
+        <div>
+            __________________________<br>
+            Applicant Signature / Thumb Impression<br>
+            (अर्जदाराची स्वाक्षरी / अंगठा)
+        </div>
+        <div>
+            __________________________<br>
+            Gram Panchayat / Officer Seal & Sign<br>
+            (अधिकारी स्वाक्षरी व शिक्का)
+        </div>
+    </div>
+
+    <!-- Cut Line Receipt -->
+    <div class="cut-line">
+        <span class="cut-label">✂️ CUT HERE FOR RECEIPT SLIP ✂️</span>
+    </div>
+
+    <div class="receipt-box">
+        <div class="receipt-title">
+            {% if lang == 'mr' %}ग्रामपंचायत / नागरी सेवा केंद्र - अर्ज पोच पावती
+            {% elif lang == 'hi' %}ग्राम पंचायत / जन सेवा केंद्र - आवेदन पावती रसीद
+            {% else %}GRAM PANCHAYAT / CSC OFFICE - APPLICATION ACKNOWLEDGMENT RECEIPT
+            {% endif %}
+        </div>
+        <div class="grid-2">
+            <div>Receipt ID: <strong>{{ app_id }}</strong></div>
+            <div>Scheme: <strong>{{ scheme.name }}</strong></div>
+            <div>Applicant Name: <strong>{{ profile.name or 'Valued Citizen' }}</strong></div>
+            <div>Received Date: <strong>____/____/2026</strong></div>
+        </div>
+        <div style="margin-top: 10px; font-size: 11px; text-align: center; color: #475569;">
+            Keep this receipt safe to track your application status. Verified by Poverty Aid Identifier Civic Tech.
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

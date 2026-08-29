@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volunteer Sign Up - Poverty Aid Identifier</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#000080">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: Arial, sans-serif; background:#f5f5f5; color:#333; min-height:100vh; display:flex; flex-direction:column; }
+        .top-bar { background: linear-gradient(90deg, #FF9933, #ffffff, #138808); height: 6px; }
+        .header { background:#000080; color:white; padding:22px 20px; text-align:center; }
+        .header h1 { font-size:19px; margin-bottom:4px; }
+        .header p { font-size:12px; opacity:0.8; }
+        .container { max-width:420px; margin:0 auto; padding:24px 20px; flex:1; width:100%; }
+        .card { background:white; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.08); padding:26px; border-top:4px solid #FF9933; }
+        .card h2 { color:#000080; font-size:17px; margin-bottom:6px; }
+        .card p.desc { font-size:12.5px; color:#666; margin-bottom:20px; line-height:1.5; }
+        label { display:block; font-size:12px; font-weight:bold; color:#555; margin:14px 0 5px; }
+        input { width:100%; padding:11px; border:2px solid #e0e0e0; border-radius:9px; font-size:14px; }
+        input:focus { border-color:#FF9933; outline:none; }
+        .hint { font-size:10.5px; color:#999; margin-top:4px; }
+        .submit-btn { width:100%; padding:13px; background:#000080; color:white; border:none; border-radius:10px; font-size:15px; font-weight:bold; cursor:pointer; margin-top:22px; }
+        .submit-btn:hover { background:#1a1a9e; }
+        .error-box { background:#ffebee; border-left:4px solid #c62828; color:#c62828; padding:12px 14px; border-radius:8px; font-size:13px; margin-bottom:16px; }
+        .login-link { text-align:center; font-size:12.5px; color:#666; margin-top:18px; }
+        .login-link a { color:#000080; font-weight:bold; text-decoration:none; }
+        .footer { text-align:center; padding:18px; color:#999; font-size:11px; }
+    </style>
+</head>
+<body>
+<div class="top-bar"></div>
+<div class="header">
+    <h1>🤝 Volunteer / Agent Sign Up</h1>
+    <p>For NGO workers &amp; panchayat volunteers assisting citizens</p>
+</div>
+
+<div class="container">
+    <div class="card">
+        <h2>Create Your Volunteer Account</h2>
+        <p class="desc">You'll be able to fill the eligibility form on behalf of citizens who can't use a phone or read/write, and see everything you've filed for them.</p>
+
+        {% if error %}
+        <div class="error-box">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST">
+            <label>Your Full Name</label>
+            <input type="text" name="full_name" placeholder="e.g. Priya Sharma" required autocomplete="off">
+
+            <label>Choose a Username</label>
+            <input type="text" name="username" placeholder="e.g. priya_ngo" required autocomplete="off">
+
+            <label>Choose a Password</label>
+            <input type="password" name="password" placeholder="At least 6 characters" required minlength="6">
+            <div class="hint">This protects the citizens' data you'll be entering — keep it private.</div>
+
+            <button type="submit" class="submit-btn">Create Volunteer Account</button>
+        </form>
+
+        <div class="login-link">Already have an account? <a href="/admin/login">Log in here</a></div>
+    </div>
+</div>
+
+<div class="footer">Poverty Aid Identifier — Volunteer accounts can only see applications they personally filed.</div>
+</body>
+</html>

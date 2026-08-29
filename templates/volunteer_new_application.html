@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Assisted Application - Poverty Aid Identifier</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#000080">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: Arial, sans-serif; background:#f5f5f5; color:#333; }
+        .top-bar { background: linear-gradient(90deg, #FF9933, #ffffff, #138808); height: 6px; }
+        .header { background:#000080; color:white; padding:18px 20px; display:flex; justify-content:space-between; align-items:center; }
+        .header h1 { font-size:16px; }
+        .back-link { color:rgba(255,255,255,0.85); font-size:12px; text-decoration:none; }
+        .container { max-width:520px; margin:0 auto; padding:20px; }
+
+        .assist-banner { background:#fff8f0; border:2px dashed #FF9933; border-radius:10px; padding:13px 15px; font-size:12.5px; color:#7a4a00; margin-bottom:18px; display:flex; gap:8px; align-items:flex-start; }
+
+        .card { background:white; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.08); padding:22px; border-top:4px solid #000080; }
+        .card h2 { color:#000080; font-size:16px; margin-bottom:16px; border-bottom:2px solid #FF9933; padding-bottom:10px; }
+
+        label { display:block; font-size:12px; font-weight:bold; color:#555; margin:14px 0 5px; }
+        input, select { width:100%; padding:10px; border:2px solid #e0e0e0; border-radius:8px; font-size:13.5px; background:#fafafa; }
+        input:focus, select:focus { border-color:#FF9933; outline:none; background:white; }
+        .row2 { display:flex; gap:10px; }
+        .row2 > div { flex:1; }
+
+        .submit-btn { width:100%; padding:14px; background:#000080; color:white; border:none; border-radius:10px; font-size:15px; font-weight:bold; cursor:pointer; margin-top:22px; }
+        .submit-btn:hover { background:#1a1a9e; }
+        .error-box { background:#ffebee; border-left:4px solid #c62828; color:#c62828; padding:12px 14px; border-radius:8px; font-size:13px; margin-bottom:16px; }
+
+        .success-icon { text-align:center; font-size:46px; margin-bottom:6px; }
+        .success-card { text-align:center; }
+        .app-id-box { background:#000080; color:#FF9933; font-weight:bold; font-size:18px; letter-spacing:1px; padding:14px; border-radius:10px; margin:16px 0; }
+        .filed-by-tag { display:inline-block; background:#e8f5e9; color:#1b5e20; font-size:11.5px; font-weight:bold; padding:5px 12px; border-radius:12px; margin-top:6px; }
+        .scheme-list { text-align:left; background:#fafafa; border-radius:10px; padding:14px 16px; margin-top:16px; font-size:12.5px; }
+        .scheme-list div { padding:5px 0; border-bottom:1px solid #eee; }
+        .scheme-list div:last-child { border-bottom:none; }
+        .action-row { display:flex; gap:10px; margin-top:20px; }
+        .action-row a { flex:1; padding:12px; border-radius:10px; text-align:center; text-decoration:none; font-size:13.5px; font-weight:bold; }
+        .action-row .primary { background:#000080; color:white; }
+        .action-row .secondary { background:white; color:#000080; border:2px solid #000080; }
+    </style>
+</head>
+<body>
+<div class="top-bar"></div>
+<div class="header">
+    <h1>🤝 Assisted Filing</h1>
+    <a href="/volunteer/dashboard" class="back-link">← Dashboard</a>
+</div>
+
+<div class="container">
+    {% if not result %}
+    <div class="assist-banner">
+        <span>ℹ️</span>
+        <span>You're filling this on behalf of a citizen who can't use a phone themselves. Everything you enter belongs to <strong>them</strong>, not you.</span>
+    </div>
+
+    <div class="card">
+        <h2>Citizen's Details</h2>
+
+        {% if error %}
+        <div class="error-box">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST">
+            <input type="hidden" name="lang" value="{{ lang }}">
+
+            <label>Citizen's Full Name</label>
+            <input type="text" name="person_name" required>
+
+            <label>Phone Number (if any)</label>
+            <input type="text" name="phone" placeholder="10-digit number, optional" pattern="[0-9]{10}">
+
+            <label>Address</label>
+            <input type="text" name="address" placeholder="Village, District, State" required>
+
+            <div class="row2">
+                <div>
+                    <label>Gender</label>
+                    <select name="gender">
+                        <option value="female">Female</option>
+                        <option value="male">Male</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Widow / Widower?</label>
+                    <select name="widow_status">
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row2">
+                <div>
+                    <label>Age Group</label>
+                    <select name="age_group" required>
+                        <option value="">Select...</option>
+                        <option value="child">Child</option>
+                        <option value="adult">Adult</option>
+                        <option value="elderly">Senior Citizen (60+)</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Monthly Income (Rs.)</label>
+                    <input type="number" name="income" min="0" required>
+                </div>
+            </div>
+
+            <label>Family Size</label>
+            <input type="number" name="family_size" min="1" required>
+
+            <label>Housing</label>
+            <select name="housing" required>
+                <option value="">Select...</option>
+                <option value="homeless">Homeless</option>
+                <option value="kutcha">Kutcha (temporary/weak structure)</option>
+                <option value="rented">Rented house</option>
+                <option value="pucca">Pucca (permanent) house</option>
+            </select>
+
+            <div class="row2">
+                <div>
+                    <label>Electricity</label>
+                    <select name="electricity">
+                        <option value="yes">Yes</option>
+                        <option value="sometimes">Sometimes</option>
+                        <option value="no">No</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Ration Card</label>
+                    <select name="ration">
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                    </select>
+                </div>
+            </div>
+
+            <label>Medical Condition</label>
+            <select name="medical">
+                <option value="none">None</option>
+                <option value="chronic_illness">Chronic Illness</option>
+                <option value="disability">Disability</option>
+                <option value="emergency">Medical Emergency</option>
+            </select>
+
+            <div class="row2">
+                <div>
+                    <label>Recent Accident?</label>
+                    <select name="accident">
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Earning Member Died Recently?</label>
+                    <select name="earning_member_died">
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn">Submit on Their Behalf</button>
+        </form>
+    </div>
+
+    {% else %}
+    <div class="card success-card">
+        <div class="success-icon">✅</div>
+        <h2 style="border:none;">Application Filed Successfully</h2>
+        <p style="font-size:13px; color:#666;">{{ person_name }} — {{ result }}</p>
+        <div class="app-id-box">{{ application_id }}</div>
+        <div class="filed-by-tag">📋 Filed by: {{ volunteer_name }}</div>
+
+        <div class="scheme-list">
+            {% for sc in schemes %}
+            <div><strong>{{ sc[2] }}</strong> — {{ sc[3] }}</div>
+            {% endfor %}
+        </div>
+
+        <div class="action-row">
+            <a href="/track-outcome?id={{ application_id }}" class="secondary">Track Status</a>
+            <a href="/volunteer/new-application" class="primary">File Another</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+</body>
+</html>
